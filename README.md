@@ -159,6 +159,99 @@ python domainIpIntel/intel.py suspicious-domain.com --verbose
 
 ---
 
+### 5. Log Analysis
+
+Parse and analyze security logs to detect attacks and suspicious patterns.
+
+**Location:** `logAnalysis/analyzer.py`
+
+**Features:**
+- Auto-detect log format (Apache, Nginx, Syslog)
+- Detect web attacks (SQL injection, XSS, path traversal)
+- Detect authentication attacks (brute-force attempts)
+- Scanner detection (suspicious user agents)
+- Traffic statistics and top talkers
+- Export to JSON, CSV, or text report
+
+**Usage:**
+```bash
+python logAnalysis/analyzer.py [log_file] [--type auto|apache|nginx|syslog] [--format json|csv|txt]
+```
+
+**Examples:**
+```bash
+# Analyze Apache access log (auto-detect format)
+python logAnalysis/analyzer.py /var/log/apache2/access.log
+
+# Analyze with specific type
+python logAnalysis/analyzer.py /var/log/secure --type syslog
+
+# Generate text report
+python logAnalysis/analyzer.py access.log --format txt --output report.txt
+
+# Export alerts to CSV
+python logAnalysis/analyzer.py access.log --format csv --output alerts.csv
+
+# Verbose analysis
+python logAnalysis/analyzer.py access.log --verbose
+```
+
+**Detections:**
+- SQL injection attempts
+- Cross-site scripting (XSS)
+- Path traversal attacks
+- Brute-force authentication attempts
+- Scanner activity (sqlmap, nikto, nmap)
+- 404 scanning patterns
+
+---
+
+### 6. PCAP Analyzer
+
+Analyze network traffic from packet capture files to identify threats and patterns.
+
+**Location:** `pcapAnalyzer/analyzer.py`
+
+**Features:**
+- Parse PCAP/PCAPNG files
+- Protocol distribution analysis
+- Traffic statistics (top IPs, ports, conversations)
+- DNS query analysis
+- Threat detection (port scans, suspicious domains, DGA)
+- HTTP payload inspection
+- Export to JSON, CSV, or text report
+
+**Usage:**
+```bash
+python pcapAnalyzer/analyzer.py [pcap_file] [--format json|csv|txt]
+```
+
+**Examples:**
+```bash
+# Analyze PCAP file
+python pcapAnalyzer/analyzer.py capture.pcap
+
+# Generate text report
+python pcapAnalyzer/analyzer.py capture.pcap --format txt --output report.txt
+
+# Export alerts to CSV
+python pcapAnalyzer/analyzer.py capture.pcap --format csv --output alerts.csv
+
+# Verbose analysis
+python pcapAnalyzer/analyzer.py capture.pcap --verbose
+```
+
+**Detections:**
+- Port scanning activity
+- Suspicious DNS queries (DGA domains, suspicious TLDs)
+- HTTP-based attacks (SQL injection, XSS in payloads)
+- Unusual traffic patterns
+
+**Dependencies:**
+- Requires `scapy` library: `pip install scapy`
+
+---
+
 ## Configuration
 
 Create a `.env` file in the project root for API keys:
@@ -200,7 +293,6 @@ Complete project specifications and feature documentation available in the [open
   - [IOC Extractor Spec](openspec/specs/ioc-extractor.spec.md) - Indicator extraction
   - [Hash Lookup Spec](openspec/specs/hash-lookup.spec.md) - Hash threat intelligence
   - [Domain/IP Intel Spec](openspec/specs/domain-ip-intel.spec.md) - Network intelligence
-- **Planned Tools:**
   - [Log Analysis Spec](openspec/specs/log-analysis.spec.md) - Security log analysis
   - [PCAP Analyzer Spec](openspec/specs/pcap-analyzer.spec.md) - Network traffic analysis
 
@@ -212,12 +304,19 @@ Complete project specifications and feature documentation available in the [open
 ### Phase 2 (Completed ✅)
 - [x] IOC Extractor (IPs, domains, hashes, URLs, CVEs)
 - [x] Hash Lookup utility (VirusTotal, MalwareBazaar)
-- [x] Domain/IP Intelligence (DNS, WHOIS, threat intel)
+- [x] Domain/IP Intelligence (DNS, threat intel, risk scoring)
 
-### Phase 3 (Planned)
-- [ ] Log Analysis tools (Apache, Nginx, Syslog, Firewall)
-- [ ] PCAP Network Traffic Analyzer
-- [ ] Advanced threat detection features
+### Phase 3 (Completed ✅)
+- [x] Log Analysis (Apache, Nginx, Syslog with attack detection)
+- [x] PCAP Analyzer (Network traffic analysis with threat detection)
+
+### Future Enhancements
+- [ ] Web dashboard interface
+- [ ] STIX 2.1 export support
+- [ ] MISP integration
+- [ ] Real-time log monitoring
+- [ ] Machine learning-based anomaly detection
+- [ ] Advanced correlation engine
 
 ## Contributing
 

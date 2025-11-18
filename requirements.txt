@@ -11,12 +11,7 @@ eml-parser>=1.17.0
 
 # Domain/IP Intelligence (no additional dependencies - uses requests, python-dotenv)
 
-# Future tools (commented out until implemented)
-# Log Analysis
-# regex>=2023.0.0
-# python-dateutil>=2.8.0
-# tabulate>=0.9.0
+# Log Analysis (no additional dependencies - uses built-in regex and datetime)
 
 # PCAP Analyzer
-# scapy>=2.5.0
-# dpkt>=1.9.8
+scapy>=2.5.0
