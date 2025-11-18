@@ -375,6 +375,119 @@ python iocExtractor/extractor.py report.txt
 python hashLookup/lookup.py <hash>
 ```
 
+### Option 3: Docker (Recommended for Isolated Execution)
+
+Docker containers provide isolated, reproducible environments perfect for security tools.
+
+**Prerequisites:**
+- Docker installed ([Get Docker](https://docs.docker.com/get-docker/))
+- Docker Compose installed (included with Docker Desktop)
+
+**Quick Start:**
+
+```bash
+# Clone the repository
+git clone https://github.com/Vligai/secops-helper.git
+cd secops-helper
+
+# Build the Docker image
+docker build -t secops-helper .
+
+# Run any tool (mount your data directory)
+docker run --rm -v $(pwd)/data:/data secops-helper ioc /data/report.txt
+
+# With API keys (using .env file)
+docker run --rm --env-file .env -v $(pwd)/data:/data secops-helper eml /data/email.eml --vt
+```
+
+**Using Docker Compose:**
+
+Docker Compose provides a more convenient way to run SecOps Helper with all services:
+
+```bash
+# Create data and output directories
+mkdir -p data output
+
+# Copy sample files to data directory
+cp samples/* data/
+
+# Run IOC extraction
+docker-compose run --rm secops-helper ioc /data/report.txt --format stix --output /output/iocs.json
+
+# Run hash lookup with output
+docker-compose run --rm secops-helper hash --file /data/hashes.txt --format csv --output /output/results.csv
+
+# Run email analysis with VirusTotal
+docker-compose run --rm secops-helper eml /data/suspicious.eml --vt --output /output/email_report.json
+
+# Run log analysis
+docker-compose run --rm secops-helper log /data/access.log --format json --output /output/alerts.json
+
+# Run PCAP analysis
+docker-compose run --rm secops-helper pcap /data/capture.pcap --verbose
+
+# Interactive shell for debugging
+docker-compose run --rm --entrypoint /bin/bash secops-helper
+
+# Stop all services
+docker-compose down
+```
+
+**Docker Features:**
+
+- **Isolated Environment**: Runs in a secure container separate from your host system
+- **No Python Setup**: All dependencies pre-installed in the image
+- **Persistent Cache**: Redis container for caching threat intelligence lookups
+- **Volume Mounting**: Easy access to input files and output results
+- **API Key Support**: Pass environment variables securely via `.env` file
+- **Reproducible**: Same environment across all machines
+
+**Directory Structure:**
+
+```
+secops-helper/
+├── data/          # Mount point for input files (read-only)
+├── output/        # Mount point for output files (read-write)
+└── .env           # API keys (optional, mounted read-only)
+```
+
+**Environment Variables:**
+
+The Docker container supports the same environment variables as the native installation:
+
+```bash
+# .env file
+VT_API_KEY=your_virustotal_api_key
+ABUSEIPDB_KEY=your_abuseipdb_api_key
+```
+
+**Advanced Usage:**
+
+```bash
+# Build with specific tag
+docker build -t secops-helper:2.0.0 .
+
+# Run specific tool with all options
+docker run --rm \
+  --env-file .env \
+  -v $(pwd)/data:/data:ro \
+  -v $(pwd)/output:/output \
+  secops-helper ioc /data/threat_report.txt \
+    --format stix \
+    --output /output/indicators.json \
+    --verbose
+
+# Use Redis cache service
+docker-compose up -d redis
+docker-compose run --rm secops-helper hash --file /data/hashes.txt
+
+# View cache statistics
+docker-compose exec redis redis-cli INFO stats
+
+# Clean up everything including volumes
+docker-compose down -v
+```
+
 ## Project Documentation
 
 Complete project specifications and feature documentation available in the [openspec/](openspec/) directory:
@@ -408,6 +521,7 @@ Complete project specifications and feature documentation available in the [open
 - [x] Unified CLI tool (`secops-helper` command)
 - [x] STIX 2.1 export support
 - [x] Package installation support (setup.py)
+- [x] Docker container support (Dockerfile, docker-compose.yml)
 
 ### Future Enhancements
 - [ ] Web dashboard interface
@@ -415,7 +529,7 @@ Complete project specifications and feature documentation available in the [open
 - [ ] Real-time log monitoring
 - [ ] Machine learning-based anomaly detection
 - [ ] Advanced correlation engine
-- [ ] Docker container support
+- [ ] Advanced caching with Redis integration
 
 ## Contributing
 

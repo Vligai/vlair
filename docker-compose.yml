@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # Main SecOps Helper service
+  secops-helper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: secops-helper:latest
+    container_name: secops-helper
+    volumes:
+      # Mount local data directory for input files
+      - ./data:/data:ro
+      # Mount output directory for results
+      - ./output:/output
+      # Mount .env file for API keys (optional)
+      - ./.env:/app/.env:ro
+    environment:
+      # API keys from .env file
+      - VT_API_KEY=${VT_API_KEY:-}
+      - ABUSEIPDB_KEY=${ABUSEIPDB_KEY:-}
+    # Override default command - example: IOC extraction
+    # command: ioc /data/report.txt --format json --output /output/iocs.json
+    networks:
+      - secops-network
+
+  # Redis cache service (optional, for future caching enhancement)
+  redis:
+    image: redis:7-alpine
+    container_name: secops-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - secops-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  # Persistent storage for Redis cache
+  redis-data:
+    driver: local
+
+networks:
+  secops-network:
+    driver: bridge
+
+# Usage Examples:
+#
+# 1. Build and start services:
+#    docker-compose up -d
+#
+# 2. Run IOC extraction:
+#    docker-compose run --rm secops-helper ioc /data/report.txt --format stix
+#
+# 3. Run hash lookup with API keys:
+#    docker-compose run --rm secops-helper hash --file /data/hashes.txt
+#
+# 4. Run email analysis with VirusTotal:
+#    docker-compose run --rm secops-helper eml /data/suspicious.eml --vt --output /output/email_report.json
+#
+# 5. Run log analysis:
+#    docker-compose run --rm secops-helper log /data/access.log --format csv --output /output/alerts.csv
+#
+# 6. Run PCAP analysis:
+#    docker-compose run --rm secops-helper pcap /data/capture.pcap --verbose
+#
+# 7. Interactive shell in container:
+#    docker-compose run --rm --entrypoint /bin/bash secops-helper
+#
+# 8. View Redis cache stats:
+#    docker-compose exec redis redis-cli INFO stats
+#
+# 9. Stop all services:
+#    docker-compose down
+#
+# 10. Remove all data including volumes:
+#     docker-compose down -v
