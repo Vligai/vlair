@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecOps Helper - Security Operations Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🛡️ SecOps Helper</h1>
+                <p class="subtitle">Security Operations Toolkit - Web Dashboard</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-box">
+                    <span class="stat-value" id="total-analyses">0</span>
+                    <span class="stat-label">Total Analyses</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="iocs-extracted">0</span>
+                    <span class="stat-label">IOCs Extracted</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value status-healthy">●</span>
+                    <span class="stat-label">System Status</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tool Selection Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTool('ioc')">
+                📊 IOC Extractor
+            </button>
+            <button class="tab-button" onclick="showTool('hash')">
+                🔍 Hash Lookup
+            </button>
+            <button class="tab-button" onclick="showTool('intel')">
+                🌐 Domain/IP Intel
+            </button>
+            <button class="tab-button" onclick="showTool('log')">
+                📝 Log Analysis
+            </button>
+            <button class="tab-button" onclick="showTool('eml')">
+                📧 Email Parser
+            </button>
+        </div>
+
+        <!-- IOC Extractor Tool -->
+        <div id="tool-ioc" class="tool-panel active">
+            <h2>IOC Extractor</h2>
+            <p class="tool-description">Extract Indicators of Compromise from text, reports, or documents.</p>
+
+            <div class="input-section">
+                <div class="form-group">
+                    <label for="ioc-text">Paste text or upload file:</label>
+                    <textarea id="ioc-text" rows="10" placeholder="Paste threat report, log data, or any text containing IOCs...
+
+Example:
+The attacker used IP 192.0.2.1 and contacted malware.example.com.
+File hash: 5d41402abc4b2a76b9719d911017c592
+CVE-2021-44228 was exploited."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="ioc-file">Or upload file:</label>
+                    <input type="file" id="ioc-file" accept=".txt,.log,.md,.json">
+                </div>
+
+                <div class="options-grid">
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" id="ioc-defang"> Defang IOCs
+                        </label>
+                        <label>
+                            <input type="checkbox" id="ioc-exclude-private" checked> Exclude Private IPs
+                        </label>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <label>IOC Types to Extract:</label>
+                        <label><input type="checkbox" class="ioc-type" value="ip" checked> IPs</label>
+                        <label><input type="checkbox" class="ioc-type" value="domain" checked> Domains</label>
+                        <label><input type="checkbox" class="ioc-type" value="url" checked> URLs</label>
+                        <label><input type="checkbox" class="ioc-type" value="email" checked> Emails</label>
+                        <label><input type="checkbox" class="ioc-type" value="hash" checked> Hashes</label>
+                        <label><input type="checkbox" class="ioc-type" value="cve" checked> CVEs</label>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="extractIOCs()">
+                    Extract IOCs
+                </button>
+            </div>
+
+            <div id="ioc-results" class="results-section" style="display: none;">
+                <h3>Extraction Results</h3>
+                <div class="stats-grid" id="ioc-stats"></div>
+                <div class="results-content" id="ioc-content"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="downloadResults('ioc', 'json')">
+                        Download JSON
+                    </button>
+                    <button class="btn btn-secondary" onclick="downloadResults('ioc', 'stix')">
+                        Download STIX 2.1
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hash Lookup Tool -->
+        <div id="tool-hash" class="tool-panel">
+            <h2>Hash Lookup</h2>
+            <p class="tool-description">Query file hashes against threat intelligence sources (VirusTotal, MalwareBazaar).</p>
+
+            <div class="input-section">
+                <div class="form-group">
+                    <label for="hash-input">Enter file hashes (one per line):</label>
+                    <textarea id="hash-input" rows="10" placeholder="Enter MD5, SHA1, SHA256, or SHA512 hashes, one per line:
+
+5d41402abc4b2a76b9719d911017c592
+aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d
+2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"></textarea>
+                </div>
+
+                <button class="btn btn-primary" onclick="lookupHashes()">
+                    Lookup Hashes
+                </button>
+            </div>
+
+            <div id="hash-results" class="results-section" style="display: none;">
+                <h3>Lookup Results</h3>
+                <div class="stats-grid" id="hash-stats"></div>
+                <div class="results-content" id="hash-content"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="downloadResults('hash', 'json')">
+                        Download JSON
+                    </button>
+                    <button class="btn btn-secondary" onclick="downloadResults('hash', 'csv')">
+                        Download CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Domain/IP Intelligence Tool -->
+        <div id="tool-intel" class="tool-panel">
+            <h2>Domain/IP Intelligence</h2>
+            <p class="tool-description">Analyze domains and IP addresses for threat intelligence and reputation.</p>
+
+            <div class="input-section">
+                <div class="form-group">
+                    <label for="intel-input">Enter domains or IP addresses (one per line):</label>
+                    <textarea id="intel-input" rows="10" placeholder="Enter domains or IP addresses, one per line:
+
+8.8.8.8
+malware.example.com
+192.0.2.1
+suspicious-domain.com"></textarea>
+                </div>
+
+                <button class="btn btn-primary" onclick="analyzeIntelligence()">
+                    Analyze Targets
+                </button>
+            </div>
+
+            <div id="intel-results" class="results-section" style="display: none;">
+                <h3>Intelligence Results</h3>
+                <div class="stats-grid" id="intel-stats"></div>
+                <div class="results-content" id="intel-content"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="downloadResults('intel', 'json')">
+                        Download JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Analysis Tool -->
+        <div id="tool-log" class="tool-panel">
+            <h2>Log Analysis</h2>
+            <p class="tool-description">Analyze security logs for attacks, anomalies, and suspicious patterns.</p>
+
+            <div class="input-section">
+                <div class="form-group">
+                    <label for="log-file">Upload log file:</label>
+                    <input type="file" id="log-file" accept=".log,.txt">
+                </div>
+
+                <div class="form-group">
+                    <label for="log-type">Log Type:</label>
+                    <select id="log-type">
+                        <option value="auto">Auto-detect</option>
+                        <option value="apache">Apache</option>
+                        <option value="nginx">Nginx</option>
+                        <option value="syslog">Syslog</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" onclick="analyzeLogs()">
+                    Analyze Logs
+                </button>
+            </div>
+
+            <div id="log-results" class="results-section" style="display: none;">
+                <h3>Analysis Results</h3>
+                <div class="stats-grid" id="log-stats"></div>
+                <div class="alerts-section" id="log-alerts"></div>
+                <div class="results-content" id="log-content"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="downloadResults('log', 'json')">
+                        Download JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Parser Tool -->
+        <div id="tool-eml" class="tool-panel">
+            <h2>Email Parser</h2>
+            <p class="tool-description">Parse and analyze email files (.eml) for threat indicators and metadata.</p>
+
+            <div class="input-section">
+                <div class="form-group">
+                    <label for="eml-file">Upload .eml file:</label>
+                    <input type="file" id="eml-file" accept=".eml,.msg">
+                </div>
+
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="eml-virustotal"> Use VirusTotal for attachment scanning
+                    </label>
+                </div>
+
+                <button class="btn btn-primary" onclick="parseEmail()">
+                    Parse Email
+                </button>
+            </div>
+
+            <div id="eml-results" class="results-section" style="display: none;">
+                <h3>Email Analysis Results</h3>
+                <div class="results-content" id="eml-content"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="downloadResults('eml', 'json')">
+                        Download JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+
+        <!-- Error Display -->
+        <div id="error-message" class="error-message" style="display: none;"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>SecOps Helper v2.0.0 | <a href="https://github.com/Vligai/secops-helper" target="_blank">GitHub</a></p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

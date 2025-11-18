@@ -258,9 +258,100 @@ python pcapAnalyzer/analyzer.py capture.pcap --verbose
 
 ---
 
+## Web Dashboard (New! 🌐)
+
+SecOps Helper now includes a modern web interface for all tools - no command line required!
+
+### Quick Start
+
+```bash
+# Using Docker Compose (Recommended)
+docker-compose up -d web
+
+# Open your browser to http://localhost:5000
+```
+
+### Features
+
+The web dashboard provides:
+- **Interactive Interface**: Point-and-click analysis without command line
+- **Real-time Results**: Instant visualization of analysis results
+- **File Upload**: Drag-and-drop support for email, log, and PCAP files
+- **Multiple Tools**: All 6 SecOps Helper tools in one interface
+- **Export Options**: Download results as JSON, CSV, or STIX 2.1
+- **Statistics Dashboard**: Track total analyses and IOCs extracted
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+
+### Available Tools in Web UI
+
+- **IOC Extractor** - Extract indicators from text or files
+- **Hash Lookup** - Query file hashes against threat intelligence
+- **Domain/IP Intel** - Analyze domains and IP addresses
+- **Log Analysis** - Upload and analyze security logs
+- **Email Parser** - Parse .eml files with attachment analysis
+
+### Running the Web Dashboard
+
+**Option 1: Docker Compose (Recommended)**
+
+```bash
+# Start all services
+docker-compose up -d web
+
+# Access dashboard
+open http://localhost:5000
+
+# View logs
+docker-compose logs -f web
+
+# Stop services
+docker-compose down
+```
+
+**Option 2: Local Python**
+
+```bash
+# Install web dependencies
+pip install -r requirements-webapp.txt
+
+# Run development server
+python webapp/app.py
+
+# Production with Gunicorn
+gunicorn --bind 0.0.0.0:5000 --workers 4 webapp.app:app
+```
+
+### API Endpoints
+
+The web dashboard also exposes a REST API:
+
+```bash
+# Health check
+curl http://localhost:5000/api/health
+
+# Extract IOCs
+curl -X POST http://localhost:5000/api/ioc/extract \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Contact malware@evil.com at 192.0.2.1"}'
+
+# Lookup hashes
+curl -X POST http://localhost:5000/api/hash/lookup \
+  -H "Content-Type: application/json" \
+  -d '{"hashes": ["5d41402abc4b2a76b9719d911017c592"]}'
+
+# Analyze domain/IP
+curl -X POST http://localhost:5000/api/intel/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"targets": ["8.8.8.8", "example.com"]}'
+```
+
+Full API documentation available in `webapp/app.py`.
+
+---
+
 ## Unified CLI (New! 🚀)
 
-SecOps Helper now provides a unified command-line interface for all tools:
+SecOps Helper also provides a unified command-line interface for all tools:
 
 ```bash
 # Install the package
@@ -522,14 +613,16 @@ Complete project specifications and feature documentation available in the [open
 - [x] STIX 2.1 export support
 - [x] Package installation support (setup.py)
 - [x] Docker container support (Dockerfile, docker-compose.yml)
+- [x] Web dashboard interface (Flask-based UI with REST API)
 
 ### Future Enhancements
-- [ ] Web dashboard interface
-- [ ] MISP integration
-- [ ] Real-time log monitoring
+- [ ] MISP integration for threat intelligence sharing
+- [ ] Real-time log monitoring with WebSocket support
 - [ ] Machine learning-based anomaly detection
 - [ ] Advanced correlation engine
 - [ ] Advanced caching with Redis integration
+- [ ] User authentication and multi-tenancy
+- [ ] Scheduled analysis and reporting
 
 ## Contributing
 
