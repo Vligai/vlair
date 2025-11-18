@@ -1,0 +1,42 @@
+Threat Intelligence Report - APT29 Campaign
+
+Date: 2025-11-18
+Classification: TLP:AMBER
+
+Executive Summary:
+We have identified a sophisticated phishing campaign targeting government organizations.
+The attackers are using spear-phishing emails with malicious attachments.
+
+Indicators of Compromise:
+
+IP Addresses:
+- Command and Control: 192.0.2.50
+- Staging Server: 198.51.100.25
+- Data Exfiltration: 203.0.113.100
+
+Domains:
+- malicious-update.example.com
+- secure-login.badactor.net
+- phishing-portal.suspicious-site.com
+
+URLs:
+- hxxp://malicious-update[.]example[.]com/payload.exe
+- hxxps://secure-login[.]badactor[.]net/credentials.php
+
+Email Addresses:
+- attacker@malicious.net
+- c2server[@]badactor[.]net
+
+File Hashes:
+MD5: 5d41402abc4b2a76b9719d911017c592
+SHA1: aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d
+SHA256: 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+
+CVEs Exploited:
+- CVE-2024-1234
+- CVE-2023-5678
+
+Additional Context:
+The malware communicates with 192.0.2.50 on port 8443.
+Infected hosts may beacon to malicious-update.example.com every 60 seconds.
+Contact security@victim.org for more information.

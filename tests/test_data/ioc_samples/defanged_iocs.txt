@@ -1,0 +1,17 @@
+Defanged IOCs for Safe Sharing
+
+IPs:
+192[.]0[.]2[.]50
+198[.]51[.]100[.]25
+
+Domains:
+malicious[.]example[.]com
+badactor[.]net
+
+URLs:
+hxxp://malicious[.]example[.]com/payload[.]exe
+hxxps://badactor[.]net/login
+
+Emails:
+attacker[@]malicious[.]net
+admin[@]badactor[.]net

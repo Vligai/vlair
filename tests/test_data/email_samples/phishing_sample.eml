@@ -1,0 +1,41 @@
+From: Attacker <attacker@malicious.com>
+To: victim@company.com
+Subject: Urgent: Verify Your Account Now!
+Date: Mon, 18 Nov 2025 10:00:00 +0000
+Message-ID: <abc123@malicious.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----=_Part_001"
+X-Mailer: EvilMailer 1.0
+X-Priority: 1
+X-Originating-IP: [203.0.113.100]
+Reply-To: phishing@badactor.net
+Return-Path: <bounce@malicious.com>
+Received-SPF: fail (google.com: domain of attacker@malicious.com does not designate 203.0.113.100 as permitted sender)
+Authentication-Results: dkim=fail; spf=fail; dmarc=fail
+
+------=_Part_001
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Dear valued customer,
+
+Your account has been compromised. Click here immediately to verify:
+http://malicious-update.example.com/verify.php
+
+Regards,
+Security Team
+contact@company-fake.com
+
+------=_Part_001
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+<html>
+<body>
+<h1>Account Verification Required</h1>
+<p>Click <a href="http://malicious-update.example.com/verify.php">here</a> to verify your account.</p>
+<p>Visit secure-login.badactor.net for more information.</p>
+</body>
+</html>
+
+------=_Part_001--
