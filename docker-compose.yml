@@ -24,6 +24,37 @@ services:
     networks:
       - secops-network
 
+  # Web Dashboard service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: secops-helper-web:latest
+    container_name: secops-web
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount .env file for API keys
+      - ./.env:/app/.env:ro
+      # Mount data directories
+      - ./data:/data:ro
+      - ./output:/output
+    environment:
+      - VT_API_KEY=${VT_API_KEY:-}
+      - ABUSEIPDB_KEY=${ABUSEIPDB_KEY:-}
+      - FLASK_ENV=production
+    depends_on:
+      - redis
+    networks:
+      - secops-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   # Redis cache service (optional, for future caching enhancement)
   redis:
     image: redis:7-alpine
@@ -52,32 +83,42 @@ networks:
 
 # Usage Examples:
 #
-# 1. Build and start services:
-#    docker-compose up -d
+# === Web Dashboard ===
+# 1. Start web dashboard:
+#    docker-compose up -d web
+#    Open browser to http://localhost:5000
 #
-# 2. Run IOC extraction:
-#    docker-compose run --rm secops-helper ioc /data/report.txt --format stix
-#
-# 3. Run hash lookup with API keys:
-#    docker-compose run --rm secops-helper hash --file /data/hashes.txt
-#
-# 4. Run email analysis with VirusTotal:
-#    docker-compose run --rm secops-helper eml /data/suspicious.eml --vt --output /output/email_report.json
-#
-# 5. Run log analysis:
-#    docker-compose run --rm secops-helper log /data/access.log --format csv --output /output/alerts.csv
-#
-# 6. Run PCAP analysis:
-#    docker-compose run --rm secops-helper pcap /data/capture.pcap --verbose
-#
-# 7. Interactive shell in container:
-#    docker-compose run --rm --entrypoint /bin/bash secops-helper
-#
-# 8. View Redis cache stats:
-#    docker-compose exec redis redis-cli INFO stats
-#
-# 9. Stop all services:
+# 2. Stop web dashboard:
 #    docker-compose down
 #
-# 10. Remove all data including volumes:
+# === CLI Tools ===
+# 3. Run IOC extraction:
+#    docker-compose run --rm secops-helper ioc /data/report.txt --format stix
+#
+# 4. Run hash lookup with API keys:
+#    docker-compose run --rm secops-helper hash --file /data/hashes.txt
+#
+# 5. Run email analysis with VirusTotal:
+#    docker-compose run --rm secops-helper eml /data/suspicious.eml --vt --output /output/email_report.json
+#
+# 6. Run log analysis:
+#    docker-compose run --rm secops-helper log /data/access.log --format csv --output /output/alerts.csv
+#
+# 7. Run PCAP analysis:
+#    docker-compose run --rm secops-helper pcap /data/capture.pcap --verbose
+#
+# === Maintenance ===
+# 8. Interactive shell in container:
+#    docker-compose run --rm --entrypoint /bin/bash secops-helper
+#
+# 9. View Redis cache stats:
+#    docker-compose exec redis redis-cli INFO stats
+#
+# 10. View web dashboard logs:
+#     docker-compose logs -f web
+#
+# 11. Restart web dashboard:
+#     docker-compose restart web
+#
+# 12. Remove all data including volumes:
 #     docker-compose down -v
