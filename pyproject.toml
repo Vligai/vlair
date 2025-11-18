@@ -1,0 +1,58 @@
+[tool.bandit]
+exclude_dirs = ["tests", "venv", "env", ".venv", ".tox"]
+skips = ["B101", "B601"]  # Skip assert_used and subprocess warnings in tests
+
+[tool.black]
+line-length = 127
+target-version = ['py39', 'py310', 'py311']
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.tox
+  | venv
+  | env
+  | __pycache__
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 127
+skip_gitignore = true
+known_first_party = ["emlAnalysis", "iocExtractor", "hashLookup", "domainIpIntel", "logAnalysis", "pcapAnalyzer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers --cov=. --cov-report=html --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "setup.py",
+    "venv/*",
+    "env/*",
+    ".venv/*"
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
