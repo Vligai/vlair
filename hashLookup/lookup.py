@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Hash Lookup - Query file hashes against threat intelligence sources
-Supports VirusTotal, MalwareBazaar, and local caching
+Supports VirusTotal, MalwareBazaar, and Redis caching
 """
 
 import re
@@ -9,13 +9,16 @@ import sys
 import json
 import argparse
 import os
-import sqlite3
 import time
 import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 from dotenv import load_dotenv
+
+# Import unified cache manager
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from common.cache_manager import get_cache
 
 load_dotenv()
 
@@ -45,91 +48,6 @@ class HashValidator:
     def normalize(hash_str: str) -> str:
         """Normalize hash string"""
         return hash_str.strip().lower()
-
-
-class CacheManager:
-    """Manage hash lookup cache using SQLite"""
-
-    def __init__(self, cache_path: str = None, ttl: int = 86400):
-        self.cache_path = cache_path or os.path.expanduser('~/.hashlookup_cache.db')
-        self.ttl = ttl  # Time-to-live in seconds
-        self._init_db()
-        self.hits = 0
-        self.misses = 0
-
-    def _init_db(self):
-        """Initialize SQLite database"""
-        Path(self.cache_path).parent.mkdir(parents=True, exist_ok=True)
-
-        conn = sqlite3.connect(self.cache_path)
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS hash_cache (
-                hash TEXT PRIMARY KEY,
-                hash_type TEXT,
-                result TEXT,
-                timestamp INTEGER
-            )
-        ''')
-        conn.commit()
-        conn.close()
-
-    def get(self, hash_value: str) -> Optional[Dict]:
-        """Retrieve cached result"""
-        conn = sqlite3.connect(self.cache_path)
-        cursor = conn.cursor()
-
-        cursor.execute(
-            'SELECT result, timestamp FROM hash_cache WHERE hash = ?',
-            (hash_value,)
-        )
-        row = cursor.fetchone()
-        conn.close()
-
-        if row:
-            result_json, timestamp = row
-            # Check if cache entry is still valid
-            if time.time() - timestamp < self.ttl:
-                self.hits += 1
-                return json.loads(result_json)
-            else:
-                # Cache expired, remove it
-                self._delete(hash_value)
-
-        self.misses += 1
-        return None
-
-    def set(self, hash_value: str, hash_type: str, result: Dict):
-        """Store result in cache"""
-        conn = sqlite3.connect(self.cache_path)
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            INSERT OR REPLACE INTO hash_cache (hash, hash_type, result, timestamp)
-            VALUES (?, ?, ?, ?)
-        ''', (hash_value, hash_type, json.dumps(result), int(time.time())))
-
-        conn.commit()
-        conn.close()
-
-    def _delete(self, hash_value: str):
-        """Delete cache entry"""
-        conn = sqlite3.connect(self.cache_path)
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM hash_cache WHERE hash = ?', (hash_value,))
-        conn.commit()
-        conn.close()
-
-    def stats(self) -> Dict:
-        """Return cache statistics"""
-        total = self.hits + self.misses
-        hit_rate = (self.hits / total * 100) if total > 0 else 0
-        return {
-            'hits': self.hits,
-            'misses': self.misses,
-            'total_queries': total,
-            'hit_rate_percent': round(hit_rate, 2)
-        }
 
 
 class RateLimiter:
@@ -278,8 +196,11 @@ class MalwareBazaarAPI:
 class HashLookup:
     """Main hash lookup orchestrator"""
 
+    CACHE_NAMESPACE = 'hash_lookup'
+
     def __init__(self, cache_enabled=True, cache_ttl=86400, rate_limit=4, verbose=False):
-        self.cache = CacheManager(ttl=cache_ttl) if cache_enabled else None
+        self.cache = get_cache() if cache_enabled else None
+        self.cache_ttl = cache_ttl
         self.rate_limiter = RateLimiter(rate_limit)
         self.verbose = verbose
 
@@ -302,7 +223,7 @@ class HashLookup:
 
         # Check cache
         if self.cache:
-            cached = self.cache.get(hash_value)
+            cached = self.cache.get(hash_value, namespace=self.CACHE_NAMESPACE)
             if cached:
                 if self.verbose:
                     print(f"[Cache hit] {hash_value}", file=sys.stderr)
@@ -344,7 +265,7 @@ class HashLookup:
 
         # Cache result
         if self.cache:
-            self.cache.set(hash_value, hash_type, result)
+            self.cache.set(hash_value, result, namespace=self.CACHE_NAMESPACE, ttl=self.cache_ttl)
 
         return result
 
@@ -542,14 +463,15 @@ def main():
 
     # Show cache stats
     if lookup.cache and args.verbose:
-        stats = lookup.cache.stats()
-        print(f"\nCache stats: {stats['hits']} hits, {stats['misses']} misses ({stats['hit_rate_percent']}% hit rate)", file=sys.stderr)
+        stats = lookup.cache.get_stats(namespace=HashLookup.CACHE_NAMESPACE)
+        hit_rate = stats.get('hit_rate', 0)
+        print(f"\nCache stats: {stats.get('hits', 0)} hits, {stats.get('misses', 0)} misses ({hit_rate}% hit rate)", file=sys.stderr)
 
     # Format output
     metadata = {
         'lookup_date': datetime.now().isoformat(),
         'total_hashes': len(results),
-        'cache_stats': lookup.cache.stats() if lookup.cache else None
+        'cache_stats': lookup.cache.get_stats(namespace=HashLookup.CACHE_NAMESPACE) if lookup.cache else None
     }
 
     if args.format == 'json':

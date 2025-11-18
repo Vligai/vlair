@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Domain/IP Intelligence - Comprehensive threat intelligence for domains and IPs
-Supports WHOIS, DNS, GeoIP, and threat intelligence lookups
+Supports WHOIS, DNS, GeoIP, and threat intelligence lookups with Redis caching
 """
 
 import sys
@@ -15,6 +15,10 @@ from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 from dotenv import load_dotenv
 import re
+
+# Import unified cache manager
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from common.cache_manager import get_cache
 
 load_dotenv()
 
@@ -299,8 +303,12 @@ class RiskScorer:
 class DomainIPIntelligence:
     """Main intelligence orchestrator"""
 
-    def __init__(self, verbose=False):
+    CACHE_NAMESPACE = 'domain_ip_intel'
+    CACHE_TTL = 86400  # 24 hours
+
+    def __init__(self, verbose=False, cache_enabled=True):
         self.verbose = verbose
+        self.cache = get_cache() if cache_enabled else None
 
         # Initialize APIs
         vt_key = os.getenv('VT_API_KEY')
@@ -318,6 +326,15 @@ class DomainIPIntelligence:
                 'error': 'Invalid IP address format'
             }
 
+        # Check cache
+        if self.cache:
+            cached = self.cache.get(f'ip:{ip}', namespace=self.CACHE_NAMESPACE)
+            if cached:
+                if self.verbose:
+                    print(f"[Cache hit] {ip}", file=sys.stderr)
+                cached['cached'] = True
+                return cached
+
         if self.verbose:
             print(f"[Analyzing IP] {ip}", file=sys.stderr)
 
@@ -326,11 +343,15 @@ class DomainIPIntelligence:
             'type': 'ipv4',
             'lookup_date': datetime.now().isoformat(),
             'is_private': Validator.is_private_ip(ip),
+            'cached': False
         }
 
         # Skip threat intel for private IPs
         if result['is_private']:
             result['note'] = 'Private IP address - skipping threat intelligence lookups'
+            # Still cache private IP results (quick lookups)
+            if self.cache:
+                self.cache.set(f'ip:{ip}', result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL)
             return result
 
         # Reverse DNS
@@ -356,6 +377,10 @@ class DomainIPIntelligence:
             'risk_level': RiskScorer.classify_risk(score)
         }
 
+        # Cache result
+        if self.cache:
+            self.cache.set(f'ip:{ip}', result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL)
+
         return result
 
     def analyze_domain(self, domain: str) -> Dict:
@@ -369,6 +394,15 @@ class DomainIPIntelligence:
                 'error': 'Invalid domain format'
             }
 
+        # Check cache
+        if self.cache:
+            cached = self.cache.get(f'domain:{domain}', namespace=self.CACHE_NAMESPACE)
+            if cached:
+                if self.verbose:
+                    print(f"[Cache hit] {domain}", file=sys.stderr)
+                cached['cached'] = True
+                return cached
+
         if self.verbose:
             print(f"[Analyzing Domain] {domain}", file=sys.stderr)
 
@@ -376,6 +410,7 @@ class DomainIPIntelligence:
             'target': domain,
             'type': 'domain',
             'lookup_date': datetime.now().isoformat(),
+            'cached': False
         }
 
         # DNS Information
@@ -395,6 +430,10 @@ class DomainIPIntelligence:
             'score': score,
             'risk_level': RiskScorer.classify_risk(score)
         }
+
+        # Cache result
+        if self.cache:
+            self.cache.set(f'domain:{domain}', result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL)
 
         return result
 

@@ -2,6 +2,9 @@
 requests>=2.31.0
 python-dotenv>=1.0.0
 
+# Redis caching (optional but recommended)
+redis>=5.0.0
+
 # EML Parser
 eml-parser>=1.17.0
 

@@ -22,6 +22,7 @@ from domainIpIntel.intel import IntelligenceGatherer
 from logAnalysis.analyzer import LogAnalyzer
 from emlAnalysis.emlParser import EMLParser
 from common.stix_export import export_to_stix
+from common.cache_manager import get_cache
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
@@ -363,17 +364,74 @@ def health_check():
     })
 
 
+@app.route('/api/cache/stats', methods=['GET'])
+def get_cache_stats():
+    """Get cache statistics"""
+    try:
+        cache = get_cache()
+        stats = cache.get_stats()
+
+        # Add namespace-specific stats
+        namespaces = cache.get_namespaces()
+        namespace_stats = {}
+        for ns in namespaces:
+            namespace_stats[ns] = cache.get_stats(namespace=ns)
+
+        return jsonify({
+            'success': True,
+            'overall': stats,
+            'namespaces': namespace_stats,
+            'health': cache.health_check()
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/cache/clear', methods=['POST'])
+def clear_cache():
+    """Clear cache (specific namespace or all)"""
+    try:
+        data = request.get_json() or {}
+        namespace = data.get('namespace')
+
+        cache = get_cache()
+
+        if namespace:
+            deleted = cache.clear_namespace(namespace)
+            message = f"Cleared {deleted} keys from namespace '{namespace}'"
+        else:
+            cache.clear_all()
+            message = "Cleared entire cache"
+
+        return jsonify({
+            'success': True,
+            'message': message
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """Get dashboard statistics"""
-    # In a production app, these would be real metrics from a database
+    # Get cache stats
+    cache_stats = {}
+    try:
+        cache = get_cache()
+        cache_stats = cache.get_stats()
+    except:
+        pass
+
     stats = {
         'total_analyses': 1234,
         'iocs_extracted': 5678,
         'hashes_looked_up': 890,
         'logs_analyzed': 456,
         'emails_parsed': 123,
-        'uptime': '99.9%'
+        'uptime': '99.9%',
+        'cache': cache_stats
     }
     return jsonify(stats)
 

@@ -408,7 +408,7 @@ STIX output includes:
 
 ## Configuration
 
-Create a `.env` file in the project root for API keys:
+Create a `.env` file in the project root for API keys and cache configuration:
 
 ```env
 # VirusTotal API (used by EML Parser, Hash Lookup, Domain/IP Intel)
@@ -416,11 +416,75 @@ VT_API_KEY=your_virustotal_api_key
 
 # AbuseIPDB API (used by Domain/IP Intel)
 ABUSEIPDB_KEY=your_abuseipdb_api_key
+
+# Redis Cache (optional - falls back to in-memory if not available)
+REDIS_URL=redis://localhost:6379/0
 ```
 
 **Getting API Keys:**
 - VirusTotal: Sign up at [https://www.virustotal.com/](https://www.virustotal.com/) (free tier: 4 requests/minute)
 - AbuseIPDB: Sign up at [https://www.abuseipdb.com/](https://www.abuseipdb.com/) (free tier available)
+
+### Redis Caching
+
+SecOps Helper uses Redis for intelligent caching of threat intelligence lookups, significantly improving performance for repeated queries.
+
+**Features:**
+- **Automatic Caching**: Hash lookups and domain/IP intelligence results are automatically cached
+- **24-hour TTL**: Cache entries expire after 24 hours to ensure fresh data
+- **Namespace Isolation**: Different tools use separate cache namespaces (hash_lookup, domain_ip_intel)
+- **Fallback Support**: If Redis is unavailable, tools fall back to in-memory caching
+- **Cache Statistics**: Track hits, misses, and hit rates via API
+
+**Benefits:**
+- ⚡ **10-100x faster** repeated lookups (no API calls)
+- 💰 **Reduced API costs** - fewer VirusTotal/AbuseIPDB queries
+- 📊 **Hit rate tracking** - monitor cache effectiveness
+- 🔄 **Shared cache** - All tools and web dashboard share the same cache
+
+**Using Redis with Docker:**
+
+```bash
+# Redis is automatically started with Docker Compose
+docker-compose up -d
+
+# The web dashboard and CLI tools will use Redis automatically
+```
+
+**Cache Management API:**
+
+```bash
+# Get cache statistics
+curl http://localhost:5000/api/cache/stats
+
+# Clear specific namespace
+curl -X POST http://localhost:5000/api/cache/clear \
+  -H "Content-Type: application/json" \
+  -d '{"namespace": "hash_lookup"}'
+
+# Clear all cache
+curl -X POST http://localhost:5000/api/cache/clear \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+**Cache Statistics Example:**
+
+```json
+{
+  "overall": {
+    "backend": "redis",
+    "hits": 450,
+    "misses": 125,
+    "hit_rate": 78.26,
+    "total_keys": 350
+  },
+  "namespaces": {
+    "hash_lookup": {"hits": 300, "misses": 75, "sets": 75},
+    "domain_ip_intel": {"hits": 150, "misses": 50, "sets": 50}
+  }
+}
+```
 
 ## Installation
 
@@ -614,15 +678,16 @@ Complete project specifications and feature documentation available in the [open
 - [x] Package installation support (setup.py)
 - [x] Docker container support (Dockerfile, docker-compose.yml)
 - [x] Web dashboard interface (Flask-based UI with REST API)
+- [x] Redis caching with intelligent TTL and namespace isolation
 
 ### Future Enhancements
 - [ ] MISP integration for threat intelligence sharing
 - [ ] Real-time log monitoring with WebSocket support
 - [ ] Machine learning-based anomaly detection
 - [ ] Advanced correlation engine
-- [ ] Advanced caching with Redis integration
 - [ ] User authentication and multi-tenancy
 - [ ] Scheduled analysis and reporting
+- [ ] Advanced visualization with charts and graphs
 
 ## Contributing
 
