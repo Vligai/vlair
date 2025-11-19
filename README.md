@@ -258,6 +258,101 @@ python pcapAnalyzer/analyzer.py capture.pcap --verbose
 
 ---
 
+### 7. URL Analyzer (New! 🔗)
+
+Comprehensive URL threat analysis with multiple intelligence sources and pattern detection.
+
+**Location:** `urlAnalyzer/analyzer.py`
+
+**Features:**
+- Multi-source threat intelligence (VirusTotal, URLhaus)
+- URL parsing and decomposition
+- Suspicious pattern detection
+- Homograph attack detection
+- Automatic caching for repeated lookups
+- Export to JSON, CSV, or text report
+
+**Usage:**
+```bash
+python urlAnalyzer/analyzer.py [url] [--format json|csv|txt]
+
+# Or via unified CLI
+secops-helper url "http://suspicious-site.com"
+```
+
+**Examples:**
+```bash
+# Analyze single URL
+python urlAnalyzer/analyzer.py "http://suspicious-site.com"
+
+# Analyze URLs from file
+python urlAnalyzer/analyzer.py --file urls.txt --format csv
+
+# With output file
+python urlAnalyzer/analyzer.py "http://test.com" --output results.json
+
+# Disable caching
+python urlAnalyzer/analyzer.py "http://example.com" --no-cache
+
+# Verbose mode
+python urlAnalyzer/analyzer.py "http://test.com" --verbose
+```
+
+**Detection Capabilities:**
+- **Threat Intelligence**: URLhaus malicious URL database, VirusTotal URL scanning
+- **Suspicious Patterns**:
+  - IP addresses instead of domains
+  - Suspicious keywords (login, verify, banking, etc.)
+  - Dangerous file extensions (.exe, .scr, .bat, etc.)
+  - Excessive URL encoding (obfuscation)
+  - Free/suspicious TLDs (.tk, .ml, .ga, etc.)
+  - Homograph attacks (non-ASCII characters)
+  - Excessive subdomains
+  - Unusually long domains
+
+**Output:**
+```json
+{
+  "url": "http://suspicious-site.com",
+  "verdict": "suspicious",
+  "risk_level": "medium",
+  "parsed": {
+    "domain": "suspicious-site.com",
+    "scheme": "http",
+    "path": "/"
+  },
+  "pattern_analysis": {
+    "suspicions": ["Contains suspicious keywords: login, verify"],
+    "risk_score": 45,
+    "is_suspicious": true
+  },
+  "threat_intelligence": {
+    "virustotal": {
+      "verdict": "suspicious",
+      "malicious": 2,
+      "suspicious": 3
+    },
+    "urlhaus": {
+      "verdict": "unknown"
+    }
+  }
+}
+```
+
+**API Endpoint:**
+```bash
+curl -X POST http://localhost:5000/api/url/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"urls": ["http://example.com"]}'
+```
+
+**Caching:**
+- Results cached in Redis (24-hour TTL)
+- Cache namespace: `url_analysis`
+- Significantly faster repeated lookups
+
+---
+
 ## Web Dashboard (New! 🌐)
 
 SecOps Helper now includes a modern web interface for all tools - no command line required!

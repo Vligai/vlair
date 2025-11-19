@@ -9,6 +9,7 @@ A comprehensive toolkit for security analysts providing unified access to:
 - Domain/IP intelligence
 - Log analysis
 - PCAP network analysis
+- URL threat analysis
 """
 
 import sys
@@ -30,6 +31,7 @@ Available Commands:
   intel        Analyze domains and IP addresses
   log          Analyze security logs for threats
   pcap         Analyze network traffic captures
+  url          Analyze URLs for threats and reputation
 
 Examples:
   # Email analysis with VirusTotal
@@ -49,6 +51,9 @@ Examples:
 
   # PCAP analysis
   secops-helper pcap capture.pcap --verbose --output analysis.json
+
+  # URL threat analysis
+  secops-helper url "http://suspicious-site.com" --format txt
 
 For detailed help on each command:
   secops-helper <command> --help
@@ -147,6 +152,19 @@ Documentation: https://github.com/Vligai/secops-helper
     pcap_parser.add_argument('--format', '-f', choices=['json', 'csv', 'txt'],
                             default='json', help='Output format')
     pcap_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+
+    # URL Analyzer subcommand
+    url_parser = subparsers.add_parser(
+        'url',
+        help='Analyze URLs for threats',
+        description='Check URLs against threat intelligence and detect suspicious patterns'
+    )
+    url_parser.add_argument('url', nargs='?', help='URL to analyze')
+    url_parser.add_argument('--file', '-f', help='File with URLs (one per line)')
+    url_parser.add_argument('--output', '-o', help='Output file')
+    url_parser.add_argument('--format', choices=['json', 'csv', 'txt'], default='json', help='Output format')
+    url_parser.add_argument('--no-cache', action='store_true', help='Disable caching')
+    url_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
 
     return parser
 
@@ -265,6 +283,25 @@ def main():
             sys.argv.append('--verbose')
         sys.argv.extend(remaining)
         pcap_main()
+
+    elif args.command == 'url':
+        from urlAnalyzer.analyzer import main as url_main
+        # Reconstruct argv for the tool
+        sys.argv = ['analyzer.py']
+        if args.url:
+            sys.argv.append(args.url)
+        if args.file:
+            sys.argv.extend(['--file', args.file])
+        if args.output:
+            sys.argv.extend(['--output', args.output])
+        if args.format:
+            sys.argv.extend(['--format', args.format])
+        if args.no_cache:
+            sys.argv.append('--no-cache')
+        if args.verbose:
+            sys.argv.append('--verbose')
+        sys.argv.extend(remaining)
+        url_main()
 
     else:
         parser.print_help()

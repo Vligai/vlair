@@ -21,6 +21,7 @@ from hashLookup.lookup import HashLookup
 from domainIpIntel.intel import IntelligenceGatherer
 from logAnalysis.analyzer import LogAnalyzer
 from emlAnalysis.emlParser import EMLParser
+from urlAnalyzer.analyzer import URLAnalyzer
 from common.stix_export import export_to_stix
 from common.cache_manager import get_cache
 
@@ -345,6 +346,61 @@ def parse_email():
         response = {
             'success': True,
             'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'results': results
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/url/analyze', methods=['POST'])
+def analyze_url():
+    """
+    Analyze URL for threats
+
+    Request JSON:
+        {
+            "urls": ["http://example.com", ...],
+            "cache_enabled": true
+        }
+
+    Returns:
+        JSON with URL analysis results
+    """
+    try:
+        data = request.get_json() or {}
+        urls = data.get('urls', [])
+
+        if isinstance(urls, str):
+            urls = [urls]
+
+        if not urls:
+            return jsonify({'error': 'No URLs provided'}), 400
+
+        # Analyze URLs
+        cache_enabled = data.get('cache_enabled', True)
+        analyzer = URLAnalyzer(cache_enabled=cache_enabled, verbose=False)
+
+        results = []
+        for url in urls:
+            result = analyzer.analyze(url)
+            results.append(result)
+
+        # Calculate statistics
+        verdicts = {'malicious': 0, 'suspicious': 0, 'clean': 0, 'unknown': 0}
+        for r in results:
+            verdict = r.get('verdict', 'unknown')
+            verdicts[verdict] = verdicts.get(verdict, 0) + 1
+
+        response = {
+            'success': True,
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'statistics': {
+                'total_urls': len(results),
+                'verdicts': verdicts
+            },
             'results': results
         }
 
