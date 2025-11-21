@@ -22,3 +22,6 @@ scapy>=2.5.0
 # YARA Scanner
 yara-python>=4.3.0
 tqdm>=4.66.0
+
+# Certificate Analyzer
+cryptography>=41.0.0

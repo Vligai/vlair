@@ -11,6 +11,8 @@ A comprehensive toolkit for security analysts providing unified access to:
 - PCAP network analysis
 - URL threat analysis
 - YARA malware scanning
+- SSL/TLS certificate analysis
+- Script deobfuscation
 """
 
 import sys
@@ -34,6 +36,8 @@ Available Commands:
   pcap         Analyze network traffic captures
   url          Analyze URLs for threats and reputation
   yara         Scan files with YARA malware detection rules
+  cert         Analyze SSL/TLS certificates for security issues
+  deobfuscate  Deobfuscate malicious scripts (PowerShell, JavaScript, etc.)
 
 Examples:
   # Email analysis with VirusTotal
@@ -59,6 +63,12 @@ Examples:
 
   # YARA malware scanning
   secops-helper yara scan /samples/ --rules ./yaraScanner/rules/ --recursive
+
+  # Certificate analysis
+  secops-helper cert https://example.com
+
+  # Deobfuscate malicious script
+  secops-helper deobfuscate malware.js --extract-iocs
 
 For detailed help on each command:
   secops-helper <command> --help
@@ -180,6 +190,40 @@ Documentation: https://github.com/Vligai/secops-helper
     # YARA has its own subcommands, so we pass everything through
     yara_parser.add_argument('yara_args', nargs=argparse.REMAINDER,
                             help='YARA scanner arguments (use "secops-helper yara --help" for details)')
+
+    # Certificate Analyzer subcommand
+    cert_parser = subparsers.add_parser(
+        'cert',
+        help='Analyze SSL/TLS certificates',
+        description='Analyze certificates for security issues, phishing, and expiration'
+    )
+    cert_parser.add_argument('target', nargs='?', help='HTTPS URL or hostname')
+    cert_parser.add_argument('--file', '-f', help='Certificate file (PEM or DER)')
+    cert_parser.add_argument('--file-list', help='File with list of domains')
+    cert_parser.add_argument('--hostname', help='Hostname for validation (with --file)')
+    cert_parser.add_argument('--port', type=int, default=443, help='Port number')
+    cert_parser.add_argument('--ct-search', help='Search Certificate Transparency logs')
+    cert_parser.add_argument('--format', choices=['json', 'txt'], default='txt', help='Output format')
+    cert_parser.add_argument('--output', '-o', help='Output file')
+    cert_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+
+    # Deobfuscator subcommand
+    deobf_parser = subparsers.add_parser(
+        'deobfuscate',
+        help='Deobfuscate malicious scripts',
+        description='Deobfuscate PowerShell, JavaScript, VBScript, and other scripts'
+    )
+    deobf_parser.add_argument('input_file', nargs='?', help='Script file to deobfuscate')
+    deobf_parser.add_argument('--language', '-l', choices=['auto', 'powershell', 'javascript', 'vbscript', 'batch'],
+                             default='auto', help='Script language')
+    deobf_parser.add_argument('--max-layers', type=int, default=10, help='Maximum deobfuscation layers')
+    deobf_parser.add_argument('--extract-iocs', action='store_true', help='Extract IOCs')
+    deobf_parser.add_argument('--format', choices=['json', 'txt'], default='txt', help='Output format')
+    deobf_parser.add_argument('--output', '-o', help='Output file')
+    deobf_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    deobf_parser.add_argument('--decode-base64', help='Decode base64 string directly')
+    deobf_parser.add_argument('--decode-hex', help='Decode hex string directly')
+    deobf_parser.add_argument('--decode-url', help='Decode URL-encoded string')
 
     return parser
 
@@ -323,6 +367,58 @@ def main():
         # Pass all arguments directly to YARA scanner
         sys.argv = ['scanner.py'] + args.yara_args + remaining
         yara_main()
+
+    elif args.command == 'cert':
+        from certAnalyzer.analyzer import main as cert_main
+        # Reconstruct argv for the tool
+        sys.argv = ['analyzer.py']
+        if args.target:
+            sys.argv.append(args.target)
+        if args.file:
+            sys.argv.extend(['--file', args.file])
+        if args.file_list:
+            sys.argv.extend(['--file-list', args.file_list])
+        if args.hostname:
+            sys.argv.extend(['--hostname', args.hostname])
+        if args.port != 443:
+            sys.argv.extend(['--port', str(args.port)])
+        if args.ct_search:
+            sys.argv.extend(['--ct-search', args.ct_search])
+        if args.format:
+            sys.argv.extend(['--format', args.format])
+        if args.output:
+            sys.argv.extend(['--output', args.output])
+        if args.verbose:
+            sys.argv.append('--verbose')
+        sys.argv.extend(remaining)
+        cert_main()
+
+    elif args.command == 'deobfuscate':
+        from deobfuscator.deobfuscator import main as deobf_main
+        # Reconstruct argv for the tool
+        sys.argv = ['deobfuscator.py']
+        if args.input_file:
+            sys.argv.append(args.input_file)
+        if args.language != 'auto':
+            sys.argv.extend(['--language', args.language])
+        if args.max_layers != 10:
+            sys.argv.extend(['--max-layers', str(args.max_layers)])
+        if args.extract_iocs:
+            sys.argv.append('--extract-iocs')
+        if args.format:
+            sys.argv.extend(['--format', args.format])
+        if args.output:
+            sys.argv.extend(['--output', args.output])
+        if args.verbose:
+            sys.argv.append('--verbose')
+        if args.decode_base64:
+            sys.argv.extend(['--decode-base64', args.decode_base64])
+        if args.decode_hex:
+            sys.argv.extend(['--decode-hex', args.decode_hex])
+        if args.decode_url:
+            sys.argv.extend(['--decode-url', args.decode_url])
+        sys.argv.extend(remaining)
+        deobf_main()
 
     else:
         parser.print_help()
