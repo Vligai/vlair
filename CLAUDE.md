@@ -34,7 +34,12 @@ secops-helper/
 │       ├── hash-lookup.spec.md
 │       ├── domain-ip-intel.spec.md
 │       ├── log-analysis.spec.md
-│       └── pcap-analyzer.spec.md
+│       ├── pcap-analyzer.spec.md
+│       ├── yara-scanner.spec.md
+│       ├── cert-analyzer.spec.md
+│       ├── deobfuscator.spec.md
+│       ├── threat-feed-aggregator.spec.md
+│       └── file-carver.spec.md
 │
 ├── emlAnalysis/           # Email analysis tools
 │   └── emlParser.py       # ✅ IMPLEMENTED
@@ -51,8 +56,29 @@ secops-helper/
 ├── logAnalysis/           # Log analysis tools
 │   └── analyzer.py        # ✅ IMPLEMENTED
 │
-└── pcapAnalyzer/          # Network traffic analysis
-    └── analyzer.py        # ✅ IMPLEMENTED
+├── pcapAnalyzer/          # Network traffic analysis
+│   └── analyzer.py        # ✅ IMPLEMENTED
+│
+├── urlAnalyzer/           # URL threat analysis
+│   └── analyzer.py        # ✅ IMPLEMENTED
+│
+├── yaraScanner/           # YARA malware scanning
+│   ├── scanner.py         # ✅ IMPLEMENTED
+│   └── rules/             # YARA rule repository
+│       ├── malware/       # Malware detection rules
+│       └── apt/           # APT indicators
+│
+├── certAnalyzer/          # Certificate analysis
+│   └── analyzer.py        # ✅ IMPLEMENTED
+│
+├── deobfuscator/          # Script deobfuscation
+│   └── deobfuscator.py    # ✅ IMPLEMENTED
+│
+├── threatFeedAggregator/  # Threat intelligence aggregation
+│   └── aggregator.py      # ✅ IMPLEMENTED
+│
+└── fileCarver/            # Forensic file extraction
+    └── carver.py          # ✅ IMPLEMENTED
 ```
 
 ## Implementation Status
@@ -98,6 +124,57 @@ secops-helper/
   - Port scan detection
   - DNS threat detection (DGA, suspicious TLDs)
   - HTTP payload inspection
+
+- **URL Analyzer** (`urlAnalyzer/analyzer.py`)
+  - Multi-source threat intelligence (VirusTotal, URLhaus)
+  - Suspicious pattern detection (11 different checks)
+  - Redis caching with 24-hour TTL
+  - Risk scoring and verdict classification
+  - Multiple output formats
+
+### ✅ Phase 4 (Completed)
+- **YARA Scanner** (`yaraScanner/scanner.py`)
+  - Multi-format scanning (files, directories, PCAP, memory dumps)
+  - Rule validation and compilation
+  - Batch scanning with multi-threading
+  - Severity classification (critical/high/medium/low)
+  - Match analysis with detailed metadata
+  - Integrated with unified CLI
+
+- **Certificate Analyzer** (`certAnalyzer/analyzer.py`)
+  - Certificate retrieval from HTTPS servers and files
+  - Comprehensive information extraction
+  - Chain validation and hostname verification
+  - Security issue detection (weak crypto, small keys, expired certs)
+  - Phishing detection (brand impersonation, suspicious patterns)
+  - Certificate Transparency log queries
+  - Risk scoring and verdict classification
+
+- **Deobfuscator** (`deobfuscator/deobfuscator.py`)
+  - Multi-language support (JavaScript, PowerShell, VBScript, Batch, Python)
+  - Auto-detect script language
+  - Multi-layer deobfuscation (up to 10 layers)
+  - Encoding detection and decoding (Base64, Hex, URL, ROT13)
+  - PowerShell-specific: -EncodedCommand, backtick removal, compression
+  - JavaScript-specific: String.fromCharCode(), escape sequences
+  - Automatic IOC extraction from deobfuscated code
+
+- **Threat Feed Aggregator** (`threatFeedAggregator/aggregator.py`)
+  - Multi-source threat intelligence (ThreatFox, URLhaus)
+  - SQLite storage backend with full schema
+  - Automatic deduplication by IOC hash
+  - Confidence scoring (increases with multiple sources)
+  - Search capabilities (by value, type, malware family, confidence)
+  - Export to JSON and CSV
+  - Statistics and metrics dashboard
+
+- **File Carver** (`fileCarver/carver.py`)
+  - Extract files from disk images, memory dumps, binary files
+  - 25+ file type signatures (images, documents, archives, executables)
+  - Magic bytes detection (headers and footers)
+  - Automatic hash calculation (MD5, SHA256)
+  - Organized output by file type
+  - Chunked processing for large files
 
 ## Code Conventions
 
@@ -794,9 +871,9 @@ done
 
 ---
 
-**Last Updated:** 2025-11-18
+**Last Updated:** 2025-11-20
 **Maintained By:** Vligai
-**Version:** 2.0.0 (All Phases Complete)
+**Version:** 3.0.0 (All 12 Tools Complete - Phase 4 Finished)
 
 This document should be updated whenever:
 - New tools are added
