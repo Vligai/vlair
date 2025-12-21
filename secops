@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# SecOps Helper - Shell Wrapper Script
+# Provides easy access to the central control system
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON="${PYTHON:-python3}"
+
+# Run the central control system
+exec "$PYTHON" "$SCRIPT_DIR/secops.py" "$@"

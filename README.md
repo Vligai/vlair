@@ -12,6 +12,100 @@ A collection of security operations tools to streamline and automate everyday se
 
 SecOps Helper provides command-line utilities for threat analysis, incident response, and security investigations. Each tool is designed to be simple, fast, and effective for SOC analysts and security researchers.
 
+**NEW!** SecOps Helper now features a **Central Control System** that provides:
+- 🎯 **Interactive Menu** - Easy navigation and tool discovery
+- 🔍 **Smart Search** - Find tools by keywords
+- 📚 **Unified Documentation** - All tool info in one place
+- ⚡ **Quick Access** - Single command to run any tool
+- 📊 **Categorized Tools** - Browse by analysis type
+
+## Quick Start
+
+### Interactive Mode (Recommended)
+
+Launch the interactive menu to browse and select tools:
+
+```bash
+./secops
+```
+
+This will present a menu where you can:
+1. Browse tools by category (Email, Malware, Network, etc.)
+2. Search for tools by keyword
+3. View detailed tool information
+4. Check API key status
+5. Access the quick start guide
+
+### Command-Line Mode
+
+List all available tools:
+```bash
+./secops list
+```
+
+Get detailed information about a tool:
+```bash
+./secops info <tool>
+```
+
+Search for tools:
+```bash
+./secops search malware
+```
+
+Run a tool directly:
+```bash
+./secops <tool> [arguments]
+```
+
+### Common Workflows
+
+```bash
+# Analyze suspicious email
+./secops eml suspicious.eml --vt
+
+# Extract IOCs from threat report
+./secops ioc report.txt --format csv --output iocs.csv
+
+# Check hash reputation
+./secops hash 44d88612fea8a8f36de82e1278abb02f
+
+# Analyze domain/IP
+./secops intel malicious.com
+
+# Scan for malware with YARA
+./secops yara scan /samples/ --rules ./yaraScanner/rules/
+
+# Analyze SSL certificate
+./secops cert https://example.com
+
+# Deobfuscate malicious script
+./secops deobfuscate malware.js --extract-iocs
+
+# Analyze network traffic
+./secops pcap capture.pcap
+
+# Update threat feeds
+./secops threatfeed update --source all
+
+# Carve files from disk image
+./secops carve --image disk.dd --output /carved/
+```
+
+## Tool Categories
+
+SecOps Helper includes **12 specialized tools** organized by category:
+
+| Category | Tools | Description |
+|----------|-------|-------------|
+| **Email Analysis** | EML Parser | Parse and analyze email files |
+| **Threat Intelligence** | IOC Extractor, Hash Lookup, Domain/IP Intel, URL Analyzer, Threat Feed Aggregator | Extract and analyze threat indicators |
+| **Log Analysis** | Log Analyzer | Detect attacks in web server logs |
+| **Network Analysis** | PCAP Analyzer | Analyze network traffic captures |
+| **SSL/TLS Analysis** | Certificate Analyzer | Analyze SSL/TLS certificates |
+| **Malware Analysis** | YARA Scanner, Script Deobfuscator | Detect and analyze malware |
+| **Forensics** | File Carver | Extract files from disk images |
+
 ## Available Tools
 
 ### 1. EML Parser
@@ -828,7 +922,44 @@ curl -X POST http://localhost:5000/api/cache/clear \
 
 ## Installation
 
-### Option 1: Package Installation (Recommended)
+### Option 1: Central Control System (Recommended - NEW!)
+
+The new central control system provides the easiest and most powerful way to use SecOps Helper:
+
+```bash
+# Clone the repository
+git clone https://github.com/Vligai/secops-helper.git
+cd secops-helper
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables (optional)
+cp .env.example .env
+# Edit .env with your API keys
+
+# Make the control script executable
+chmod +x secops
+
+# Launch interactive mode
+./secops
+
+# Or use directly from command line
+./secops list                    # List all tools
+./secops info hash               # Get tool info
+./secops search malware          # Search tools
+./secops hash <hash_value>       # Run a tool
+```
+
+**Why use the Central Control System?**
+- 🎯 Interactive menu for easy navigation
+- 🔍 Smart search to find the right tool
+- 📚 Built-in documentation for all tools
+- ⚡ Single command to access any tool
+- 📊 Tools organized by category
+- ✅ API key status checking
+
+### Option 2: Package Installation
 
 ```bash
 # Clone the repository
@@ -855,7 +986,7 @@ secops-helper hash --file hashes.txt
 secops-helper intel 8.8.8.8
 ```
 
-### Option 2: Direct Usage
+### Option 3: Direct Usage
 
 ```bash
 # Clone the repository
@@ -870,7 +1001,7 @@ python iocExtractor/extractor.py report.txt
 python hashLookup/lookup.py <hash>
 ```
 
-### Option 3: Docker (Recommended for Isolated Execution)
+### Option 4: Docker (Recommended for Isolated Execution)
 
 Docker containers provide isolated, reproducible environments perfect for security tools.
 

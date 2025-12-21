@@ -26,6 +26,10 @@ secops-helper/
 ├── requirements.txt       # Python dependencies
 ├── CLAUDE.md              # This file - AI assistant guide
 │
+├── secops                 # 🆕 Central control system shell wrapper
+├── secops.py              # 🆕 Central control system (Python)
+├── secops_helper.py       # Legacy unified CLI (still supported)
+│
 ├── openspec/              # Project specifications (OpenSpec format)
 │   ├── project.openspec.md           # Overall project spec
 │   └── specs/                        # Individual feature specs
@@ -175,6 +179,130 @@ secops-helper/
   - Automatic hash calculation (MD5, SHA256)
   - Organized output by file type
   - Chunked processing for large files
+
+## Central Control System (NEW!)
+
+The **SecOps Helper Central Control System** (`secops.py` and `secops` shell wrapper) provides a unified interface for discovering, managing, and executing all 12 security tools.
+
+### Key Features
+
+1. **Automatic Tool Discovery**
+   - Scans repository structure and catalogs all available tools
+   - Verifies tool availability and reports status
+   - Dynamically loads tool modules on demand
+
+2. **Interactive Menu System**
+   - User-friendly text-based interface
+   - Browse tools by category (Email, Malware, Network, etc.)
+   - Search tools by keywords
+   - View detailed tool information
+   - Check API key configuration status
+
+3. **Smart Search**
+   - Search across tool names, descriptions, and keywords
+   - Returns relevant tools with category and status
+   - Example: `./secops search malware` finds YARA Scanner, Deobfuscator, and related tools
+
+4. **Unified Documentation**
+   - Built-in help for every tool
+   - Usage examples included
+   - API key requirements clearly displayed
+   - Quick start guide accessible from menu
+
+5. **Command-Line Interface**
+   ```bash
+   ./secops                    # Launch interactive menu
+   ./secops list               # List all tools with categories
+   ./secops info <tool>        # Show detailed tool information
+   ./secops search <keyword>   # Search for tools
+   ./secops <tool> [args]      # Run a tool directly
+   ./secops --version          # Show version information
+   ```
+
+### Architecture
+
+The central control system uses a modular architecture:
+
+```
+secops (shell wrapper)
+  └── secops.py (main control system)
+      ├── ToolDiscovery     # Auto-discover and catalog tools
+      ├── ToolManager       # Dynamic module loading and execution
+      └── InteractiveMenu   # User interface and navigation
+```
+
+**ToolDiscovery Class:**
+- Maintains metadata for all 12 tools
+- Verifies file existence and availability
+- Organizes tools by category
+- Provides search and filtering capabilities
+
+**ToolManager Class:**
+- Dynamically imports tool modules using `importlib`
+- Reconstructs command-line arguments for each tool
+- Handles errors gracefully with clear messages
+
+**InteractiveMenu Class:**
+- Displays categorized tool listings
+- Provides search interface
+- Shows API key configuration status
+- Includes quick start guide
+
+### Tool Categories
+
+The central system organizes tools into 7 categories:
+
+1. **Email Analysis**: EML Parser
+2. **Threat Intelligence**: IOC Extractor, Hash Lookup, Domain/IP Intel, URL Analyzer, Threat Feed Aggregator
+3. **Log Analysis**: Log Analyzer
+4. **Network Analysis**: PCAP Analyzer
+5. **SSL/TLS Analysis**: Certificate Analyzer
+6. **Malware Analysis**: YARA Scanner, Script Deobfuscator
+7. **Forensics**: File Carver
+
+### Usage Examples
+
+```bash
+# Interactive mode - recommended for exploration
+./secops
+
+# List all tools with status indicators
+./secops list
+
+# Search for tools related to malware
+./secops search malware
+# Returns: YARA Scanner, Deobfuscator, Hash Lookup
+
+# Get detailed information about a tool
+./secops info hash
+# Shows: Description, examples, API requirements, keywords
+
+# Run tools directly through the control system
+./secops eml suspicious.eml --vt
+./secops hash 44d88612fea8a8f36de82e1278abb02f
+./secops yara scan /samples/ --rules ./yaraScanner/rules/
+./secops cert https://example.com
+```
+
+### Why Use the Central Control System?
+
+**Benefits over direct tool execution:**
+- ✅ **Discoverability**: Easily find the right tool for your task
+- ✅ **Documentation**: Built-in help and examples
+- ✅ **Consistency**: Uniform interface across all tools
+- ✅ **Efficiency**: No need to remember paths or command syntax
+- ✅ **Validation**: Check API key status before running tools
+- ✅ **Flexibility**: Interactive mode for exploration, CLI for automation
+
+**When to recommend it:**
+- User is new to SecOps Helper
+- User is unsure which tool to use
+- User wants to explore available capabilities
+- User needs to check tool availability or API configuration
+
+**Legacy options still supported:**
+- Direct tool execution: `python hashLookup/lookup.py <hash>`
+- Unified CLI: `python secops_helper.py hash <hash>`
 
 ## Code Conventions
 
