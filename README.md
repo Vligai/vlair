@@ -353,6 +353,234 @@ curl -X POST http://localhost:5000/api/url/analyze \
 
 ---
 
+### 8. YARA Scanner (New! 🎯)
+
+Scan files, directories, and memory dumps with YARA rules for malware detection and pattern matching.
+
+**Location:** `yaraScanner/scanner.py`
+
+**Features:**
+- Multi-format scanning (files, directories, PCAP, memory dumps)
+- Rule validation and compilation
+- Batch scanning with multi-threading
+- Severity classification (critical/high/medium/low)
+- Match analysis with detailed metadata extraction
+- Support for community rule repositories
+- Multiple output formats (JSON, CSV, TXT)
+
+**Usage:**
+```bash
+# Scan file with YARA rules
+python yaraScanner/scanner.py scan suspicious.exe --rules ./yaraScanner/rules/
+
+# Scan directory recursively
+python yaraScanner/scanner.py scan /samples/ --rules ./rules/ --recursive
+
+# Validate YARA rules
+python yaraScanner/scanner.py validate ./rules/malware/
+
+# Unified CLI
+secops-helper yara scan /samples/ --rules ./yaraScanner/rules/ --recursive
+```
+
+**Included Rules:**
+- EICAR test file detection
+- Suspicious PowerShell patterns
+- Malware downloader detection
+- Registry persistence mechanisms
+- Anti-analysis techniques
+- APT indicators (webshells, credential access, C2)
+
+---
+
+### 9. Certificate Analyzer (New! 🔒)
+
+Analyze SSL/TLS certificates for security issues, phishing detection, and expiration monitoring.
+
+**Location:** `certAnalyzer/analyzer.py`
+
+**Features:**
+- Retrieve certificates from HTTPS servers and files (PEM/DER)
+- Certificate information extraction (subject, issuer, validity, SANs)
+- Chain validation and hostname verification
+- Security issue detection (weak crypto, small keys, expired certs)
+- Phishing detection (brand impersonation, suspicious patterns)
+- Certificate Transparency log queries (crt.sh)
+- Risk scoring and verdict classification
+- Batch domain processing
+
+**Usage:**
+```bash
+# Analyze HTTPS server certificate
+python certAnalyzer/analyzer.py https://example.com
+
+# Analyze certificate file
+python certAnalyzer/analyzer.py --file cert.pem --hostname example.com
+
+# Query Certificate Transparency
+python certAnalyzer/analyzer.py --ct-search example.com
+
+# Batch analysis
+python certAnalyzer/analyzer.py --file-list domains.txt --format json
+
+# Unified CLI
+secops-helper cert https://example.com
+```
+
+**Security Checks:**
+- Weak signature algorithms (MD5, SHA1)
+- Small RSA key sizes (< 2048 bits)
+- Expired or not-yet-valid certificates
+- Self-signed certificates
+- Brand impersonation in CN/SAN
+- Suspicious certificate patterns
+- Very new certificates (< 7 days)
+
+---
+
+### 10. Deobfuscator (New! 🔓)
+
+Deobfuscate malicious scripts (JavaScript, PowerShell, VBScript, Batch) and extract IOCs.
+
+**Location:** `deobfuscator/deobfuscator.py`
+
+**Features:**
+- Multi-language support (JavaScript, PowerShell, VBScript, Batch, Python)
+- Auto-detect script language
+- Multi-layer deobfuscation (up to 10 layers)
+- Encoding detection and decoding (Base64, Hex, URL, ROT13)
+- PowerShell-specific: -EncodedCommand, backtick removal, compression
+- JavaScript-specific: String.fromCharCode(), escape sequences
+- Automatic IOC extraction from deobfuscated code
+- Quick decode commands for one-off tasks
+
+**Usage:**
+```bash
+# Deobfuscate JavaScript
+python deobfuscator/deobfuscator.py malware.js --extract-iocs
+
+# Deobfuscate PowerShell
+python deobfuscator/deobfuscator.py script.ps1 --language powershell --verbose
+
+# Quick base64 decode
+python deobfuscator/deobfuscator.py --decode-base64 "SGVsbG8gV29ybGQ="
+
+# Quick hex decode
+python deobfuscator/deobfuscator.py --decode-hex "48656c6c6f"
+
+# Unified CLI
+secops-helper deobfuscate malware.js --extract-iocs
+```
+
+**Supported Techniques:**
+- Base64 encoding (standard & URL-safe)
+- Hex encoding
+- URL encoding
+- ROT13 cipher
+- PowerShell encoded commands (UTF-16LE)
+- PowerShell backtick obfuscation
+- PowerShell Gzip compression
+- JavaScript hex/unicode escapes
+- JavaScript String.fromCharCode()
+
+---
+
+### 11. Threat Feed Aggregator (New! 📊)
+
+Aggregate threat intelligence from multiple sources into a centralized database with deduplication and search.
+
+**Location:** `threatFeedAggregator/aggregator.py`
+
+**Features:**
+- Multi-source threat intelligence (ThreatFox, URLhaus)
+- SQLite storage with full schema
+- Automatic deduplication by IOC hash
+- Confidence scoring (increases with multiple sources)
+- Search by value, type, malware family, confidence
+- Export to JSON and CSV
+- Statistics and metrics dashboard
+- Update history tracking
+
+**Usage:**
+```bash
+# Update all feeds
+python threatFeedAggregator/aggregator.py update
+
+# Update specific feed
+python threatFeedAggregator/aggregator.py update --source threatfox --verbose
+
+# Search for IOC
+python threatFeedAggregator/aggregator.py search "malicious.com"
+
+# Search by type
+python threatFeedAggregator/aggregator.py search --type domain --min-confidence 70
+
+# Search by malware family
+python threatFeedAggregator/aggregator.py search --malware emotet --format json
+
+# Get statistics
+python threatFeedAggregator/aggregator.py stats
+
+# Export IOCs
+python threatFeedAggregator/aggregator.py export --format csv --output iocs.csv --min-confidence 80
+```
+
+**Supported Feeds:**
+- Abuse.ch ThreatFox (malware C2 IOCs)
+- Abuse.ch URLhaus (malicious URLs)
+- Extensible for additional feeds
+
+**Database Location:** `~/.threatFeedAggregator/feeds.db`
+
+---
+
+### 12. File Carver (New! 🗂️)
+
+Extract embedded files from disk images, memory dumps, and binary files using file signature detection.
+
+**Location:** `fileCarver/carver.py`
+
+**Features:**
+- Extract files from disk images, memory dumps, binary files
+- 25+ file type signatures (images, documents, archives, executables)
+- Magic bytes detection (headers and footers)
+- Automatic hash calculation (MD5, SHA256)
+- Organized output by file type
+- Chunked processing for large files (1MB chunks)
+- Progress reporting for large datasets
+- Multiple output formats (JSON, CSV, TXT)
+
+**Usage:**
+```bash
+# List supported file types
+python fileCarver/carver.py --list-types
+
+# Carve all file types
+python fileCarver/carver.py --image disk.dd --output /carved/
+
+# Carve specific types
+python fileCarver/carver.py --image memdump.raw --types exe,dll,pdf --verbose
+
+# Generate JSON report
+python fileCarver/carver.py --image disk.dd --format json --report report.json
+```
+
+**Supported File Types (25):**
+- **Images:** JPG, PNG, GIF
+- **Documents:** PDF, DOC, DOCX, XLS, XLSX, EML, HTML, XML
+- **Archives:** ZIP, RAR, 7Z, TAR, GZ, BZ2
+- **Executables:** EXE, DLL
+- **Media:** MP3, MP4, AVI
+- **Scripts:** PS1, BAT
+- **Databases:** SQLite
+
+**Output Organization:**
+- Files organized in type-specific subdirectories
+- Filenames include file ID and SHA256 prefix
+- Complete metadata in JSON/CSV reports
+
+---
+
 ## Web Dashboard (New! 🌐)
 
 SecOps Helper now includes a modern web interface for all tools - no command line required!
@@ -372,7 +600,7 @@ The web dashboard provides:
 - **Interactive Interface**: Point-and-click analysis without command line
 - **Real-time Results**: Instant visualization of analysis results
 - **File Upload**: Drag-and-drop support for email, log, and PCAP files
-- **Multiple Tools**: All 6 SecOps Helper tools in one interface
+- **Multiple Tools**: 7 SecOps Helper tools in web interface (12 total via CLI)
 - **Export Options**: Download results as JSON, CSV, or STIX 2.1
 - **Statistics Dashboard**: Track total analyses and IOCs extracted
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
@@ -463,6 +691,11 @@ secops-helper <command> [options]
 - `intel` - Domain/IP intelligence
 - `log` - Log analysis
 - `pcap` - PCAP analysis
+- `url` - URL threat analysis
+- `yara` - YARA malware scanning
+- `cert` - Certificate analysis
+- `deobfuscate` - Script deobfuscation
+- (Threat Feed Aggregator and File Carver use standalone CLIs)
 
 **Examples:**
 ```bash
@@ -480,6 +713,18 @@ secops-helper log /var/log/apache2/access.log --format txt
 
 # Email analysis with VirusTotal
 secops-helper eml suspicious.eml --vt
+
+# URL threat analysis
+secops-helper url "http://suspicious-site.com" --format txt
+
+# YARA malware scanning
+secops-helper yara scan /samples/ --rules ./yaraScanner/rules/ --recursive
+
+# Certificate analysis
+secops-helper cert https://example.com
+
+# Deobfuscate malicious script
+secops-helper deobfuscate malware.js --extract-iocs
 ```
 
 ### STIX 2.1 Export
