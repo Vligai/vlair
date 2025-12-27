@@ -1160,6 +1160,92 @@ Complete project specifications and feature documentation available in the [open
 - [ ] Scheduled analysis and reporting
 - [ ] Advanced visualization with charts and graphs
 
+## Troubleshooting
+
+### Central Control System Issues
+
+**Problem:** `./secops` command not found
+**Solution:** Make sure the script is executable:
+```bash
+chmod +x secops
+./secops --version
+```
+
+**Problem:** Tool shows as "Not Found ✗" in list
+**Solution:** The tool file is missing. Verify repository integrity:
+```bash
+git status
+git pull origin main
+```
+
+**Problem:** `ModuleNotFoundError` when running tools
+**Solution:** Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+### API Key Issues
+
+**Problem:** API calls fail or return limited results
+**Solution:** Configure API keys in `.env` file:
+```bash
+cp .env.example .env
+# Edit .env and add your API keys
+./secops  # Select option 4 to check key status
+```
+
+**Problem:** Rate limit errors
+**Solution:** VirusTotal free tier allows 4 requests/minute:
+```bash
+# Use --rate-limit flag to slow down requests
+./secops hash --file hashes.txt --rate-limit 4
+```
+
+### Tool-Specific Issues
+
+**Problem:** YARA Scanner fails to load
+**Solution:** Install YARA dependencies:
+```bash
+pip install yara-python>=4.3.0
+# On Ubuntu/Debian:
+sudo apt-get install yara
+```
+
+**Problem:** Certificate Analyzer cryptography errors
+**Solution:** Update cryptography library:
+```bash
+pip install --upgrade cryptography>=41.0.0
+```
+
+**Problem:** PCAP Analyzer can't read files
+**Solution:** Ensure you have scapy installed and proper permissions:
+```bash
+pip install scapy>=2.5.0
+# May need sudo to read raw packets
+sudo ./secops pcap capture.pcap
+```
+
+### General Issues
+
+**Problem:** Python version incompatibility
+**Solution:** SecOps Helper requires Python 3.9+:
+```bash
+python3 --version  # Should be 3.9 or higher
+```
+
+**Problem:** Permission denied errors
+**Solution:** Check file permissions:
+```bash
+chmod +x secops *.py
+# Or run with python3:
+python3 secops.py list
+```
+
+**For more help:**
+- Check [CLAUDE.md](CLAUDE.md) for development guidance
+- Review tool-specific specs in [openspec/specs/](openspec/specs/)
+- Open an issue at https://github.com/Vligai/secops-helper/issues
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.

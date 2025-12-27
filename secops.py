@@ -679,6 +679,11 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
         sys.exit(130)
+    except BrokenPipeError:
+        # Handle broken pipe when output is piped to head, grep, etc.
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        sys.exit(0)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         import traceback
