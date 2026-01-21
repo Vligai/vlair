@@ -15,6 +15,68 @@ This document provides comprehensive guidance for AI assistants working with the
 - **Minimal Dependencies**: Use standard libraries where possible
 - **JSON Output**: Structured output for easy parsing and integration
 
+## Current Development: Operationalization (Phase 5)
+
+**Branch:** `feat/operationalize`
+**Spec:** `openspec/specs/operationalize.spec.md`
+
+The project is transitioning from a collection of tools to an operational platform. Key changes:
+
+### Problem Being Solved
+- Tools are too cumbersome to use individually
+- Users must know which tool to run and how
+- No workflows or tool chaining
+- Output is raw data, not actionable insights
+
+### New Features in Progress
+
+**1. Smart Analyze Command**
+```bash
+secops analyze suspicious.eml    # Auto-detects email, runs full analysis
+secops analyze 44d88612...       # Auto-detects hash, checks reputation
+secops analyze malicious.com     # Auto-detects domain, gets intel
+```
+
+**2. Pre-built Workflows**
+```bash
+secops workflow phishing-email suspicious.eml
+secops workflow malware-triage sample.exe
+secops workflow ioc-hunt iocs.txt
+```
+
+**3. Actionable Output**
+- Risk scores (0-100)
+- Verdicts (Clean/Suspicious/Malicious)
+- Key findings (bulleted)
+- Recommended actions
+
+**4. Interactive Investigation Mode**
+```bash
+secops investigate   # Guided Q&A for users who don't know what they have
+```
+
+### Implementation Priority
+1. Phase 1: Smart Analyze Command (MVP)
+2. Phase 2: Workflows
+3. Phase 3: Interactive Mode
+4. Phase 4: Reports and Polish
+
+### New Directory Structure (Planned)
+```
+secops-helper/
+├── core/                 # 🆕 Orchestration engine
+│   ├── analyzer.py       # Smart analyze command
+│   ├── detector.py       # Input type detection
+│   ├── scorer.py         # Risk scoring
+│   ├── reporter.py       # Report generation
+│   └── workflow.py       # Workflow engine
+├── workflows/            # 🆕 Pre-built workflows
+│   ├── phishing_email.py
+│   ├── malware_triage.py
+│   └── ioc_hunt.py
+└── ... (existing tools)
+```
+
 ## Repository Structure
 
 ```
@@ -33,6 +95,7 @@ secops-helper/
 ├── openspec/              # Project specifications (OpenSpec format)
 │   ├── project.openspec.md           # Overall project spec
 │   └── specs/                        # Individual feature specs
+│       ├── operationalize.spec.md    # 🔥 ACTIVE - Phase 5 operationalization
 │       ├── eml-parser.spec.md
 │       ├── ioc-extractor.spec.md
 │       ├── hash-lookup.spec.md
@@ -973,8 +1036,15 @@ done
 
 ## Future Development
 
-### Enhancement Ideas
+### Phase 5: Operationalization (IN PROGRESS)
+See `openspec/specs/operationalize.spec.md` for full details.
+- Smart analyze command with auto-detection
+- Pre-built investigation workflows
+- Risk scoring and verdicts
+- Interactive investigation mode
+- Report generation (HTML, Markdown, PDF)
 
+### Future Enhancement Ideas (Post Phase 5)
 - Web dashboard (Flask/FastAPI)
 - STIX 2.1 export for all tools
 - MISP integration
@@ -999,9 +1069,9 @@ done
 
 ---
 
-**Last Updated:** 2025-11-20
+**Last Updated:** 2026-01-20
 **Maintained By:** Vligai
-**Version:** 3.0.0 (All 12 Tools Complete - Phase 4 Finished)
+**Version:** 4.0.0-dev (Phase 5: Operationalization in Progress)
 
 This document should be updated whenever:
 - New tools are added
