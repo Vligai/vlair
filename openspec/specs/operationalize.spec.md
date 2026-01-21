@@ -13,6 +13,11 @@
 - [x] `core/reporter.py` - Console/JSON/quiet output formatting
 - [x] `core/analyzer.py` - Main orchestration engine
 - [x] Updated `secops.py` with `analyze` command routing
+- [x] Unit tests for all core modules:
+  - `tests/test_detector.py` - 35+ tests for input detection
+  - `tests/test_scorer.py` - 40+ tests for risk scoring
+  - `tests/test_reporter.py` - 30+ tests for output formatting
+  - `tests/test_analyzer.py` - 25+ tests for orchestration
 
 ### Phase 2: Workflows - NOT STARTED
 ### Phase 3: Interactive Mode - NOT STARTED

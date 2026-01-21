@@ -61,16 +61,21 @@ secops investigate   # Guided Q&A for users who don't know what they have
 3. Phase 3: Interactive Mode
 4. Phase 4: Reports and Polish
 
-### New Directory Structure (Planned)
+### New Directory Structure (Phase 1 Complete)
 ```
 secops-helper/
-├── core/                 # 🆕 Orchestration engine
+├── core/                 # ✅ IMPLEMENTED - Orchestration engine
+│   ├── __init__.py       # Package exports
 │   ├── analyzer.py       # Smart analyze command
 │   ├── detector.py       # Input type detection
 │   ├── scorer.py         # Risk scoring
-│   ├── reporter.py       # Report generation
-│   └── workflow.py       # Workflow engine
-├── workflows/            # 🆕 Pre-built workflows
+│   └── reporter.py       # Report generation
+├── tests/                # ✅ IMPLEMENTED - Unit tests
+│   ├── test_detector.py  # Input detection tests
+│   ├── test_scorer.py    # Risk scoring tests
+│   ├── test_reporter.py  # Output formatting tests
+│   └── test_analyzer.py  # Integration tests
+├── workflows/            # 🔜 PLANNED - Pre-built workflows
 │   ├── phishing_email.py
 │   ├── malware_triage.py
 │   └── ioc_hunt.py
