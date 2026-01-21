@@ -37,11 +37,13 @@ secops analyze 44d88612...       # Auto-detects hash, checks reputation
 secops analyze malicious.com     # Auto-detects domain, gets intel
 ```
 
-**2. Pre-built Workflows**
+**2. Pre-built Workflows** (✅ IMPLEMENTED)
 ```bash
-secops workflow phishing-email suspicious.eml
-secops workflow malware-triage sample.exe
-secops workflow ioc-hunt iocs.txt
+secops workflow phishing-email suspicious.eml   # 7-step phishing investigation
+secops workflow malware-triage sample.exe       # 7-step malware analysis
+secops workflow ioc-hunt iocs.txt               # 6-step bulk IOC hunting
+secops workflow network-forensics capture.pcap  # 7-step PCAP forensics
+secops workflow log-investigation access.log    # 7-step log analysis
 ```
 
 **3. Actionable Output**
@@ -61,7 +63,7 @@ secops investigate   # Guided Q&A for users who don't know what they have
 3. Phase 3: Interactive Mode
 4. Phase 4: Reports and Polish
 
-### New Directory Structure (Phase 1 Complete)
+### New Directory Structure (Phase 2 Complete)
 ```
 secops-helper/
 ├── core/                 # ✅ IMPLEMENTED - Orchestration engine
@@ -69,16 +71,21 @@ secops-helper/
 │   ├── analyzer.py       # Smart analyze command
 │   ├── detector.py       # Input type detection
 │   ├── scorer.py         # Risk scoring
-│   └── reporter.py       # Report generation
+│   ├── reporter.py       # Report generation
+│   └── workflow.py       # Workflow engine
+├── workflows/            # ✅ IMPLEMENTED - Pre-built workflows
+│   ├── __init__.py       # Package exports
+│   ├── phishing_email.py # Phishing investigation (7 steps)
+│   ├── malware_triage.py # Malware analysis (7 steps)
+│   ├── ioc_hunt.py       # Bulk IOC hunting (6 steps)
+│   ├── network_forensics.py  # PCAP forensics (7 steps)
+│   └── log_investigation.py  # Log analysis (7 steps)
 ├── tests/                # ✅ IMPLEMENTED - Unit tests
 │   ├── test_detector.py  # Input detection tests
 │   ├── test_scorer.py    # Risk scoring tests
 │   ├── test_reporter.py  # Output formatting tests
-│   └── test_analyzer.py  # Integration tests
-├── workflows/            # 🔜 PLANNED - Pre-built workflows
-│   ├── phishing_email.py
-│   ├── malware_triage.py
-│   └── ioc_hunt.py
+│   ├── test_analyzer.py  # Integration tests
+│   └── test_workflows.py # Workflow tests
 └── ... (existing tools)
 ```
 

@@ -6,6 +6,7 @@ Part of SecOps Helper Operationalization (Phase 5)
 from .detector import InputDetector, InputType
 from .scorer import RiskScorer, Severity, Verdict, Finding
 from .reporter import Reporter
+from .workflow import Workflow, WorkflowStep, WorkflowContext, WorkflowRegistry
 
 __all__ = [
     'InputDetector',
@@ -14,5 +15,9 @@ __all__ = [
     'Severity',
     'Verdict',
     'Finding',
-    'Reporter'
+    'Reporter',
+    'Workflow',
+    'WorkflowStep',
+    'WorkflowContext',
+    'WorkflowRegistry'
 ]

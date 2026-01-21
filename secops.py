@@ -559,6 +559,7 @@ the appropriate tools. Just give it a file, hash, IP, domain, or URL.
 
 Usage:
     secops analyze <input>      Smart analysis (auto-detect input type)
+    secops workflow <name> <input>  Run pre-built investigation workflow
     secops                      Interactive mode
     secops list                 List all available tools
     secops info <tool>          Show detailed tool information
@@ -567,16 +568,23 @@ Usage:
     secops --help               Show this help message
     secops --version            Show version information
 
-Examples:
+Examples - Smart Analyze:
     secops analyze suspicious.eml           # Analyze email file
     secops analyze 44d88612fea8a8f36...     # Check hash reputation
     secops analyze malicious.com            # Get domain intelligence
-    secops analyze 192.168.1.100            # Check IP reputation
     secops analyze capture.pcap             # Analyze network traffic
 
-    secops analyze report.eml --json        # JSON output
-    secops analyze file.exe --verbose       # Detailed progress
-    secops analyze hash.txt --quiet         # Just verdict + score
+Examples - Workflows:
+    secops workflow phishing-email suspicious.eml   # Full phishing investigation
+    secops workflow malware-triage sample.exe       # Malware analysis
+    secops workflow ioc-hunt indicators.txt         # Bulk IOC hunting
+    secops workflow network-forensics capture.pcap  # PCAP forensics
+    secops workflow log-investigation access.log    # Log analysis
+
+Output Options:
+    --json      Machine-readable JSON output
+    --verbose   Detailed progress and results
+    --quiet     Just verdict + score (analyze only)
 
 Individual Tools:
     eml          Email analysis and parsing
@@ -739,6 +747,95 @@ def main():
             sys.exit(1)
         except Exception as e:
             print(f"Error during analysis: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    elif sys.argv[1] == 'workflow':
+        # Pre-built investigation workflows
+        if len(sys.argv) < 3:
+            print("Usage: secops workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
+            print("\nAvailable workflows:", file=sys.stderr)
+            print("  phishing-email     Comprehensive phishing email investigation", file=sys.stderr)
+            print("  malware-triage     Quick malware analysis and triage", file=sys.stderr)
+            print("  ioc-hunt           Bulk IOC threat hunting", file=sys.stderr)
+            print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
+            print("  log-investigation  Security log investigation", file=sys.stderr)
+            print("\nExamples:", file=sys.stderr)
+            print("  secops workflow phishing-email suspicious.eml", file=sys.stderr)
+            print("  secops workflow malware-triage sample.exe --verbose", file=sys.stderr)
+            print("  secops workflow ioc-hunt iocs.txt --json", file=sys.stderr)
+            sys.exit(1)
+
+        workflow_name = sys.argv[2]
+
+        if len(sys.argv) < 4:
+            print(f"Error: Missing input for workflow '{workflow_name}'", file=sys.stderr)
+            print(f"Usage: secops workflow {workflow_name} <input>", file=sys.stderr)
+            sys.exit(1)
+
+        input_value = sys.argv[3]
+        verbose = '--verbose' in sys.argv or '-v' in sys.argv[4:]
+        json_output = '--json' in sys.argv or '-j' in sys.argv
+
+        try:
+            from core.workflow import WorkflowRegistry
+            from core.reporter import Reporter
+
+            # Import workflows to register them
+            from workflows import (
+                PhishingEmailWorkflow,
+                MalwareTriageWorkflow,
+                IOCHuntWorkflow,
+                NetworkForensicsWorkflow,
+                LogInvestigationWorkflow
+            )
+
+            # Get workflow class
+            workflow_class = WorkflowRegistry.get(workflow_name)
+            if not workflow_class:
+                print(f"Error: Unknown workflow '{workflow_name}'", file=sys.stderr)
+                print("Run 'secops workflow' to see available workflows", file=sys.stderr)
+                sys.exit(1)
+
+            # Execute workflow
+            workflow_instance = workflow_class(verbose=verbose)
+            result = workflow_instance.execute(input_value)
+
+            # Format output
+            reporter = Reporter()
+
+            if json_output:
+                import json
+                # Convert scorer to summary for JSON
+                result['summary'] = result['scorer'].get_summary()
+                result['findings'] = result['scorer'].get_findings()
+                result['recommendations'] = result['scorer'].get_recommendations()
+                del result['scorer']
+                print(json.dumps(result, indent=2, default=str))
+            else:
+                # Console output
+                print(reporter.format_console(
+                    result['input'],
+                    result['type'],
+                    result['scorer'],
+                    result['iocs'],
+                    result['tool_results']
+                ))
+
+                # Print workflow-specific info
+                print(f"\nWorkflow: {result['workflow']}")
+                print(f"Steps completed: {result['steps_completed']}/{result['steps_total']}")
+                print(f"Duration: {result['duration_seconds']:.1f}s")
+
+            sys.exit(reporter.get_exit_code(result['scorer']) if 'scorer' in result else 0)
+
+        except ImportError as e:
+            print(f"Error: Could not load workflow module: {e}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error during workflow execution: {e}", file=sys.stderr)
+            if verbose:
+                import traceback
+                traceback.print_exc()
             sys.exit(1)
 
     else:

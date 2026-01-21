@@ -1,7 +1,7 @@
 # Operationalize SecOps Helper
 
 **Version:** 1.0.0
-**Status:** Phase 1 Implemented
+**Status:** Phase 2 Implemented
 **Priority:** Critical
 **Branch:** feat/operationalize
 
@@ -19,7 +19,16 @@
   - `tests/test_reporter.py` - 30+ tests for output formatting
   - `tests/test_analyzer.py` - 25+ tests for orchestration
 
-### Phase 2: Workflows - NOT STARTED
+### Phase 2: Workflows - COMPLETE
+- [x] `core/workflow.py` - Workflow engine (base class, context, registry)
+- [x] `workflows/phishing_email.py` - 7-step phishing investigation
+- [x] `workflows/malware_triage.py` - 7-step malware analysis
+- [x] `workflows/ioc_hunt.py` - 6-step bulk IOC hunting
+- [x] `workflows/network_forensics.py` - 7-step PCAP forensics
+- [x] `workflows/log_investigation.py` - 7-step log analysis
+- [x] Updated `secops.py` with `workflow` command routing
+- [x] Unit tests: `tests/test_workflows.py` - 25+ workflow tests
+
 ### Phase 3: Interactive Mode - NOT STARTED
 ### Phase 4: Reports and Polish - NOT STARTED
 
