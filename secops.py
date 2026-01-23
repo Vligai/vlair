@@ -587,6 +587,8 @@ Output Options:
     --json      Machine-readable JSON output
     --verbose   Detailed progress and results
     --quiet     Just verdict + score (analyze only)
+    --report [html|markdown|md]  Generate report file
+    --output/-o <path>           Specify report output path
 
 Individual Tools:
     eml          Email analysis and parsing
@@ -707,6 +709,20 @@ def main():
             json_output = '--json' in sys.argv or '-j' in sys.argv
             quiet = '--quiet' in sys.argv or '-q' in sys.argv
 
+            # Parse report arguments
+            report_format = None
+            output_path = None
+            args_list = sys.argv[3:]
+            for i, arg in enumerate(args_list):
+                if arg == '--report':
+                    if i + 1 < len(args_list) and args_list[i + 1] in ('html', 'markdown', 'md'):
+                        report_format = args_list[i + 1]
+                    else:
+                        report_format = 'html'
+                if arg in ('--output', '-o'):
+                    if i + 1 < len(args_list):
+                        output_path = args_list[i + 1]
+
             # Run analysis
             analyzer = Analyzer(verbose=verbose)
             result = analyzer.analyze(input_value)
@@ -740,6 +756,13 @@ def main():
                     result['iocs'],
                     result['tool_results']
                 ))
+
+            # Generate report if requested
+            if report_format:
+                from core.report_generator import ReportGenerator
+                generator = ReportGenerator()
+                report_path = generator.generate(result, report_format, output_path)
+                print(f"\nReport saved to: {report_path}", file=sys.stderr)
 
             sys.exit(reporter.get_exit_code(result['scorer']))
 
@@ -778,6 +801,20 @@ def main():
         verbose = '--verbose' in sys.argv or '-v' in sys.argv[4:]
         json_output = '--json' in sys.argv or '-j' in sys.argv
 
+        # Parse report arguments
+        report_format = None
+        output_path = None
+        args_list = sys.argv[4:]
+        for i, arg in enumerate(args_list):
+            if arg == '--report':
+                if i + 1 < len(args_list) and args_list[i + 1] in ('html', 'markdown', 'md'):
+                    report_format = args_list[i + 1]
+                else:
+                    report_format = 'html'
+            if arg in ('--output', '-o'):
+                if i + 1 < len(args_list):
+                    output_path = args_list[i + 1]
+
         try:
             from core.workflow import WorkflowRegistry
             from core.reporter import Reporter
@@ -801,6 +838,13 @@ def main():
             # Execute workflow
             workflow_instance = workflow_class(verbose=verbose)
             result = workflow_instance.execute(input_value)
+
+            # Generate report before potentially modifying result for JSON output
+            if report_format:
+                from core.report_generator import ReportGenerator
+                generator = ReportGenerator()
+                report_path = generator.generate(result, report_format, output_path)
+                print(f"\nReport saved to: {report_path}", file=sys.stderr)
 
             # Format output
             reporter = Reporter()

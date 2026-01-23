@@ -1,7 +1,7 @@
 # Operationalize SecOps Helper
 
 **Version:** 1.0.0
-**Status:** Phase 2 Implemented
+**Status:** Phase 4 In Progress
 **Priority:** Critical
 **Branch:** feat/operationalize
 
@@ -29,8 +29,22 @@
 - [x] Updated `secops.py` with `workflow` command routing
 - [x] Unit tests: `tests/test_workflows.py` - 25+ workflow tests
 
-### Phase 3: Interactive Mode - NOT STARTED
-### Phase 4: Reports and Polish - NOT STARTED
+### Phase 3: Interactive Mode - COMPLETE
+- [x] `core/interactive.py` - Interactive investigation mode (551 lines)
+- [x] Progress bar display with terminal visualization
+- [x] Guided investigation menus (6 investigation types)
+- [x] Post-analysis actions (export IOCs, view JSON, new investigation)
+- [x] Updated `secops.py` with `investigate` command routing
+- [x] Unit tests: `tests/test_interactive.py` - 34 tests
+
+### Phase 4: Reports and Polish - COMPLETE
+- [x] `core/report_generator.py` - HTML and Markdown report generation
+- [x] ReportData dataclass for structured report data
+- [x] Self-contained HTML reports with inline CSS (responsive, professional)
+- [x] Markdown reports with GFM tables
+- [x] Executive summary generation
+- [x] CLI integration: `--report [html|markdown|md]` and `--output` flags
+- [x] Unit tests: `tests/test_report_generator.py`
 
 ---
 
