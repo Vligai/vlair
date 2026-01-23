@@ -39,6 +39,20 @@ class Colors:
         cls.DIM = ''
         cls.RESET = ''
 
+    @classmethod
+    def enable(cls):
+        """Re-enable colors"""
+        cls.RED = '\033[91m'
+        cls.GREEN = '\033[92m'
+        cls.YELLOW = '\033[93m'
+        cls.BLUE = '\033[94m'
+        cls.MAGENTA = '\033[95m'
+        cls.CYAN = '\033[96m'
+        cls.WHITE = '\033[97m'
+        cls.BOLD = '\033[1m'
+        cls.DIM = '\033[2m'
+        cls.RESET = '\033[0m'
+
 
 class Reporter:
     """

@@ -151,9 +151,13 @@ class TestScoreCalculation:
 
     def test_score_capped_at_100(self):
         """Test that score is capped at 100"""
-        # Add many critical findings
+        # Add many findings across all severity levels to exceed 100
         for i in range(10):
             self.scorer.add_finding(Severity.CRITICAL, f"Critical {i}", "test")
+        for i in range(10):
+            self.scorer.add_finding(Severity.HIGH, f"High {i}", "test")
+        for i in range(10):
+            self.scorer.add_finding(Severity.MEDIUM, f"Medium {i}", "test")
         score = self.scorer.calculate_score()
         assert score == 100
 

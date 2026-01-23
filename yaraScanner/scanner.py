@@ -21,10 +21,9 @@ from collections import defaultdict
 
 try:
     import yara
+    YARA_AVAILABLE = True
 except ImportError:
-    print("Error: yara-python not installed. Install with: pip install yara-python", file=sys.stderr)
-    print("Note: YARA must be installed on your system first.", file=sys.stderr)
-    sys.exit(1)
+    YARA_AVAILABLE = False
 
 try:
     from tqdm import tqdm
@@ -541,6 +540,11 @@ Examples:
 
 def main():
     """Main entry point"""
+    if not YARA_AVAILABLE:
+        print("Error: yara-python not installed. Install with: pip install yara-python", file=sys.stderr)
+        print("Note: YARA must be installed on your system first.", file=sys.stderr)
+        sys.exit(1)
+
     args = parse_args()
 
     if not args.command:

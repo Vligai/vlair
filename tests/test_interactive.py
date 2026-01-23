@@ -16,6 +16,7 @@ from io import StringIO
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.interactive import InteractiveInvestigation, ProgressBar
+from core.reporter import Colors
 
 
 class TestProgressBar:
@@ -112,6 +113,7 @@ class TestVerdictColors:
     def test_get_verdict_color(self):
         """Test getting colors for verdicts"""
         investigation = InteractiveInvestigation()
+        Colors.enable()  # Re-enable after Reporter init disables them
 
         # Test each verdict
         malicious_color = investigation._get_verdict_color('MALICIOUS')

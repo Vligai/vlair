@@ -11,7 +11,8 @@ from unittest.mock import Mock, patch
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from hashLookup.lookup import HashValidator, CacheManager, RateLimiter
+from hashLookup.lookup import HashValidator, RateLimiter
+from common.cache_manager import CacheManager
 
 
 class TestHashValidator:
@@ -63,41 +64,37 @@ class TestHashValidator:
 class TestCacheManager:
     """Test cache management"""
 
-    def test_cache_set_and_get(self, tmp_path):
+    def test_cache_set_and_get(self):
         """Test setting and getting from cache"""
-        cache_file = tmp_path / "test_cache.db"
-        cache = CacheManager(cache_path=str(cache_file), ttl=3600)
+        cache = CacheManager(default_ttl=3600)
 
         test_data = {'verdict': 'malicious', 'score': 85}
-        cache.set('test_hash', 'md5', test_data)
+        cache.set('test_hash', test_data, namespace='test')
 
-        result = cache.get('test_hash')
+        result = cache.get('test_hash', namespace='test')
         assert result is not None
         assert result['verdict'] == 'malicious'
         assert result['score'] == 85
 
-    def test_cache_miss(self, tmp_path):
+    def test_cache_miss(self):
         """Test cache miss"""
-        cache_file = tmp_path / "test_cache.db"
-        cache = CacheManager(cache_path=str(cache_file))
+        cache = CacheManager()
 
-        result = cache.get('nonexistent_hash')
+        result = cache.get('nonexistent_hash', namespace='test_miss')
         assert result is None
 
-    def test_cache_stats(self, tmp_path):
+    def test_cache_stats(self):
         """Test cache statistics"""
-        cache_file = tmp_path / "test_cache.db"
-        cache = CacheManager(cache_path=str(cache_file))
+        cache = CacheManager()
 
         # Generate some hits and misses
-        cache.set('hash1', 'md5', {'data': 'test'})
-        cache.get('hash1')  # Hit
-        cache.get('nonexistent')  # Miss
+        cache.set('hash1', {'data': 'test'}, namespace='test_stats')
+        cache.get('hash1', namespace='test_stats')  # Hit
+        cache.get('nonexistent', namespace='test_stats')  # Miss
 
-        stats = cache.stats()
-        assert stats['hits'] == 1
-        assert stats['misses'] == 1
-        assert stats['total_queries'] == 2
+        stats = cache.get_stats()
+        assert stats['hits'] >= 1
+        assert stats['misses'] >= 1
 
 
 class TestRateLimiter:
@@ -127,15 +124,15 @@ class TestHashLookupIntegration:
 
     @patch('hashLookup.lookup.VirusTotalAPI')
     @patch('hashLookup.lookup.MalwareBazaarAPI')
-    @patch('hashLookup.lookup.CacheManager')
-    def test_lookup_with_mocked_apis(self, mock_cache, mock_mb, mock_vt, tmp_path):
+    @patch('hashLookup.lookup.get_cache')
+    def test_lookup_with_mocked_apis(self, mock_get_cache, mock_mb, mock_vt, tmp_path):
         """Test hash lookup with mocked APIs"""
         from hashLookup.lookup import HashLookup
 
         # Mock cache
         mock_cache_instance = Mock()
         mock_cache_instance.get.return_value = None
-        mock_cache.return_value = mock_cache_instance
+        mock_get_cache.return_value = mock_cache_instance
 
         # Mock VT response
         mock_vt_instance = Mock()

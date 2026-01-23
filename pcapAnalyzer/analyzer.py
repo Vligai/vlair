@@ -17,6 +17,14 @@ try:
     SCAPY_AVAILABLE = True
 except ImportError:
     SCAPY_AVAILABLE = False
+    rdpcap = None
+    IP = None
+    TCP = None
+    UDP = None
+    DNS = None
+    Raw = None
+    DNSQR = None
+    DNSRR = None
 
 
 class PCAPAnalyzer:
@@ -25,7 +33,15 @@ class PCAPAnalyzer:
     def __init__(self, verbose=False):
         self.verbose = verbose
         self.packets = []
-        self.stats = defaultdict(int)
+        self.stats = {
+            'total_bytes': 0,
+            'protocols': defaultdict(int),
+            'src_ips': set(),
+            'dst_ips': set(),
+            'syn_packets': defaultdict(int),
+            'dst_ports': defaultdict(int),
+            'dns_queries': defaultdict(int),
+        }
         self.conversations = defaultdict(int)
         self.alerts = []
 

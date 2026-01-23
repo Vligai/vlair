@@ -29,7 +29,7 @@ class TestPCAPAnalyzer:
 
         assert analyzer.verbose is False
         assert analyzer.packets == []
-        assert isinstance(analyzer.stats, defaultdict)
+        assert isinstance(analyzer.stats, dict)
         assert isinstance(analyzer.conversations, defaultdict)
         assert analyzer.alerts == []
 
@@ -87,7 +87,7 @@ class TestPCAPAnalyzer:
         analyzer = PCAPAnalyzer()
 
         # Create mock packet without IP layer
-        mock_packet = Mock()
+        mock_packet = MagicMock()
         mock_packet.haslayer.return_value = False
         mock_packet.__len__.return_value = 100
 
@@ -103,7 +103,7 @@ class TestPCAPAnalyzer:
         analyzer = PCAPAnalyzer()
 
         # Create mock TCP packet
-        mock_packet = Mock()
+        mock_packet = MagicMock()
         mock_packet.haslayer.side_effect = lambda layer: layer in [mock_ip, mock_tcp]
         mock_packet.__len__.return_value = 200
 
@@ -127,7 +127,7 @@ class TestPCAPAnalyzer:
         analyzer = PCAPAnalyzer()
 
         # Create mock UDP packet
-        mock_packet = Mock()
+        mock_packet = MagicMock()
         mock_packet.haslayer.side_effect = lambda layer: layer in [mock_ip, mock_udp]
         mock_packet.__len__.return_value = 150
 
@@ -142,7 +142,9 @@ class TestPCAPAnalyzer:
 
         assert analyzer.stats['protocols']['UDP'] == 1
 
-    def test_analyze_tcp_port_scan_detection(self):
+    @patch('pcapAnalyzer.analyzer.Raw')
+    @patch('pcapAnalyzer.analyzer.TCP')
+    def test_analyze_tcp_port_scan_detection(self, mock_tcp, mock_raw):
         """Test port scan detection"""
         analyzer = PCAPAnalyzer()
 
@@ -151,41 +153,34 @@ class TestPCAPAnalyzer:
             analyzer.stats['syn_packets']['203.0.113.100'] += 1
 
         # Create mock packet
-        mock_packet = Mock()
-        mock_packet.haslayer.return_value = True
-        mock_packet.__len__.return_value = 60
-
-        mock_ip_layer = Mock()
-        mock_ip_layer.src = '203.0.113.100'
-        mock_ip_layer.dst = '192.0.2.1'
+        mock_packet = MagicMock()
 
         mock_tcp_layer = Mock()
         mock_tcp_layer.sport = 50000
         mock_tcp_layer.dport = 22
         mock_tcp_layer.flags = 'S'
 
-        with patch('pcapAnalyzer.analyzer.IP', return_value=mock_ip_layer):
-            with patch('pcapAnalyzer.analyzer.TCP', return_value=mock_tcp_layer):
-                mock_packet.__getitem__.side_effect = lambda layer: (
-                    mock_ip_layer if layer.__name__ == 'IP' else mock_tcp_layer
-                )
-                analyzer._analyze_tcp(mock_packet, '203.0.113.100', '192.0.2.1')
+        mock_packet.__getitem__.return_value = mock_tcp_layer
+        mock_packet.haslayer.return_value = False  # No Raw layer
+
+        analyzer._analyze_tcp(mock_packet, '203.0.113.100', '192.0.2.1')
 
         # Should detect port scan
         port_scan_alerts = [a for a in analyzer.alerts if a['type'] == 'port_scan']
         assert len(port_scan_alerts) > 0
         assert port_scan_alerts[0]['source_ip'] == '203.0.113.100'
 
-    def test_analyze_http_sql_injection(self):
+    @patch('pcapAnalyzer.analyzer.Raw')
+    def test_analyze_http_sql_injection(self, mock_raw_cls):
         """Test HTTP SQL injection detection"""
         analyzer = PCAPAnalyzer()
 
         # Create mock HTTP packet with SQL injection
-        mock_packet = Mock()
+        mock_packet = MagicMock()
         mock_raw = Mock()
         mock_raw.load = b"GET /search?q=' UNION SELECT password FROM users-- HTTP/1.1"
 
-        mock_packet.haslayer.side_effect = lambda layer: True if layer.__name__ == 'Raw' else False
+        mock_packet.haslayer.return_value = True
         mock_packet.__getitem__.return_value = mock_raw
 
         analyzer._analyze_http(mock_packet, '203.0.113.100', '192.0.2.1')
@@ -195,16 +190,17 @@ class TestPCAPAnalyzer:
         assert len(sql_alerts) > 0
         assert sql_alerts[0]['severity'] == 'high'
 
-    def test_analyze_http_xss(self):
+    @patch('pcapAnalyzer.analyzer.Raw')
+    def test_analyze_http_xss(self, mock_raw_cls):
         """Test HTTP XSS detection"""
         analyzer = PCAPAnalyzer()
 
         # Create mock HTTP packet with XSS
-        mock_packet = Mock()
+        mock_packet = MagicMock()
         mock_raw = Mock()
         mock_raw.load = b"GET /comment?text=<script>alert('XSS')</script> HTTP/1.1"
 
-        mock_packet.haslayer.side_effect = lambda layer: True if layer.__name__ == 'Raw' else False
+        mock_packet.haslayer.return_value = True
         mock_packet.__getitem__.return_value = mock_raw
 
         analyzer._analyze_http(mock_packet, '198.51.100.25', '192.0.2.1')
@@ -213,16 +209,17 @@ class TestPCAPAnalyzer:
         xss_alerts = [a for a in analyzer.alerts if 'xss' in a['type'].lower()]
         assert len(xss_alerts) > 0
 
-    def test_analyze_http_path_traversal(self):
+    @patch('pcapAnalyzer.analyzer.Raw')
+    def test_analyze_http_path_traversal(self, mock_raw_cls):
         """Test HTTP path traversal detection"""
         analyzer = PCAPAnalyzer()
 
         # Create mock HTTP packet with path traversal
-        mock_packet = Mock()
+        mock_packet = MagicMock()
         mock_raw = Mock()
         mock_raw.load = b"GET /../../../etc/passwd HTTP/1.1"
 
-        mock_packet.haslayer.side_effect = lambda layer: True if layer.__name__ == 'Raw' else False
+        mock_packet.haslayer.return_value = True
         mock_packet.__getitem__.return_value = mock_raw
 
         analyzer._analyze_http(mock_packet, '203.0.113.100', '192.0.2.1')
@@ -238,7 +235,7 @@ class TestPCAPAnalyzer:
         analyzer = PCAPAnalyzer()
 
         # Create mock DNS packet with suspicious TLD
-        mock_packet = Mock()
+        mock_packet = MagicMock()
         mock_dns_layer = Mock()
         mock_dns_layer.qr = 0  # Query
 
@@ -264,7 +261,7 @@ class TestPCAPAnalyzer:
         analyzer = PCAPAnalyzer()
 
         # Create mock DNS packet with DGA-like domain
-        mock_packet = Mock()
+        mock_packet = MagicMock()
         mock_dns_layer = Mock()
         mock_dns_layer.qr = 0  # Query
 
@@ -426,7 +423,7 @@ class TestIntegration:
         # Create some mock packets
         mock_packets = []
         for i in range(5):
-            mock_packet = Mock()
+            mock_packet = MagicMock()
             mock_packet.haslayer.return_value = False
             mock_packet.__len__.return_value = 100
             mock_packets.append(mock_packet)

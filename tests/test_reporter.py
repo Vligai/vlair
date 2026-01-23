@@ -21,6 +21,7 @@ class TestColors:
 
     def test_colors_have_values(self):
         """Test that color codes are defined"""
+        Colors.enable()
         assert Colors.RED != ''
         assert Colors.GREEN != ''
         assert Colors.YELLOW != ''
@@ -28,6 +29,7 @@ class TestColors:
 
     def test_disable_colors(self):
         """Test that colors can be disabled"""
+        Colors.enable()
         Colors.disable()
         assert Colors.RED == ''
         assert Colors.GREEN == ''
