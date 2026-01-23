@@ -15,6 +15,80 @@ This document provides comprehensive guidance for AI assistants working with the
 - **Minimal Dependencies**: Use standard libraries where possible
 - **JSON Output**: Structured output for easy parsing and integration
 
+## Current Development: Operationalization (Phase 5)
+
+**Branch:** `feat/operationalize`
+**Spec:** `openspec/specs/operationalize.spec.md`
+
+The project is transitioning from a collection of tools to an operational platform. Key changes:
+
+### Problem Being Solved
+- Tools are too cumbersome to use individually
+- Users must know which tool to run and how
+- No workflows or tool chaining
+- Output is raw data, not actionable insights
+
+### New Features in Progress
+
+**1. Smart Analyze Command**
+```bash
+secops analyze suspicious.eml    # Auto-detects email, runs full analysis
+secops analyze 44d88612...       # Auto-detects hash, checks reputation
+secops analyze malicious.com     # Auto-detects domain, gets intel
+```
+
+**2. Pre-built Workflows** (✅ IMPLEMENTED)
+```bash
+secops workflow phishing-email suspicious.eml   # 7-step phishing investigation
+secops workflow malware-triage sample.exe       # 7-step malware analysis
+secops workflow ioc-hunt iocs.txt               # 6-step bulk IOC hunting
+secops workflow network-forensics capture.pcap  # 7-step PCAP forensics
+secops workflow log-investigation access.log    # 7-step log analysis
+```
+
+**3. Actionable Output**
+- Risk scores (0-100)
+- Verdicts (Clean/Suspicious/Malicious)
+- Key findings (bulleted)
+- Recommended actions
+
+**4. Interactive Investigation Mode**
+```bash
+secops investigate   # Guided Q&A for users who don't know what they have
+```
+
+### Implementation Priority
+1. Phase 1: Smart Analyze Command (MVP)
+2. Phase 2: Workflows
+3. Phase 3: Interactive Mode
+4. Phase 4: Reports and Polish
+
+### New Directory Structure (Phase 2 Complete)
+```
+secops-helper/
+├── core/                 # ✅ IMPLEMENTED - Orchestration engine
+│   ├── __init__.py       # Package exports
+│   ├── analyzer.py       # Smart analyze command
+│   ├── detector.py       # Input type detection
+│   ├── scorer.py         # Risk scoring
+│   ├── reporter.py       # Report generation
+│   └── workflow.py       # Workflow engine
+├── workflows/            # ✅ IMPLEMENTED - Pre-built workflows
+│   ├── __init__.py       # Package exports
+│   ├── phishing_email.py # Phishing investigation (7 steps)
+│   ├── malware_triage.py # Malware analysis (7 steps)
+│   ├── ioc_hunt.py       # Bulk IOC hunting (6 steps)
+│   ├── network_forensics.py  # PCAP forensics (7 steps)
+│   └── log_investigation.py  # Log analysis (7 steps)
+├── tests/                # ✅ IMPLEMENTED - Unit tests
+│   ├── test_detector.py  # Input detection tests
+│   ├── test_scorer.py    # Risk scoring tests
+│   ├── test_reporter.py  # Output formatting tests
+│   ├── test_analyzer.py  # Integration tests
+│   └── test_workflows.py # Workflow tests
+└── ... (existing tools)
+```
+
 ## Repository Structure
 
 ```
@@ -33,6 +107,7 @@ secops-helper/
 ├── openspec/              # Project specifications (OpenSpec format)
 │   ├── project.openspec.md           # Overall project spec
 │   └── specs/                        # Individual feature specs
+│       ├── operationalize.spec.md    # 🔥 ACTIVE - Phase 5 operationalization
 │       ├── eml-parser.spec.md
 │       ├── ioc-extractor.spec.md
 │       ├── hash-lookup.spec.md
@@ -973,8 +1048,15 @@ done
 
 ## Future Development
 
-### Enhancement Ideas
+### Phase 5: Operationalization (IN PROGRESS)
+See `openspec/specs/operationalize.spec.md` for full details.
+- Smart analyze command with auto-detection
+- Pre-built investigation workflows
+- Risk scoring and verdicts
+- Interactive investigation mode
+- Report generation (HTML, Markdown, PDF)
 
+### Future Enhancement Ideas (Post Phase 5)
 - Web dashboard (Flask/FastAPI)
 - STIX 2.1 export for all tools
 - MISP integration
@@ -999,9 +1081,9 @@ done
 
 ---
 
-**Last Updated:** 2025-11-20
+**Last Updated:** 2026-01-20
 **Maintained By:** Vligai
-**Version:** 3.0.0 (All 12 Tools Complete - Phase 4 Finished)
+**Version:** 4.0.0-dev (Phase 5: Operationalization in Progress)
 
 This document should be updated whenever:
 - New tools are added

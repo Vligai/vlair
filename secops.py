@@ -549,18 +549,46 @@ class InteractiveMenu:
 def print_usage():
     """Print usage information"""
     print("""
-SecOps Helper - Central Control System
+SecOps Helper - Security Operations Toolkit
+
+Quick Start:
+    secops analyze <input>      Auto-detect and analyze (RECOMMENDED)
+
+The 'analyze' command automatically detects what you're analyzing and runs
+the appropriate tools. Just give it a file, hash, IP, domain, or URL.
 
 Usage:
-    secops                      Interactive mode
+    secops analyze <input>      Smart analysis (auto-detect input type)
+    secops workflow <name> <input>  Run pre-built investigation workflow
+    secops investigate          Guided interactive investigation mode
+    secops status               Show API key and tool status
+    secops                      Tool browser (interactive menu)
     secops list                 List all available tools
     secops info <tool>          Show detailed tool information
     secops search <keyword>     Search for tools
-    secops <tool> [args]        Run a specific tool
+    secops <tool> [args]        Run a specific tool directly
     secops --help               Show this help message
     secops --version            Show version information
 
-Available Tools:
+Examples - Smart Analyze:
+    secops analyze suspicious.eml           # Analyze email file
+    secops analyze 44d88612fea8a8f36...     # Check hash reputation
+    secops analyze malicious.com            # Get domain intelligence
+    secops analyze capture.pcap             # Analyze network traffic
+
+Examples - Workflows:
+    secops workflow phishing-email suspicious.eml   # Full phishing investigation
+    secops workflow malware-triage sample.exe       # Malware analysis
+    secops workflow ioc-hunt indicators.txt         # Bulk IOC hunting
+    secops workflow network-forensics capture.pcap  # PCAP forensics
+    secops workflow log-investigation access.log    # Log analysis
+
+Output Options:
+    --json      Machine-readable JSON output
+    --verbose   Detailed progress and results
+    --quiet     Just verdict + score (analyze only)
+
+Individual Tools:
     eml          Email analysis and parsing
     ioc          IOC extraction from text
     hash         Hash reputation lookup
@@ -573,13 +601,6 @@ Available Tools:
     deobfuscate  Script deobfuscation
     threatfeed   Threat intelligence aggregation
     carve        File carving and extraction
-
-Examples:
-    secops                              # Start interactive menu
-    secops list                         # List all tools
-    secops info hash                    # Get info about hash tool
-    secops eml suspicious.eml --vt      # Run email parser
-    secops search malware               # Search for malware-related tools
 
 Documentation: https://github.com/Vligai/secops-helper
     """)
@@ -609,8 +630,8 @@ def main():
         sys.exit(0)
 
     elif sys.argv[1] in ['--version', '-v']:
-        print("SecOps Helper v3.0.0")
-        print("All 12 tools implemented - Phase 4 Complete")
+        print("SecOps Helper v4.0.0")
+        print("Phase 5: Operationalization - Smart analyze command")
         sys.exit(0)
 
     elif sys.argv[1] == 'list':
@@ -664,6 +685,205 @@ def main():
                 status = "✓" if tool['available'] else "✗"
                 print(f"  [{status}] {tool_id:12s} - {tool['name']}")
                 print(f"      {tool['description']}\n")
+
+    elif sys.argv[1] == 'analyze':
+        # Smart analyze command - auto-detect and run appropriate tools
+        if len(sys.argv) < 3:
+            print("Usage: secops analyze <input> [--verbose] [--json] [--quiet]", file=sys.stderr)
+            print("\nExamples:", file=sys.stderr)
+            print("  secops analyze suspicious.eml     # Auto-detect email", file=sys.stderr)
+            print("  secops analyze 44d88612...        # Auto-detect hash", file=sys.stderr)
+            print("  secops analyze malicious.com      # Auto-detect domain", file=sys.stderr)
+            print("  secops analyze 192.168.1.1        # Auto-detect IP", file=sys.stderr)
+            sys.exit(1)
+
+        try:
+            from core.analyzer import Analyzer
+            from core.reporter import Reporter
+
+            # Parse analyze arguments
+            input_value = sys.argv[2]
+            verbose = '--verbose' in sys.argv or '-v' in sys.argv[3:]
+            json_output = '--json' in sys.argv or '-j' in sys.argv
+            quiet = '--quiet' in sys.argv or '-q' in sys.argv
+
+            # Run analysis
+            analyzer = Analyzer(verbose=verbose)
+            result = analyzer.analyze(input_value)
+
+            # Format output
+            reporter = Reporter()
+
+            if quiet:
+                print(reporter.format_quiet(result['scorer']))
+            elif json_output:
+                print(reporter.format_json(
+                    result['input'],
+                    result['type'],
+                    result['scorer'],
+                    result['iocs'],
+                    result['tool_results']
+                ))
+            elif verbose:
+                print(reporter.format_verbose(
+                    result['input'],
+                    result['type'],
+                    result['scorer'],
+                    result['iocs'],
+                    result['tool_results']
+                ))
+            else:
+                print(reporter.format_console(
+                    result['input'],
+                    result['type'],
+                    result['scorer'],
+                    result['iocs'],
+                    result['tool_results']
+                ))
+
+            sys.exit(reporter.get_exit_code(result['scorer']))
+
+        except ImportError as e:
+            print(f"Error: Could not load analyzer module: {e}", file=sys.stderr)
+            print("Make sure core/ directory exists with analyzer.py", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error during analysis: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    elif sys.argv[1] == 'workflow':
+        # Pre-built investigation workflows
+        if len(sys.argv) < 3:
+            print("Usage: secops workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
+            print("\nAvailable workflows:", file=sys.stderr)
+            print("  phishing-email     Comprehensive phishing email investigation", file=sys.stderr)
+            print("  malware-triage     Quick malware analysis and triage", file=sys.stderr)
+            print("  ioc-hunt           Bulk IOC threat hunting", file=sys.stderr)
+            print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
+            print("  log-investigation  Security log investigation", file=sys.stderr)
+            print("\nExamples:", file=sys.stderr)
+            print("  secops workflow phishing-email suspicious.eml", file=sys.stderr)
+            print("  secops workflow malware-triage sample.exe --verbose", file=sys.stderr)
+            print("  secops workflow ioc-hunt iocs.txt --json", file=sys.stderr)
+            sys.exit(1)
+
+        workflow_name = sys.argv[2]
+
+        if len(sys.argv) < 4:
+            print(f"Error: Missing input for workflow '{workflow_name}'", file=sys.stderr)
+            print(f"Usage: secops workflow {workflow_name} <input>", file=sys.stderr)
+            sys.exit(1)
+
+        input_value = sys.argv[3]
+        verbose = '--verbose' in sys.argv or '-v' in sys.argv[4:]
+        json_output = '--json' in sys.argv or '-j' in sys.argv
+
+        try:
+            from core.workflow import WorkflowRegistry
+            from core.reporter import Reporter
+
+            # Import workflows to register them
+            from workflows import (
+                PhishingEmailWorkflow,
+                MalwareTriageWorkflow,
+                IOCHuntWorkflow,
+                NetworkForensicsWorkflow,
+                LogInvestigationWorkflow
+            )
+
+            # Get workflow class
+            workflow_class = WorkflowRegistry.get(workflow_name)
+            if not workflow_class:
+                print(f"Error: Unknown workflow '{workflow_name}'", file=sys.stderr)
+                print("Run 'secops workflow' to see available workflows", file=sys.stderr)
+                sys.exit(1)
+
+            # Execute workflow
+            workflow_instance = workflow_class(verbose=verbose)
+            result = workflow_instance.execute(input_value)
+
+            # Format output
+            reporter = Reporter()
+
+            if json_output:
+                import json
+                # Convert scorer to summary for JSON
+                result['summary'] = result['scorer'].get_summary()
+                result['findings'] = result['scorer'].get_findings()
+                result['recommendations'] = result['scorer'].get_recommendations()
+                del result['scorer']
+                print(json.dumps(result, indent=2, default=str))
+            else:
+                # Console output
+                print(reporter.format_console(
+                    result['input'],
+                    result['type'],
+                    result['scorer'],
+                    result['iocs'],
+                    result['tool_results']
+                ))
+
+                # Print workflow-specific info
+                print(f"\nWorkflow: {result['workflow']}")
+                print(f"Steps completed: {result['steps_completed']}/{result['steps_total']}")
+                print(f"Duration: {result['duration_seconds']:.1f}s")
+
+            sys.exit(reporter.get_exit_code(result['scorer']) if 'scorer' in result else 0)
+
+        except ImportError as e:
+            print(f"Error: Could not load workflow module: {e}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error during workflow execution: {e}", file=sys.stderr)
+            if verbose:
+                import traceback
+                traceback.print_exc()
+            sys.exit(1)
+
+    elif sys.argv[1] == 'investigate':
+        # Interactive investigation mode
+        try:
+            from core.interactive import InteractiveInvestigation
+
+            investigation = InteractiveInvestigation()
+            investigation.run()
+            sys.exit(0)
+
+        except ImportError as e:
+            print(f"Error: Could not load interactive module: {e}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error during investigation: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    elif sys.argv[1] == 'status':
+        # Quick status dashboard
+        print("\nSecOps Helper Status")
+        print("=" * 40)
+
+        # Check API keys
+        from dotenv import load_dotenv
+        load_dotenv()
+
+        api_keys = {
+            'VT_API_KEY': 'VirusTotal',
+            'ABUSEIPDB_KEY': 'AbuseIPDB',
+            'THREATFOX_API_KEY': 'ThreatFox',
+            'URLHAUS_API_KEY': 'URLhaus'
+        }
+
+        print("\nAPI Keys:")
+        for key, name in api_keys.items():
+            status = "✓ Configured" if os.getenv(key) else "✗ Not set"
+            print(f"  {name:15s}: {status}")
+
+        # Check tools
+        print("\nTools: All 12 tools available")
+        print("\nFeatures:")
+        print("  ✓ Smart analyze command")
+        print("  ✓ Pre-built workflows (5)")
+        print("  ✓ Interactive investigation mode")
+        print()
 
     else:
         # Run a tool
