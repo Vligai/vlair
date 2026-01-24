@@ -5,6 +5,11 @@ A unified security operations toolkit with automatic tool discovery and manageme
 
 Usage:
     secops                      # Interactive mode
+    secops analyze <input>      # Smart analyze (auto-detect input type)
+    secops check <type> <value> # Quick indicator lookup
+    secops workflow <name> <in> # Run pre-built investigation workflow
+    secops investigate          # Interactive guided investigation
+    secops status               # Show system status dashboard
     secops list                 # List all available tools
     secops <tool> [args]        # Run a specific tool
     secops info <tool>          # Get detailed info about a tool
@@ -700,6 +705,9 @@ def main():
             sys.exit(1)
 
         try:
+            import time as _time
+            _analyze_start = _time.time()
+
             from core.analyzer import Analyzer
             from core.reporter import Reporter
 
@@ -764,6 +772,22 @@ def main():
                 report_path = generator.generate(result, report_format, output_path)
                 print(f"\nReport saved to: {report_path}", file=sys.stderr)
 
+            # Record in history
+            try:
+                from core.history import AnalysisHistory
+                history = AnalysisHistory()
+                scorer = result['scorer']
+                history.record(
+                    input_value=input_value,
+                    input_type=result['type'],
+                    verdict=scorer.get_summary().get('verdict', 'UNKNOWN'),
+                    risk_score=scorer.get_summary().get('risk_score'),
+                    command='analyze',
+                    duration_seconds=_time.time() - _analyze_start
+                )
+            except Exception:
+                pass
+
             sys.exit(reporter.get_exit_code(result['scorer']))
 
         except ImportError as e:
@@ -772,6 +796,193 @@ def main():
             sys.exit(1)
         except Exception as e:
             print(f"Error during analysis: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    elif sys.argv[1] == 'check':
+        # Quick indicator lookup - direct tool invocation without full analysis pipeline
+        if len(sys.argv) < 3:
+            print("Usage: secops check <type> <value> [--json] [--verbose]", file=sys.stderr)
+            print("       secops check <file>          # Auto-detect IOC file", file=sys.stderr)
+            print("\nTypes:", file=sys.stderr)
+            print("  hash    <hash>     Look up a file hash (MD5/SHA1/SHA256)", file=sys.stderr)
+            print("  domain  <domain>   Get domain intelligence", file=sys.stderr)
+            print("  ip      <ip>       Get IP intelligence", file=sys.stderr)
+            print("  url     <url>      Check URL reputation", file=sys.stderr)
+            print("\nExamples:", file=sys.stderr)
+            print("  secops check hash 44d88612fea8a8f36de82e1278abb02f", file=sys.stderr)
+            print("  secops check domain malicious.com", file=sys.stderr)
+            print("  secops check ip 1.2.3.4 --json", file=sys.stderr)
+            print("  secops check url http://bad.com/payload", file=sys.stderr)
+            print("  secops check iocs.txt", file=sys.stderr)
+            sys.exit(1)
+
+        check_type = sys.argv[2]
+        verbose = '--verbose' in sys.argv or '-v' in sys.argv[3:]
+        json_output = '--json' in sys.argv or '-j' in sys.argv
+
+        try:
+            import time as _time
+            start_time = _time.time()
+
+            # Known type keywords route directly to tools
+            if check_type == 'hash':
+                if len(sys.argv) < 4:
+                    print("Error: Missing hash value", file=sys.stderr)
+                    print("Usage: secops check hash <md5|sha1|sha256>", file=sys.stderr)
+                    sys.exit(1)
+                hash_value = sys.argv[3]
+                from hashLookup.lookup import HashLookup
+                lookup = HashLookup(verbose=verbose)
+                result = lookup.lookup(hash_value)
+                indicator_type = 'hash'
+
+                if json_output:
+                    print(json.dumps(result, indent=2, default=str))
+                else:
+                    verdict = result.get('verdict', 'UNKNOWN')
+                    detections = result.get('detections', 0)
+                    total = result.get('total_engines', 0)
+                    print(f"Hash: {hash_value}")
+                    print(f"Verdict: {verdict}")
+                    if detections or total:
+                        print(f"Detections: {detections}/{total}")
+                    malware_family = result.get('malware_family') or result.get('suggested_threat_label')
+                    if malware_family:
+                        print(f"Family: {malware_family}")
+                    sources = result.get('sources', [])
+                    if sources:
+                        print(f"Sources: {', '.join(sources)}")
+
+            elif check_type == 'domain':
+                if len(sys.argv) < 4:
+                    print("Error: Missing domain value", file=sys.stderr)
+                    print("Usage: secops check domain <domain>", file=sys.stderr)
+                    sys.exit(1)
+                domain_value = sys.argv[3]
+                from domainIpIntel.intel import DomainIPIntelligence as DomainIPIntel
+                intel = DomainIPIntel(verbose=verbose)
+                result = intel.lookup(domain_value)
+                indicator_type = 'domain'
+
+                if json_output:
+                    print(json.dumps(result, indent=2, default=str))
+                else:
+                    verdict = result.get('verdict', 'UNKNOWN')
+                    risk_score = result.get('risk_score', 0)
+                    print(f"Domain: {domain_value}")
+                    print(f"Verdict: {verdict}")
+                    print(f"Risk Score: {risk_score}/100")
+                    dns = result.get('dns', {})
+                    if dns.get('a_records'):
+                        print(f"IPs: {', '.join(dns['a_records'][:5])}")
+                    categories = result.get('categories', [])
+                    if categories:
+                        print(f"Categories: {', '.join(categories[:5])}")
+
+            elif check_type == 'ip':
+                if len(sys.argv) < 4:
+                    print("Error: Missing IP address", file=sys.stderr)
+                    print("Usage: secops check ip <ip_address>", file=sys.stderr)
+                    sys.exit(1)
+                ip_value = sys.argv[3]
+                from domainIpIntel.intel import DomainIPIntelligence as DomainIPIntel
+                intel = DomainIPIntel(verbose=verbose)
+                result = intel.lookup(ip_value)
+                indicator_type = 'ip'
+
+                if json_output:
+                    print(json.dumps(result, indent=2, default=str))
+                else:
+                    verdict = result.get('verdict', 'UNKNOWN')
+                    risk_score = result.get('risk_score', 0)
+                    print(f"IP: {ip_value}")
+                    print(f"Verdict: {verdict}")
+                    print(f"Risk Score: {risk_score}/100")
+                    abuse_score = result.get('abuse_confidence_score')
+                    if abuse_score is not None:
+                        print(f"Abuse Score: {abuse_score}%")
+                    country = result.get('country')
+                    if country:
+                        print(f"Country: {country}")
+
+            elif check_type == 'url':
+                if len(sys.argv) < 4:
+                    print("Error: Missing URL", file=sys.stderr)
+                    print("Usage: secops check url <url>", file=sys.stderr)
+                    sys.exit(1)
+                url_value = sys.argv[3]
+                from urlAnalyzer.analyzer import URLAnalyzer
+                analyzer = URLAnalyzer(verbose=verbose)
+                result = analyzer.analyze(url_value)
+                indicator_type = 'url'
+
+                if json_output:
+                    print(json.dumps(result, indent=2, default=str))
+                else:
+                    verdict = result.get('verdict', 'UNKNOWN')
+                    risk_score = result.get('risk_score', 0)
+                    print(f"URL: {url_value}")
+                    print(f"Verdict: {verdict}")
+                    print(f"Risk Score: {risk_score}/100")
+                    threats = result.get('threats', [])
+                    if threats:
+                        for threat in threats[:5]:
+                            print(f"  [!] {threat}")
+
+            elif os.path.isfile(check_type):
+                # Auto-detect file as IOC list
+                from core.analyzer import Analyzer
+                from core.reporter import Reporter
+
+                analyzer_instance = Analyzer(verbose=verbose)
+                result = analyzer_instance.analyze(check_type)
+                indicator_type = result.get('type', 'file')
+
+                reporter = Reporter()
+                if json_output:
+                    print(reporter.format_json(
+                        result['input'], result['type'],
+                        result['scorer'], result['iocs'], result['tool_results']
+                    ))
+                else:
+                    print(reporter.format_console(
+                        result['input'], result['type'],
+                        result['scorer'], result['iocs'], result['tool_results']
+                    ))
+                sys.exit(reporter.get_exit_code(result['scorer']))
+
+            else:
+                print(f"Error: Unknown check type '{check_type}'", file=sys.stderr)
+                print("Valid types: hash, domain, ip, url", file=sys.stderr)
+                print("Or provide a file path for batch IOC checking", file=sys.stderr)
+                sys.exit(1)
+
+            # Record in history
+            duration = _time.time() - start_time
+            try:
+                from core.history import AnalysisHistory
+                history = AnalysisHistory()
+                verdict_val = result.get('verdict', 'UNKNOWN') if isinstance(result, dict) else 'UNKNOWN'
+                score_val = result.get('risk_score') if isinstance(result, dict) else None
+                history.record(
+                    input_value=sys.argv[3] if len(sys.argv) > 3 else check_type,
+                    input_type=indicator_type,
+                    verdict=verdict_val,
+                    risk_score=score_val,
+                    command='check',
+                    duration_seconds=duration
+                )
+            except Exception:
+                pass
+
+        except ImportError as e:
+            print(f"Error: Could not load tool module: {e}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error during check: {e}", file=sys.stderr)
+            if verbose:
+                import traceback
+                traceback.print_exc()
             sys.exit(1)
 
     elif sys.argv[1] == 'workflow':
@@ -850,7 +1061,6 @@ def main():
             reporter = Reporter()
 
             if json_output:
-                import json
                 # Convert scorer to summary for JSON
                 result['summary'] = result['scorer'].get_summary()
                 result['findings'] = result['scorer'].get_findings()
@@ -902,8 +1112,8 @@ def main():
 
     elif sys.argv[1] == 'status':
         # Quick status dashboard
-        print("\nSecOps Helper Status")
-        print("=" * 40)
+        print("\nSecOps Helper Status Dashboard")
+        print("=" * 50)
 
         # Check API keys
         from dotenv import load_dotenv
@@ -917,16 +1127,107 @@ def main():
         }
 
         print("\nAPI Keys:")
+        configured_count = 0
         for key, name in api_keys.items():
-            status = "✓ Configured" if os.getenv(key) else "✗ Not set"
-            print(f"  {name:15s}: {status}")
+            if os.getenv(key):
+                print(f"  [+] {name:15s}: Configured")
+                configured_count += 1
+            else:
+                print(f"  [-] {name:15s}: Not set")
+        print(f"      ({configured_count}/{len(api_keys)} configured)")
 
-        # Check tools
-        print("\nTools: All 12 tools available")
+        # Check tool availability
+        base_path = Path(__file__).parent
+        tool_files = {
+            'EML Parser': base_path / 'emlAnalysis' / 'emlParser.py',
+            'IOC Extractor': base_path / 'iocExtractor' / 'extractor.py',
+            'Hash Lookup': base_path / 'hashLookup' / 'lookup.py',
+            'Domain/IP Intel': base_path / 'domainIpIntel' / 'intel.py',
+            'Log Analyzer': base_path / 'logAnalysis' / 'analyzer.py',
+            'PCAP Analyzer': base_path / 'pcapAnalyzer' / 'analyzer.py',
+            'URL Analyzer': base_path / 'urlAnalyzer' / 'analyzer.py',
+            'YARA Scanner': base_path / 'yaraScanner' / 'scanner.py',
+            'Cert Analyzer': base_path / 'certAnalyzer' / 'analyzer.py',
+            'Deobfuscator': base_path / 'deobfuscator' / 'deobfuscator.py',
+            'Threat Feeds': base_path / 'threatFeedAggregator' / 'aggregator.py',
+            'File Carver': base_path / 'fileCarver' / 'carver.py',
+        }
+
+        available_count = sum(1 for p in tool_files.values() if p.exists())
+        print(f"\nTools: {available_count}/{len(tool_files)} available")
+
+        # Cache statistics
+        print("\nCache:")
+        try:
+            from common.cache_manager import get_cache
+            cache = get_cache()
+            print(f"  Backend: {cache.backend}")
+            print(f"  Session stats - Hits: {cache.stats['hits']}, "
+                  f"Misses: {cache.stats['misses']}, "
+                  f"Sets: {cache.stats['sets']}")
+        except Exception:
+            print("  Not available")
+
+        # Threat feed freshness
+        print("\nThreat Feeds:")
+        try:
+            feeds_db = Path.home() / '.threatFeedAggregator' / 'feeds.db'
+            if feeds_db.exists():
+                import sqlite3
+                conn = sqlite3.connect(str(feeds_db))
+                cursor = conn.cursor()
+                cursor.execute('SELECT COUNT(*) FROM iocs')
+                ioc_count = cursor.fetchone()[0]
+                cursor.execute('SELECT MAX(last_seen) FROM iocs')
+                last_update = cursor.fetchone()[0]
+                conn.close()
+                print(f"  IOCs in database: {ioc_count}")
+                print(f"  Last updated: {last_update or 'Never'}")
+            else:
+                print("  Database not initialized (run: secops feeds update)")
+        except Exception:
+            print("  Not available")
+
+        # Recent analysis history
+        print("\nRecent Analyses:")
+        try:
+            from core.history import AnalysisHistory
+            history = AnalysisHistory()
+            stats = history.get_stats()
+
+            if stats['total_analyses'] > 0:
+                print(f"  Total: {stats['total_analyses']}")
+                if stats['verdicts']:
+                    verdict_str = ', '.join(f"{v}: {c}" for v, c in stats['verdicts'].items())
+                    print(f"  Verdicts: {verdict_str}")
+                if stats['last_analysis']:
+                    print(f"  Last: {stats['last_analysis']}")
+
+                # Show last 5 analyses
+                recent = history.get_recent(5)
+                if recent:
+                    print("\n  Last 5:")
+                    for entry in recent:
+                        verdict = entry.get('verdict', '?')
+                        score = entry.get('risk_score')
+                        score_str = f" ({score}/100)" if score is not None else ""
+                        ts = entry['timestamp'][:16].replace('T', ' ')
+                        inp = entry['input_value']
+                        if len(inp) > 30:
+                            inp = inp[:27] + '...'
+                        print(f"    {ts}  {inp:30s}  {verdict}{score_str}")
+            else:
+                print("  No analyses recorded yet")
+        except Exception:
+            print("  History not available")
+
+        # Features summary
         print("\nFeatures:")
-        print("  ✓ Smart analyze command")
-        print("  ✓ Pre-built workflows (5)")
-        print("  ✓ Interactive investigation mode")
+        print("  [+] Smart analyze command (secops analyze)")
+        print("  [+] Quick check command (secops check)")
+        print("  [+] Pre-built workflows (5)")
+        print("  [+] Interactive investigation mode")
+        print("  [+] Report generation (HTML/Markdown)")
         print()
 
     else:

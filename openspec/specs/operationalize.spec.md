@@ -1,7 +1,7 @@
 # Operationalize SecOps Helper
 
 **Version:** 1.0.0
-**Status:** Phase 4 In Progress
+**Status:** COMPLETE
 **Priority:** Critical
 **Branch:** feat/operationalize
 
@@ -45,6 +45,17 @@
 - [x] Executive summary generation
 - [x] CLI integration: `--report [html|markdown|md]` and `--output` flags
 - [x] Unit tests: `tests/test_report_generator.py`
+
+### Phase 5: Check Command, Status Dashboard & Completions - COMPLETE
+- [x] `core/history.py` - SQLite-based analysis history tracker
+- [x] `secops check` command - Quick indicator lookups (hash/domain/ip/url)
+- [x] Enhanced `secops status` dashboard (API keys, tool availability, cache, history, feeds)
+- [x] Shell completion scripts (bash, zsh, PowerShell)
+- [x] Analysis history recording for both `analyze` and `check` commands
+- [x] Fixed `DomainIPIntelligence` import consistency across codebase
+- [x] Fixed `json` module scoping bug in `main()` function
+- [x] Unit tests: `tests/test_history.py` - 21 tests
+- [x] Unit tests: `tests/test_check_command.py` - 19 tests
 
 ---
 

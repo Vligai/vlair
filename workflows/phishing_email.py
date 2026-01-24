@@ -260,7 +260,7 @@ class PhishingEmailWorkflow(Workflow):
                             data={'message': 'No domains to check'})
 
         try:
-            from domainIpIntel.intel import DomainIPIntel
+            from domainIpIntel.intel import DomainIPIntelligence as DomainIPIntel
 
             intel = DomainIPIntel(verbose=self.verbose)
             results = []

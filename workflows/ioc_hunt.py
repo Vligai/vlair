@@ -179,7 +179,7 @@ class IOCHuntWorkflow(Workflow):
             return StepResult(step_name="check_domains", success=True, data={'checked': 0})
 
         try:
-            from domainIpIntel.intel import DomainIPIntel
+            from domainIpIntel.intel import DomainIPIntelligence as DomainIPIntel
             intel = DomainIPIntel(verbose=self.verbose)
 
             results = {'checked': 0, 'malicious': 0, 'suspicious': 0, 'clean': 0}
@@ -220,7 +220,7 @@ class IOCHuntWorkflow(Workflow):
             return StepResult(step_name="check_ips", success=True, data={'checked': 0})
 
         try:
-            from domainIpIntel.intel import DomainIPIntel
+            from domainIpIntel.intel import DomainIPIntelligence as DomainIPIntel
             intel = DomainIPIntel(verbose=self.verbose)
 
             results = {'checked': 0, 'malicious': 0, 'suspicious': 0, 'clean': 0}

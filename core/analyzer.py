@@ -157,7 +157,7 @@ class Analyzer:
         if self.available_tools.get('domain_intel'):
             try:
                 self._log("Running domain/IP intelligence...")
-                from domainIpIntel.intel import DomainIPIntel
+                from domainIpIntel.intel import DomainIPIntelligence as DomainIPIntel
 
                 intel = DomainIPIntel(verbose=self.verbose)
                 result = intel.lookup(ip)
@@ -179,7 +179,7 @@ class Analyzer:
         if self.available_tools.get('domain_intel'):
             try:
                 self._log("Running domain/IP intelligence...")
-                from domainIpIntel.intel import DomainIPIntel
+                from domainIpIntel.intel import DomainIPIntelligence as DomainIPIntel
 
                 intel = DomainIPIntel(verbose=self.verbose)
                 result = intel.lookup(domain)

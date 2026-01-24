@@ -265,7 +265,7 @@ class LogInvestigationWorkflow(Workflow):
                             data={'checked': 0, 'message': 'No IPs to check'})
 
         try:
-            from domainIpIntel.intel import DomainIPIntel
+            from domainIpIntel.intel import DomainIPIntelligence as DomainIPIntel
             intel = DomainIPIntel(verbose=self.verbose)
 
             results = {'checked': 0, 'known_malicious': 0}
