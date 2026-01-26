@@ -14,10 +14,7 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.workflow import (
-    Workflow, WorkflowStep, StepResult, WorkflowContext,
-    WorkflowRegistry, workflow
-)
+from core.workflow import Workflow, WorkflowStep, StepResult, WorkflowContext, WorkflowRegistry, workflow
 from core.scorer import Severity
 
 
@@ -26,11 +23,7 @@ class TestWorkflowStep:
 
     def test_step_creation(self):
         """Test creating a workflow step"""
-        step = WorkflowStep(
-            name="test_step",
-            description="Test step description",
-            tool="test_tool"
-        )
+        step = WorkflowStep(name="test_step", description="Test step description", tool="test_tool")
         assert step.name == "test_step"
         assert step.description == "Test step description"
         assert step.tool == "test_tool"
@@ -39,22 +32,12 @@ class TestWorkflowStep:
 
     def test_step_with_dependencies(self):
         """Test step with dependencies"""
-        step = WorkflowStep(
-            name="dependent_step",
-            description="Depends on others",
-            tool="tool",
-            depends_on=["step1", "step2"]
-        )
+        step = WorkflowStep(name="dependent_step", description="Depends on others", tool="tool", depends_on=["step1", "step2"])
         assert step.depends_on == ["step1", "step2"]
 
     def test_optional_step(self):
         """Test optional step"""
-        step = WorkflowStep(
-            name="optional",
-            description="Optional step",
-            tool="tool",
-            required=False
-        )
+        step = WorkflowStep(name="optional", description="Optional step", tool="tool", required=False)
         assert step.required == False
 
 
@@ -63,22 +46,14 @@ class TestStepResult:
 
     def test_successful_result(self):
         """Test successful step result"""
-        result = StepResult(
-            step_name="test",
-            success=True,
-            data={'key': 'value'}
-        )
+        result = StepResult(step_name="test", success=True, data={"key": "value"})
         assert result.success == True
-        assert result.data == {'key': 'value'}
+        assert result.data == {"key": "value"}
         assert result.error is None
 
     def test_failed_result(self):
         """Test failed step result"""
-        result = StepResult(
-            step_name="test",
-            success=False,
-            error="Something went wrong"
-        )
+        result = StepResult(step_name="test", success=False, error="Something went wrong")
         assert result.success == False
         assert result.error == "Something went wrong"
 
@@ -91,26 +66,24 @@ class TestWorkflowContext:
         context = WorkflowContext("test_input", "email")
         assert context.input_value == "test_input"
         assert context.input_type == "email"
-        assert context.iocs == {
-            'hashes': [], 'domains': [], 'ips': [], 'urls': [], 'emails': []
-        }
+        assert context.iocs == {"hashes": [], "domains": [], "ips": [], "urls": [], "emails": []}
 
     def test_add_iocs(self):
         """Test adding IOCs to context"""
         context = WorkflowContext("test", "file")
-        context.add_iocs('hashes', ['abc123', 'def456'])
-        context.add_iocs('hashes', ['abc123', 'ghi789'])  # Duplicate should be ignored
+        context.add_iocs("hashes", ["abc123", "def456"])
+        context.add_iocs("hashes", ["abc123", "ghi789"])  # Duplicate should be ignored
 
-        assert len(context.iocs['hashes']) == 3
-        assert 'abc123' in context.iocs['hashes']
+        assert len(context.iocs["hashes"]) == 3
+        assert "abc123" in context.iocs["hashes"]
 
     def test_add_tool_result(self):
         """Test adding tool results"""
         context = WorkflowContext("test", "file")
-        context.add_tool_result('hash_lookup', {'verdict': 'clean'})
+        context.add_tool_result("hash_lookup", {"verdict": "clean"})
 
-        assert 'hash_lookup' in context.tool_results
-        assert context.tool_results['hash_lookup']['verdict'] == 'clean'
+        assert "hash_lookup" in context.tool_results
+        assert context.tool_results["hash_lookup"]["verdict"] == "clean"
 
     def test_add_step_result(self):
         """Test adding step results"""
@@ -125,6 +98,7 @@ class TestWorkflowContext:
         """Test elapsed time calculation"""
         context = WorkflowContext("test", "file")
         import time
+
         time.sleep(0.1)
         elapsed = context.get_elapsed_time()
         assert elapsed >= 0.1
@@ -135,6 +109,7 @@ class TestWorkflowRegistry:
 
     def test_register_workflow(self):
         """Test registering a workflow"""
+
         # Create a test workflow
         class TestWorkflow(Workflow):
             @property
@@ -199,21 +174,21 @@ class TestPhishingEmailWorkflow:
         from workflows.phishing_email import PhishingEmailWorkflow
 
         # Create a test email file
-        with tempfile.NamedTemporaryFile(suffix='.eml', delete=False) as f:
-            f.write(b'From: attacker@evil.com\n')
-            f.write(b'To: victim@company.com\n')
-            f.write(b'Subject: Urgent!\n\n')
-            f.write(b'Click here: http://malicious.com/payload\n')
+        with tempfile.NamedTemporaryFile(suffix=".eml", delete=False) as f:
+            f.write(b"From: attacker@evil.com\n")
+            f.write(b"To: victim@company.com\n")
+            f.write(b"Subject: Urgent!\n\n")
+            f.write(b"Click here: http://malicious.com/payload\n")
             temp_path = f.name
 
         try:
             wf = PhishingEmailWorkflow(verbose=False)
-            result = wf.execute(temp_path, 'email')
+            result = wf.execute(temp_path, "email")
 
-            assert 'workflow' in result
-            assert result['workflow'] == 'phishing-email'
-            assert 'scorer' in result
-            assert 'iocs' in result
+            assert "workflow" in result
+            assert result["workflow"] == "phishing-email"
+            assert "scorer" in result
+            assert "iocs" in result
         finally:
             os.unlink(temp_path)
 
@@ -252,17 +227,17 @@ class TestMalwareTriageWorkflow:
         from workflows.malware_triage import MalwareTriageWorkflow
 
         # Create a test file
-        with tempfile.NamedTemporaryFile(suffix='.exe', delete=False) as f:
-            f.write(b'MZ\x90\x00\x03\x00\x00\x00')  # Fake PE header
+        with tempfile.NamedTemporaryFile(suffix=".exe", delete=False) as f:
+            f.write(b"MZ\x90\x00\x03\x00\x00\x00")  # Fake PE header
             temp_path = f.name
 
         try:
             wf = MalwareTriageWorkflow(verbose=False)
-            result = wf.execute(temp_path, 'file')
+            result = wf.execute(temp_path, "file")
 
-            assert result['workflow'] == 'malware-triage'
+            assert result["workflow"] == "malware-triage"
             # Should have calculated hashes
-            assert len(result['iocs']['hashes']) > 0
+            assert len(result["iocs"]["hashes"]) > 0
         finally:
             os.unlink(temp_path)
 
@@ -282,19 +257,19 @@ class TestIOCHuntWorkflow:
         from workflows.ioc_hunt import IOCHuntWorkflow
 
         # Create a test IOC file
-        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False, mode='w') as f:
-            f.write('44d88612fea8a8f36de82e1278abb02f\n')
-            f.write('malicious.com\n')
-            f.write('192.168.1.100\n')
+        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False, mode="w") as f:
+            f.write("44d88612fea8a8f36de82e1278abb02f\n")
+            f.write("malicious.com\n")
+            f.write("192.168.1.100\n")
             temp_path = f.name
 
         try:
             wf = IOCHuntWorkflow(verbose=False)
-            result = wf.execute(temp_path, 'ioc_list')
+            result = wf.execute(temp_path, "ioc_list")
 
-            assert result['workflow'] == 'ioc-hunt'
+            assert result["workflow"] == "ioc-hunt"
             # Should have extracted IOCs
-            total_iocs = sum(len(v) for v in result['iocs'].values())
+            total_iocs = sum(len(v) for v in result["iocs"].values())
             assert total_iocs > 0
         finally:
             os.unlink(temp_path)
@@ -348,16 +323,16 @@ class TestLogInvestigationWorkflow:
         from workflows.log_investigation import LogInvestigationWorkflow
 
         # Create a test log file
-        with tempfile.NamedTemporaryFile(suffix='.log', delete=False, mode='w') as f:
+        with tempfile.NamedTemporaryFile(suffix=".log", delete=False, mode="w") as f:
             f.write('192.168.1.100 - - [01/Jan/2025:00:00:00 +0000] "GET /admin HTTP/1.1" 200 1234\n')
             f.write('192.168.1.100 - - [01/Jan/2025:00:00:01 +0000] "GET /login HTTP/1.1" 200 1234\n')
             temp_path = f.name
 
         try:
             wf = LogInvestigationWorkflow(verbose=False)
-            result = wf.execute(temp_path, 'log')
+            result = wf.execute(temp_path, "log")
 
-            assert result['workflow'] == 'log-investigation'
+            assert result["workflow"] == "log-investigation"
         finally:
             os.unlink(temp_path)
 
@@ -369,24 +344,24 @@ class TestWorkflowResultStructure:
         """Test result structure"""
         from workflows.malware_triage import MalwareTriageWorkflow
 
-        with tempfile.NamedTemporaryFile(suffix='.bin', delete=False) as f:
-            f.write(b'test content')
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            f.write(b"test content")
             temp_path = f.name
 
         try:
             wf = MalwareTriageWorkflow(verbose=False)
-            result = wf.execute(temp_path, 'file')
+            result = wf.execute(temp_path, "file")
 
-            assert 'workflow' in result
-            assert 'input' in result
-            assert 'type' in result
-            assert 'duration_seconds' in result
-            assert 'steps_completed' in result
-            assert 'steps_total' in result
-            assert 'iocs' in result
-            assert 'tool_results' in result
-            assert 'scorer' in result
-            assert 'step_results' in result
+            assert "workflow" in result
+            assert "input" in result
+            assert "type" in result
+            assert "duration_seconds" in result
+            assert "steps_completed" in result
+            assert "steps_total" in result
+            assert "iocs" in result
+            assert "tool_results" in result
+            assert "scorer" in result
+            assert "step_results" in result
         finally:
             os.unlink(temp_path)
 
@@ -394,18 +369,18 @@ class TestWorkflowResultStructure:
         """Test step results structure"""
         from workflows.malware_triage import MalwareTriageWorkflow
 
-        with tempfile.NamedTemporaryFile(suffix='.bin', delete=False) as f:
-            f.write(b'test content')
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            f.write(b"test content")
             temp_path = f.name
 
         try:
             wf = MalwareTriageWorkflow(verbose=False)
-            result = wf.execute(temp_path, 'file')
+            result = wf.execute(temp_path, "file")
 
-            for step_result in result['step_results']:
-                assert 'name' in step_result
-                assert 'success' in step_result
-                assert 'duration_ms' in step_result
+            for step_result in result["step_results"]:
+                assert "name" in step_result
+                assert "success" in step_result
+                assert "duration_ms" in step_result
         finally:
             os.unlink(temp_path)
 
@@ -438,13 +413,13 @@ class TestWorkflowVerboseMode:
         """Test workflow in verbose mode"""
         from workflows.malware_triage import MalwareTriageWorkflow
 
-        with tempfile.NamedTemporaryFile(suffix='.bin', delete=False) as f:
-            f.write(b'test')
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            f.write(b"test")
             temp_path = f.name
 
         try:
             wf = MalwareTriageWorkflow(verbose=True)
-            result = wf.execute(temp_path, 'file')
+            result = wf.execute(temp_path, "file")
             # Should complete without errors
             assert result is not None
         finally:
@@ -459,10 +434,10 @@ class TestWorkflowErrorHandling:
         from workflows.malware_triage import MalwareTriageWorkflow
 
         wf = MalwareTriageWorkflow(verbose=False)
-        result = wf.execute('/nonexistent/path/file.exe', 'file')
+        result = wf.execute("/nonexistent/path/file.exe", "file")
 
         # Should handle gracefully - some steps may fail
         assert result is not None
         # First step should have failed
-        first_step = result['step_results'][0]
-        assert first_step['success'] == False
+        first_step = result["step_results"][0]
+        assert first_step["success"] == False

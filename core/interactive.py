@@ -30,11 +30,11 @@ class ProgressBar:
         """Update progress bar"""
         self.current = min(value, self.total)
         filled = int(self.width * self.current / self.total)
-        bar = '█' * filled + '░' * (self.width - filled)
+        bar = "█" * filled + "░" * (self.width - filled)
         percent = int(100 * self.current / self.total)
 
         # Clear line and print progress
-        sys.stdout.write(f'\r[{bar}] {percent}% {message}')
+        sys.stdout.write(f"\r[{bar}] {percent}% {message}")
         sys.stdout.flush()
 
         if self.current >= self.total:
@@ -53,53 +53,53 @@ class InteractiveInvestigation:
 
     INVESTIGATION_TYPES = [
         {
-            'id': 'email',
-            'name': 'Suspicious email',
-            'description': 'Analyze a potentially malicious email (.eml file)',
-            'workflow': 'phishing-email',
-            'input_prompt': 'Enter the path to the email file (.eml):',
-            'file_required': True
+            "id": "email",
+            "name": "Suspicious email",
+            "description": "Analyze a potentially malicious email (.eml file)",
+            "workflow": "phishing-email",
+            "input_prompt": "Enter the path to the email file (.eml):",
+            "file_required": True,
         },
         {
-            'id': 'file',
-            'name': 'Suspicious file/attachment',
-            'description': 'Analyze a potentially malicious file',
-            'workflow': 'malware-triage',
-            'input_prompt': 'Enter the path to the file:',
-            'file_required': True
+            "id": "file",
+            "name": "Suspicious file/attachment",
+            "description": "Analyze a potentially malicious file",
+            "workflow": "malware-triage",
+            "input_prompt": "Enter the path to the file:",
+            "file_required": True,
         },
         {
-            'id': 'indicator',
-            'name': 'Suspicious domain/IP/URL/hash',
-            'description': 'Check a single indicator against threat intelligence',
-            'workflow': None,  # Use analyzer directly
-            'input_prompt': 'Enter the indicator (domain, IP, URL, or hash):',
-            'file_required': False
+            "id": "indicator",
+            "name": "Suspicious domain/IP/URL/hash",
+            "description": "Check a single indicator against threat intelligence",
+            "workflow": None,  # Use analyzer directly
+            "input_prompt": "Enter the indicator (domain, IP, URL, or hash):",
+            "file_required": False,
         },
         {
-            'id': 'pcap',
-            'name': 'Network traffic (PCAP)',
-            'description': 'Analyze network capture for threats',
-            'workflow': 'network-forensics',
-            'input_prompt': 'Enter the path to the PCAP file:',
-            'file_required': True
+            "id": "pcap",
+            "name": "Network traffic (PCAP)",
+            "description": "Analyze network capture for threats",
+            "workflow": "network-forensics",
+            "input_prompt": "Enter the path to the PCAP file:",
+            "file_required": True,
         },
         {
-            'id': 'log',
-            'name': 'Log files',
-            'description': 'Analyze security logs for attacks',
-            'workflow': 'log-investigation',
-            'input_prompt': 'Enter the path to the log file:',
-            'file_required': True
+            "id": "log",
+            "name": "Log files",
+            "description": "Analyze security logs for attacks",
+            "workflow": "log-investigation",
+            "input_prompt": "Enter the path to the log file:",
+            "file_required": True,
         },
         {
-            'id': 'iocs',
-            'name': 'IOC list',
-            'description': 'Check a list of indicators against threat intelligence',
-            'workflow': 'ioc-hunt',
-            'input_prompt': 'Enter the path to the IOC list file:',
-            'file_required': True
-        }
+            "id": "iocs",
+            "name": "IOC list",
+            "description": "Check a list of indicators against threat intelligence",
+            "workflow": "ioc-hunt",
+            "input_prompt": "Enter the path to the IOC list file:",
+            "file_required": True,
+        },
     ]
 
     def __init__(self):
@@ -115,7 +115,7 @@ class InteractiveInvestigation:
                 MalwareTriageWorkflow,
                 IOCHuntWorkflow,
                 NetworkForensicsWorkflow,
-                LogInvestigationWorkflow
+                LogInvestigationWorkflow,
             )
         except ImportError:
             pass
@@ -190,7 +190,7 @@ class InteractiveInvestigation:
             try:
                 choice = input(f"{Colors.CYAN}> {Colors.RESET}").strip()
 
-                if choice == '0' or choice.lower() in ['exit', 'quit', 'q']:
+                if choice == "0" or choice.lower() in ["exit", "quit", "q"]:
                     return None
 
                 idx = int(choice) - 1
@@ -198,7 +198,9 @@ class InteractiveInvestigation:
                     print()
                     return self.INVESTIGATION_TYPES[idx]
 
-                print(f"{Colors.RED}Invalid choice. Please enter 1-{len(self.INVESTIGATION_TYPES)} or 0 to exit.{Colors.RESET}")
+                print(
+                    f"{Colors.RED}Invalid choice. Please enter 1-{len(self.INVESTIGATION_TYPES)} or 0 to exit.{Colors.RESET}"
+                )
 
             except ValueError:
                 print(f"{Colors.RED}Please enter a number.{Colors.RESET}")
@@ -225,7 +227,7 @@ class InteractiveInvestigation:
                     value = value[1:-1]
 
                 # Validate file exists if required
-                if inv_type['file_required']:
+                if inv_type["file_required"]:
                     path = Path(value).expanduser()
                     if not path.exists():
                         print(f"{Colors.RED}File not found: {value}{Colors.RESET}")
@@ -244,7 +246,7 @@ class InteractiveInvestigation:
 
     def _run_analysis(self, inv_type: Dict, input_value: str) -> Optional[Dict]:
         """Run the analysis and show progress"""
-        workflow_name = inv_type['workflow']
+        workflow_name = inv_type["workflow"]
 
         print(f"{Colors.BOLD}Running analysis...{Colors.RESET}")
         print()
@@ -265,19 +267,15 @@ class InteractiveInvestigation:
                 # Simulate progress during workflow execution
                 progress.update(10, "Initializing...")
 
-                result = workflow.execute(input_value, inv_type['id'])
+                result = workflow.execute(input_value, inv_type["id"])
 
                 # Update progress based on completed steps
-                steps_done = result.get('steps_completed', 0)
+                steps_done = result.get("steps_completed", 0)
                 progress.update(10 + int(80 * steps_done / total_steps), f"Step {steps_done}/{total_steps}")
 
                 progress.complete("Analysis complete")
 
-                return {
-                    'type': 'workflow',
-                    'workflow_name': workflow_name,
-                    'result': result
-                }
+                return {"type": "workflow", "workflow_name": workflow_name, "result": result}
 
             else:
                 # Run direct analysis
@@ -288,10 +286,7 @@ class InteractiveInvestigation:
                 progress.update(100, "Complete")
                 progress.complete("Analysis complete")
 
-                return {
-                    'type': 'analyze',
-                    'result': result
-                }
+                return {"type": "analyze", "result": result}
 
         except Exception as e:
             print(f"\n{Colors.RED}Error during analysis: {e}{Colors.RESET}")
@@ -305,18 +300,18 @@ class InteractiveInvestigation:
         print(f"{'=' * 65}")
         print()
 
-        if analysis_result['type'] == 'workflow':
-            result = analysis_result['result']
-            scorer = result['scorer']
+        if analysis_result["type"] == "workflow":
+            result = analysis_result["result"]
+            scorer = result["scorer"]
             summary = scorer.get_summary()
         else:
-            result = analysis_result['result']
-            scorer = result['scorer']
+            result = analysis_result["result"]
+            scorer = result["scorer"]
             summary = scorer.get_summary()
 
         # Risk score with visual
-        score = summary['risk_score']
-        verdict = summary['verdict']
+        score = summary["risk_score"]
+        verdict = summary["verdict"]
         verdict_color = self._get_verdict_color(verdict)
 
         print(f"Risk Score: {self._score_bar(score)} {score}/100 ({self._score_label(score)})")
@@ -328,14 +323,14 @@ class InteractiveInvestigation:
         if findings:
             print(f"{Colors.BOLD}Key Findings:{Colors.RESET}")
             for finding in findings[:8]:
-                icon = self._severity_icon(finding['severity'])
+                icon = self._severity_icon(finding["severity"])
                 print(f"  {icon} {finding['message']}")
             if len(findings) > 8:
                 print(f"  {Colors.DIM}... and {len(findings) - 8} more findings{Colors.RESET}")
             print()
 
         # IOCs summary
-        iocs = result.get('iocs', {})
+        iocs = result.get("iocs", {})
         total_iocs = sum(len(v) for v in iocs.values() if isinstance(v, list))
         if total_iocs > 0:
             print(f"{Colors.BOLD}Extracted IOCs:{Colors.RESET} {total_iocs} indicators found")
@@ -366,16 +361,16 @@ class InteractiveInvestigation:
             try:
                 choice = input(f"{Colors.CYAN}> {Colors.RESET}").strip()
 
-                if choice == '1':
+                if choice == "1":
                     self._export_iocs(analysis_result)
                     return True
-                elif choice == '2':
+                elif choice == "2":
                     self._show_json_results(analysis_result)
                     return True
-                elif choice == '3':
+                elif choice == "3":
                     print()
                     return True
-                elif choice == '4' or choice.lower() in ['exit', 'quit', 'q']:
+                elif choice == "4" or choice.lower() in ["exit", "quit", "q"]:
                     return False
                 else:
                     print(f"{Colors.RED}Please enter 1-4.{Colors.RESET}")
@@ -385,10 +380,10 @@ class InteractiveInvestigation:
 
     def _export_iocs(self, analysis_result: Dict):
         """Export IOCs to a file"""
-        if analysis_result['type'] == 'workflow':
-            iocs = analysis_result['result'].get('iocs', {})
+        if analysis_result["type"] == "workflow":
+            iocs = analysis_result["result"].get("iocs", {})
         else:
-            iocs = analysis_result['result'].get('iocs', {})
+            iocs = analysis_result["result"].get("iocs", {})
 
         print()
         print("Enter output file path (or press Enter for 'exported_iocs.txt'):")
@@ -396,9 +391,9 @@ class InteractiveInvestigation:
         try:
             path = input(f"{Colors.CYAN}> {Colors.RESET}").strip()
             if not path:
-                path = 'exported_iocs.txt'
+                path = "exported_iocs.txt"
 
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 f.write("# Exported IOCs from SecOps Helper\n")
                 f.write(f"# Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
@@ -424,16 +419,16 @@ class InteractiveInvestigation:
         print(f"{Colors.BOLD}Detailed Results (JSON):{Colors.RESET}")
         print("-" * 65)
 
-        if analysis_result['type'] == 'workflow':
-            result = analysis_result['result'].copy()
-            result['summary'] = result['scorer'].get_summary()
-            result['findings'] = result['scorer'].get_findings()
-            del result['scorer']
+        if analysis_result["type"] == "workflow":
+            result = analysis_result["result"].copy()
+            result["summary"] = result["scorer"].get_summary()
+            result["findings"] = result["scorer"].get_findings()
+            del result["scorer"]
         else:
-            result = analysis_result['result'].copy()
-            result['summary'] = result['scorer'].get_summary()
-            result['findings'] = result['scorer'].get_findings()
-            del result['scorer']
+            result = analysis_result["result"].copy()
+            result["summary"] = result["scorer"].get_summary()
+            result["findings"] = result["scorer"].get_findings()
+            del result["scorer"]
 
         print(json.dumps(result, indent=2, default=str))
         print("-" * 65)
@@ -442,13 +437,13 @@ class InteractiveInvestigation:
     def _get_verdict_color(self, verdict: str) -> str:
         """Get color for verdict"""
         colors = {
-            'MALICIOUS': Colors.RED,
-            'SUSPICIOUS': Colors.YELLOW,
-            'LOW_RISK': Colors.CYAN,
-            'CLEAN': Colors.GREEN,
-            'UNKNOWN': Colors.DIM
+            "MALICIOUS": Colors.RED,
+            "SUSPICIOUS": Colors.YELLOW,
+            "LOW_RISK": Colors.CYAN,
+            "CLEAN": Colors.GREEN,
+            "UNKNOWN": Colors.DIM,
         }
-        return colors.get(verdict, '')
+        return colors.get(verdict, "")
 
     def _score_bar(self, score: int) -> str:
         """Create visual score bar"""
@@ -478,13 +473,13 @@ class InteractiveInvestigation:
     def _severity_icon(self, severity: str) -> str:
         """Get icon for severity"""
         icons = {
-            'critical': f"{Colors.RED}[!]{Colors.RESET}",
-            'high': f"{Colors.YELLOW}[!]{Colors.RESET}",
-            'medium': f"{Colors.CYAN}[*]{Colors.RESET}",
-            'low': f"{Colors.DIM}[-]{Colors.RESET}",
-            'info': f"{Colors.DIM}[i]{Colors.RESET}"
+            "critical": f"{Colors.RED}[!]{Colors.RESET}",
+            "high": f"{Colors.YELLOW}[!]{Colors.RESET}",
+            "medium": f"{Colors.CYAN}[*]{Colors.RESET}",
+            "low": f"{Colors.DIM}[-]{Colors.RESET}",
+            "info": f"{Colors.DIM}[i]{Colors.RESET}",
         }
-        return icons.get(severity, '[?]')
+        return icons.get(severity, "[?]")
 
 
 def main():
@@ -493,5 +488,5 @@ def main():
     investigation.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

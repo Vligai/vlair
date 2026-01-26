@@ -63,37 +63,31 @@ class TestInvestigationTypes:
         investigation = InteractiveInvestigation()
 
         for inv_type in investigation.INVESTIGATION_TYPES:
-            assert 'id' in inv_type
-            assert 'name' in inv_type
-            assert 'description' in inv_type
-            assert 'input_prompt' in inv_type
-            assert 'file_required' in inv_type
+            assert "id" in inv_type
+            assert "name" in inv_type
+            assert "description" in inv_type
+            assert "input_prompt" in inv_type
+            assert "file_required" in inv_type
 
     def test_email_investigation_type(self):
         """Test email investigation type"""
         investigation = InteractiveInvestigation()
 
-        email_type = next(
-            (t for t in investigation.INVESTIGATION_TYPES if t['id'] == 'email'),
-            None
-        )
+        email_type = next((t for t in investigation.INVESTIGATION_TYPES if t["id"] == "email"), None)
 
         assert email_type is not None
-        assert email_type['workflow'] == 'phishing-email'
-        assert email_type['file_required'] == True
+        assert email_type["workflow"] == "phishing-email"
+        assert email_type["file_required"] == True
 
     def test_indicator_investigation_type(self):
         """Test indicator investigation type (no workflow)"""
         investigation = InteractiveInvestigation()
 
-        indicator_type = next(
-            (t for t in investigation.INVESTIGATION_TYPES if t['id'] == 'indicator'),
-            None
-        )
+        indicator_type = next((t for t in investigation.INVESTIGATION_TYPES if t["id"] == "indicator"), None)
 
         assert indicator_type is not None
-        assert indicator_type['workflow'] is None
-        assert indicator_type['file_required'] == False
+        assert indicator_type["workflow"] is None
+        assert indicator_type["file_required"] == False
 
 
 class TestInteractiveInvestigationInit:
@@ -116,21 +110,21 @@ class TestVerdictColors:
         Colors.enable()  # Re-enable after Reporter init disables them
 
         # Test each verdict
-        malicious_color = investigation._get_verdict_color('MALICIOUS')
-        assert malicious_color != ''  # Should have a color
+        malicious_color = investigation._get_verdict_color("MALICIOUS")
+        assert malicious_color != ""  # Should have a color
 
-        clean_color = investigation._get_verdict_color('CLEAN')
-        assert clean_color != ''
+        clean_color = investigation._get_verdict_color("CLEAN")
+        assert clean_color != ""
 
-        unknown_color = investigation._get_verdict_color('UNKNOWN')
+        unknown_color = investigation._get_verdict_color("UNKNOWN")
         # Unknown might have dim color or empty
 
     def test_unknown_verdict_color(self):
         """Test color for unknown verdict"""
         investigation = InteractiveInvestigation()
-        color = investigation._get_verdict_color('NONEXISTENT')
+        color = investigation._get_verdict_color("NONEXISTENT")
         # Should return empty string for unknown
-        assert color == ''
+        assert color == ""
 
 
 class TestScoreDisplay:
@@ -141,33 +135,33 @@ class TestScoreDisplay:
         investigation = InteractiveInvestigation()
 
         bar = investigation._score_bar(50)
-        assert '[' in bar
-        assert ']' in bar
-        assert '█' in bar or '░' in bar
+        assert "[" in bar
+        assert "]" in bar
+        assert "█" in bar or "░" in bar
 
     def test_score_label_high(self):
         """Test high risk label"""
         investigation = InteractiveInvestigation()
         label = investigation._score_label(80)
-        assert 'HIGH' in label.upper()
+        assert "HIGH" in label.upper()
 
     def test_score_label_medium(self):
         """Test medium risk label"""
         investigation = InteractiveInvestigation()
         label = investigation._score_label(50)
-        assert 'MEDIUM' in label.upper()
+        assert "MEDIUM" in label.upper()
 
     def test_score_label_low(self):
         """Test low risk label"""
         investigation = InteractiveInvestigation()
         label = investigation._score_label(20)
-        assert 'LOW' in label.upper()
+        assert "LOW" in label.upper()
 
     def test_score_label_minimal(self):
         """Test minimal risk label"""
         investigation = InteractiveInvestigation()
         label = investigation._score_label(5)
-        assert 'MINIMAL' in label.upper()
+        assert "MINIMAL" in label.upper()
 
 
 class TestSeverityIcons:
@@ -176,26 +170,26 @@ class TestSeverityIcons:
     def test_severity_icon_critical(self):
         """Test critical severity icon"""
         investigation = InteractiveInvestigation()
-        icon = investigation._severity_icon('critical')
-        assert '[!' in icon or '!' in icon
+        icon = investigation._severity_icon("critical")
+        assert "[!" in icon or "!" in icon
 
     def test_severity_icon_high(self):
         """Test high severity icon"""
         investigation = InteractiveInvestigation()
-        icon = investigation._severity_icon('high')
-        assert '[!' in icon or '!' in icon
+        icon = investigation._severity_icon("high")
+        assert "[!" in icon or "!" in icon
 
     def test_severity_icon_medium(self):
         """Test medium severity icon"""
         investigation = InteractiveInvestigation()
-        icon = investigation._severity_icon('medium')
-        assert '*' in icon
+        icon = investigation._severity_icon("medium")
+        assert "*" in icon
 
     def test_severity_icon_unknown(self):
         """Test unknown severity icon"""
         investigation = InteractiveInvestigation()
-        icon = investigation._severity_icon('nonexistent')
-        assert '?' in icon
+        icon = investigation._severity_icon("nonexistent")
+        assert "?" in icon
 
 
 class TestExportIOCs:
@@ -207,35 +201,35 @@ class TestExportIOCs:
 
         # Create mock analysis result
         mock_result = {
-            'type': 'analyze',
-            'result': {
-                'iocs': {
-                    'hashes': ['abc123', 'def456'],
-                    'domains': ['evil.com'],
-                    'ips': ['1.2.3.4'],
-                    'urls': [],
-                    'emails': []
+            "type": "analyze",
+            "result": {
+                "iocs": {
+                    "hashes": ["abc123", "def456"],
+                    "domains": ["evil.com"],
+                    "ips": ["1.2.3.4"],
+                    "urls": [],
+                    "emails": [],
                 },
-                'scorer': MagicMock()
-            }
+                "scorer": MagicMock(),
+            },
         }
 
         # Create temp file for export
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             temp_path = f.name
 
         try:
             # Mock input to return temp path
-            with patch('builtins.input', return_value=temp_path):
+            with patch("builtins.input", return_value=temp_path):
                 investigation._export_iocs(mock_result)
 
             # Verify file was created and has content
-            with open(temp_path, 'r') as f:
+            with open(temp_path, "r") as f:
                 content = f.read()
 
-            assert 'abc123' in content
-            assert 'evil.com' in content
-            assert '1.2.3.4' in content
+            assert "abc123" in content
+            assert "evil.com" in content
+            assert "1.2.3.4" in content
 
         finally:
             os.unlink(temp_path)
@@ -248,7 +242,7 @@ class TestMenuSelection:
         """Test selecting exit option"""
         investigation = InteractiveInvestigation()
 
-        with patch('builtins.input', return_value='0'):
+        with patch("builtins.input", return_value="0"):
             result = investigation._select_investigation_type()
             assert result is None
 
@@ -256,18 +250,18 @@ class TestMenuSelection:
         """Test selecting valid option"""
         investigation = InteractiveInvestigation()
 
-        with patch('builtins.input', return_value='1'):
+        with patch("builtins.input", return_value="1"):
             result = investigation._select_investigation_type()
             assert result is not None
-            assert result['id'] == 'email'
+            assert result["id"] == "email"
 
     def test_select_investigation_invalid(self):
         """Test invalid selection followed by exit"""
         investigation = InteractiveInvestigation()
 
         # First return invalid, then exit
-        inputs = iter(['99', '0'])
-        with patch('builtins.input', lambda _: next(inputs)):
+        inputs = iter(["99", "0"])
+        with patch("builtins.input", lambda _: next(inputs)):
             result = investigation._select_investigation_type()
             assert result is None
 
@@ -279,17 +273,14 @@ class TestInputValidation:
         """Test getting input for existing file"""
         investigation = InteractiveInvestigation()
 
-        inv_type = {
-            'input_prompt': 'Enter file:',
-            'file_required': True
-        }
+        inv_type = {"input_prompt": "Enter file:", "file_required": True}
 
         # Create temp file
         with tempfile.NamedTemporaryFile(delete=False) as f:
             temp_path = f.name
 
         try:
-            with patch('builtins.input', return_value=temp_path):
+            with patch("builtins.input", return_value=temp_path):
                 result = investigation._get_input(inv_type)
                 assert result is not None
                 assert Path(result).exists()
@@ -300,10 +291,7 @@ class TestInputValidation:
         """Test getting input for non-existent file (should keep prompting)"""
         investigation = InteractiveInvestigation()
 
-        inv_type = {
-            'input_prompt': 'Enter file:',
-            'file_required': True
-        }
+        inv_type = {"input_prompt": "Enter file:", "file_required": True}
 
         # Create temp file for second input
         with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -311,8 +299,8 @@ class TestInputValidation:
 
         try:
             # First input is invalid, second is valid
-            inputs = iter(['/nonexistent/path', temp_path])
-            with patch('builtins.input', lambda _: next(inputs)):
+            inputs = iter(["/nonexistent/path", temp_path])
+            with patch("builtins.input", lambda _: next(inputs)):
                 result = investigation._get_input(inv_type)
                 assert result is not None
         finally:
@@ -322,27 +310,21 @@ class TestInputValidation:
         """Test getting input when file is not required"""
         investigation = InteractiveInvestigation()
 
-        inv_type = {
-            'input_prompt': 'Enter indicator:',
-            'file_required': False
-        }
+        inv_type = {"input_prompt": "Enter indicator:", "file_required": False}
 
-        with patch('builtins.input', return_value='malicious.com'):
+        with patch("builtins.input", return_value="malicious.com"):
             result = investigation._get_input(inv_type)
-            assert result == 'malicious.com'
+            assert result == "malicious.com"
 
     def test_get_input_quoted_path(self):
         """Test handling quoted paths"""
         investigation = InteractiveInvestigation()
 
-        inv_type = {
-            'input_prompt': 'Enter indicator:',
-            'file_required': False
-        }
+        inv_type = {"input_prompt": "Enter indicator:", "file_required": False}
 
-        with patch('builtins.input', return_value='"malicious.com"'):
+        with patch("builtins.input", return_value='"malicious.com"'):
             result = investigation._get_input(inv_type)
-            assert result == 'malicious.com'
+            assert result == "malicious.com"
 
 
 class TestPostAnalysisMenu:
@@ -352,15 +334,9 @@ class TestPostAnalysisMenu:
         """Test selecting exit from post-analysis menu"""
         investigation = InteractiveInvestigation()
 
-        mock_result = {
-            'type': 'analyze',
-            'result': {
-                'iocs': {},
-                'scorer': MagicMock()
-            }
-        }
+        mock_result = {"type": "analyze", "result": {"iocs": {}, "scorer": MagicMock()}}
 
-        with patch('builtins.input', return_value='4'):
+        with patch("builtins.input", return_value="4"):
             result = investigation._post_analysis_menu(mock_result)
             assert result == False
 
@@ -368,15 +344,9 @@ class TestPostAnalysisMenu:
         """Test selecting new investigation"""
         investigation = InteractiveInvestigation()
 
-        mock_result = {
-            'type': 'analyze',
-            'result': {
-                'iocs': {},
-                'scorer': MagicMock()
-            }
-        }
+        mock_result = {"type": "analyze", "result": {"iocs": {}, "scorer": MagicMock()}}
 
-        with patch('builtins.input', return_value='3'):
+        with patch("builtins.input", return_value="3"):
             result = investigation._post_analysis_menu(mock_result)
             assert result == True
 
@@ -388,38 +358,26 @@ class TestRunAnalysis:
         """Test running analysis with analyzer (not workflow)"""
         investigation = InteractiveInvestigation()
 
-        inv_type = {
-            'id': 'indicator',
-            'workflow': None
-        }
+        inv_type = {"id": "indicator", "workflow": None}
 
         # Mock the analyzer
-        mock_result = {
-            'input': 'example.com',
-            'type': 'domain',
-            'scorer': MagicMock(),
-            'iocs': {},
-            'tool_results': {}
-        }
+        mock_result = {"input": "example.com", "type": "domain", "scorer": MagicMock(), "iocs": {}, "tool_results": {}}
         investigation.analyzer.analyze = MagicMock(return_value=mock_result)
 
-        result = investigation._run_analysis(inv_type, 'example.com')
+        result = investigation._run_analysis(inv_type, "example.com")
 
         assert result is not None
-        assert result['type'] == 'analyze'
+        assert result["type"] == "analyze"
 
     def test_run_analysis_with_workflow(self):
         """Test running analysis with workflow"""
         investigation = InteractiveInvestigation()
 
-        inv_type = {
-            'id': 'iocs',
-            'workflow': 'ioc-hunt'
-        }
+        inv_type = {"id": "iocs", "workflow": "ioc-hunt"}
 
         # Create temp IOC file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
-            f.write('example.com\n')
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            f.write("example.com\n")
             temp_path = f.name
 
         try:

@@ -10,9 +10,9 @@ from .network_forensics import NetworkForensicsWorkflow
 from .log_investigation import LogInvestigationWorkflow
 
 __all__ = [
-    'PhishingEmailWorkflow',
-    'MalwareTriageWorkflow',
-    'IOCHuntWorkflow',
-    'NetworkForensicsWorkflow',
-    'LogInvestigationWorkflow'
+    "PhishingEmailWorkflow",
+    "MalwareTriageWorkflow",
+    "IOCHuntWorkflow",
+    "NetworkForensicsWorkflow",
+    "LogInvestigationWorkflow",
 ]
