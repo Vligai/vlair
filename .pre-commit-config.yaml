@@ -10,7 +10,7 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
-        args: [--max-line-length=127, --extend-ignore=E203,W503]
+        args: [--max-line-length=100, --extend-ignore=E203,W503]
         exclude: ^(venv/|env/|\.venv/|\.tox/|\.git/|__pycache__/)
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

@@ -4,6 +4,7 @@ Workflow Engine - Pre-built investigation patterns
 Part of SecOps Helper Operationalization (Phase 5)
 """
 
+import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional, Callable

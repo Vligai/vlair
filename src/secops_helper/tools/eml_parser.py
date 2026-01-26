@@ -1,3 +1,21 @@
+#!/usr/bin/env python3
+"""
+EML Parser - Email analysis and security assessment
+
+Parses .eml email files to extract:
+- Headers (From, To, Subject, Date, Message-ID)
+- Authentication results (SPF, DKIM, DMARC)
+- IP addresses from Received headers
+- Attachments with file hashes
+- Body content and embedded URLs
+
+Optional VirusTotal integration for attachment reputation checks.
+
+Usage:
+    secops eml suspicious.eml --vt
+    secops eml phishing.eml --output report.json
+"""
+
 import eml_parser
 import json
 import os

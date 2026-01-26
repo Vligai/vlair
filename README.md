@@ -9,7 +9,14 @@ SecOps Helper brings 12 specialized security tools under a single `secops` comma
 ```bash
 git clone https://github.com/Vligai/secops-helper.git
 cd secops-helper
-pip install -r requirements.txt
+pip install -e .
+```
+
+Or with optional dependencies:
+
+```bash
+pip install -e ".[all]"      # All features (YARA, PCAP, Redis, etc.)
+pip install -e ".[dev]"      # Development tools (pytest, black, etc.)
 ```
 
 Optional: configure API keys for threat intelligence lookups.
@@ -75,7 +82,7 @@ secops intel malicious.com
 secops log access.log
 secops pcap capture.pcap
 secops url "http://suspicious.com"
-secops yara scan /samples/ --rules ./yaraScanner/rules/
+secops yara scan /samples/ --rules ./rules/
 secops cert https://example.com
 secops deobfuscate malware.js --extract-iocs
 secops feeds update
@@ -159,21 +166,20 @@ docker-compose run --rm secops-helper analyze /data/suspicious.eml
 
 ### Web dashboard
 
-A Flask-based web UI is available for browser-based analysis.
+A Flask-based web UI is available for browser-based analysis (experimental).
 
 ```bash
 pip install -r requirements-webapp.txt
-python webapp/app.py
-# Open http://localhost:5000
+# Web dashboard is in development
 ```
 
 ### Legacy CLI
 
-Individual tools can still be called directly:
+The legacy unified CLI is also available:
 
 ```bash
-python hashLookup/lookup.py 44d88612fea8a8f36de82e1278abb02f
-python domainIpIntel/intel.py malicious.com
+secops-helper hash 44d88612fea8a8f36de82e1278abb02f
+secops-helper intel malicious.com
 ```
 
 ## Troubleshooting
