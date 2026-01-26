@@ -18,192 +18,112 @@ from collections import defaultdict
 
 # File signatures database
 FILE_SIGNATURES = {
-    'jpg': {
-        'header': b'\xFF\xD8\xFF',
-        'footer': b'\xFF\xD9',
-        'extension': 'jpg',
-        'mime': 'image/jpeg',
-        'description': 'JPEG image'
+    "jpg": {
+        "header": b"\xff\xd8\xff",
+        "footer": b"\xff\xd9",
+        "extension": "jpg",
+        "mime": "image/jpeg",
+        "description": "JPEG image",
     },
-    'png': {
-        'header': b'\x89PNG\r\n\x1a\n',
-        'footer': b'IEND\xaeB`\x82',
-        'extension': 'png',
-        'mime': 'image/png',
-        'description': 'PNG image'
+    "png": {
+        "header": b"\x89PNG\r\n\x1a\n",
+        "footer": b"IEND\xaeB`\x82",
+        "extension": "png",
+        "mime": "image/png",
+        "description": "PNG image",
     },
-    'gif': {
-        'header': b'GIF8',
-        'extension': 'gif',
-        'mime': 'image/gif',
-        'description': 'GIF image'
+    "gif": {"header": b"GIF8", "extension": "gif", "mime": "image/gif", "description": "GIF image"},
+    "pdf": {
+        "header": b"%PDF",
+        "footer": b"%%EOF",
+        "extension": "pdf",
+        "mime": "application/pdf",
+        "description": "PDF document",
     },
-    'pdf': {
-        'header': b'%PDF',
-        'footer': b'%%EOF',
-        'extension': 'pdf',
-        'mime': 'application/pdf',
-        'description': 'PDF document'
+    "zip": {"header": b"PK\x03\x04", "extension": "zip", "mime": "application/zip", "description": "ZIP archive"},
+    "rar": {"header": b"Rar!\x1a\x07", "extension": "rar", "mime": "application/x-rar", "description": "RAR archive"},
+    "7z": {
+        "header": b"7z\xbc\xaf\x27\x1c",
+        "extension": "7z",
+        "mime": "application/x-7z-compressed",
+        "description": "7-Zip archive",
     },
-    'zip': {
-        'header': b'PK\x03\x04',
-        'extension': 'zip',
-        'mime': 'application/zip',
-        'description': 'ZIP archive'
+    "exe": {"header": b"MZ", "extension": "exe", "mime": "application/x-msdownload", "description": "Windows executable"},
+    "dll": {"header": b"MZ", "extension": "dll", "mime": "application/x-msdownload", "description": "Windows DLL"},
+    "doc": {
+        "header": b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1",
+        "extension": "doc",
+        "mime": "application/msword",
+        "description": "Microsoft Word document",
     },
-    'rar': {
-        'header': b'Rar!\x1a\x07',
-        'extension': 'rar',
-        'mime': 'application/x-rar',
-        'description': 'RAR archive'
+    "docx": {
+        "header": b"PK\x03\x04",
+        "extension": "docx",
+        "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "description": "Microsoft Word document (Office Open XML)",
     },
-    '7z': {
-        'header': b'7z\xbc\xaf\x27\x1c',
-        'extension': '7z',
-        'mime': 'application/x-7z-compressed',
-        'description': '7-Zip archive'
+    "xls": {
+        "header": b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1",
+        "extension": "xls",
+        "mime": "application/vnd.ms-excel",
+        "description": "Microsoft Excel spreadsheet",
     },
-    'exe': {
-        'header': b'MZ',
-        'extension': 'exe',
-        'mime': 'application/x-msdownload',
-        'description': 'Windows executable'
+    "xlsx": {
+        "header": b"PK\x03\x04",
+        "extension": "xlsx",
+        "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "description": "Microsoft Excel spreadsheet (Office Open XML)",
     },
-    'dll': {
-        'header': b'MZ',
-        'extension': 'dll',
-        'mime': 'application/x-msdownload',
-        'description': 'Windows DLL'
+    "mp3": {"header": b"\xff\xfb", "extension": "mp3", "mime": "audio/mpeg", "description": "MP3 audio"},
+    "mp4": {"header": b"\x00\x00\x00\x18ftypmp42", "extension": "mp4", "mime": "video/mp4", "description": "MP4 video"},
+    "avi": {"header": b"RIFF", "extension": "avi", "mime": "video/x-msvideo", "description": "AVI video"},
+    "xml": {"header": b"<?xml", "extension": "xml", "mime": "application/xml", "description": "XML document"},
+    "html": {"header": b"<html", "extension": "html", "mime": "text/html", "description": "HTML document"},
+    "tar": {
+        "header": b"ustar",
+        "offset": 257,  # Signature at offset 257
+        "extension": "tar",
+        "mime": "application/x-tar",
+        "description": "TAR archive",
     },
-    'doc': {
-        'header': b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1',
-        'extension': 'doc',
-        'mime': 'application/msword',
-        'description': 'Microsoft Word document'
+    "gz": {"header": b"\x1f\x8b", "extension": "gz", "mime": "application/gzip", "description": "GZIP compressed file"},
+    "bz2": {"header": b"BZ", "extension": "bz2", "mime": "application/x-bzip2", "description": "BZIP2 compressed file"},
+    "sqlite": {
+        "header": b"SQLite format 3\x00",
+        "extension": "sqlite",
+        "mime": "application/x-sqlite3",
+        "description": "SQLite database",
     },
-    'docx': {
-        'header': b'PK\x03\x04',
-        'extension': 'docx',
-        'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'description': 'Microsoft Word document (Office Open XML)'
-    },
-    'xls': {
-        'header': b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1',
-        'extension': 'xls',
-        'mime': 'application/vnd.ms-excel',
-        'description': 'Microsoft Excel spreadsheet'
-    },
-    'xlsx': {
-        'header': b'PK\x03\x04',
-        'extension': 'xlsx',
-        'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'description': 'Microsoft Excel spreadsheet (Office Open XML)'
-    },
-    'mp3': {
-        'header': b'\xff\xfb',
-        'extension': 'mp3',
-        'mime': 'audio/mpeg',
-        'description': 'MP3 audio'
-    },
-    'mp4': {
-        'header': b'\x00\x00\x00\x18ftypmp42',
-        'extension': 'mp4',
-        'mime': 'video/mp4',
-        'description': 'MP4 video'
-    },
-    'avi': {
-        'header': b'RIFF',
-        'extension': 'avi',
-        'mime': 'video/x-msvideo',
-        'description': 'AVI video'
-    },
-    'xml': {
-        'header': b'<?xml',
-        'extension': 'xml',
-        'mime': 'application/xml',
-        'description': 'XML document'
-    },
-    'html': {
-        'header': b'<html',
-        'extension': 'html',
-        'mime': 'text/html',
-        'description': 'HTML document'
-    },
-    'tar': {
-        'header': b'ustar',
-        'offset': 257,  # Signature at offset 257
-        'extension': 'tar',
-        'mime': 'application/x-tar',
-        'description': 'TAR archive'
-    },
-    'gz': {
-        'header': b'\x1f\x8b',
-        'extension': 'gz',
-        'mime': 'application/gzip',
-        'description': 'GZIP compressed file'
-    },
-    'bz2': {
-        'header': b'BZ',
-        'extension': 'bz2',
-        'mime': 'application/x-bzip2',
-        'description': 'BZIP2 compressed file'
-    },
-    'sqlite': {
-        'header': b'SQLite format 3\x00',
-        'extension': 'sqlite',
-        'mime': 'application/x-sqlite3',
-        'description': 'SQLite database'
-    },
-    'eml': {
-        'header': b'From:',
-        'extension': 'eml',
-        'mime': 'message/rfc822',
-        'description': 'Email message'
-    },
-    'ps1': {
-        'header': b'#!',
-        'extension': 'ps1',
-        'mime': 'text/plain',
-        'description': 'PowerShell script'
-    },
-    'bat': {
-        'header': b'@echo',
-        'extension': 'bat',
-        'mime': 'text/plain',
-        'description': 'Batch script'
-    }
+    "eml": {"header": b"From:", "extension": "eml", "mime": "message/rfc822", "description": "Email message"},
+    "ps1": {"header": b"#!", "extension": "ps1", "mime": "text/plain", "description": "PowerShell script"},
+    "bat": {"header": b"@echo", "extension": "bat", "mime": "text/plain", "description": "Batch script"},
 }
 
 
 class FileCarver:
     """Main file carving engine"""
 
-    def __init__(self, output_dir: str = './carved', verbose=False, chunk_size: int = 1024 * 1024):
+    def __init__(self, output_dir: str = "./carved", verbose=False, chunk_size: int = 1024 * 1024):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.verbose = verbose
         self.chunk_size = chunk_size  # Read 1MB at a time
         self.signatures = FILE_SIGNATURES
 
-        self.stats = {
-            'files_carved': 0,
-            'by_type': defaultdict(int),
-            'total_bytes': 0,
-            'scan_time': 0
-        }
+        self.stats = {"files_carved": 0, "by_type": defaultdict(int), "total_bytes": 0, "scan_time": 0}
 
     def detect_file_type(self, data: bytes, offset: int = 0) -> Optional[str]:
         """Detect file type from header bytes"""
         for file_type, sig in self.signatures.items():
-            header = sig['header']
-            sig_offset = sig.get('offset', 0)
+            header = sig["header"]
+            sig_offset = sig.get("offset", 0)
 
             # Check if we have enough data
             if len(data) < len(header) + sig_offset:
                 continue
 
             # Check signature
-            if data[sig_offset:sig_offset + len(header)] == header:
+            if data[sig_offset : sig_offset + len(header)] == header:
                 return file_type
 
         return None
@@ -211,10 +131,10 @@ class FileCarver:
     def find_footer(self, data: bytes, file_type: str, start: int = 0) -> Optional[int]:
         """Find footer signature"""
         sig = self.signatures.get(file_type)
-        if not sig or 'footer' not in sig:
+        if not sig or "footer" not in sig:
             return None
 
-        footer = sig['footer']
+        footer = sig["footer"]
         pos = data.find(footer, start)
 
         if pos != -1:
@@ -242,28 +162,28 @@ class FileCarver:
             output_path = type_dir / filename
 
             # Save file
-            with open(output_path, 'wb') as f:
+            with open(output_path, "wb") as f:
                 f.write(file_data)
 
             # Update statistics
-            self.stats['files_carved'] += 1
-            self.stats['by_type'][file_type] += 1
-            self.stats['total_bytes'] += len(file_data)
+            self.stats["files_carved"] += 1
+            self.stats["by_type"][file_type] += 1
+            self.stats["total_bytes"] += len(file_data)
 
             if self.verbose:
                 print(f"Carved {file_type}: {filename} ({len(file_data)} bytes)", file=sys.stderr)
 
             return {
-                'file_id': file_id,
-                'type': file_type,
-                'mime_type': sig['mime'],
-                'description': sig['description'],
-                'offset': start,
-                'size': len(file_data),
-                'md5': md5,
-                'sha256': sha256,
-                'carved_path': str(output_path),
-                'filename': filename
+                "file_id": file_id,
+                "type": file_type,
+                "mime_type": sig["mime"],
+                "description": sig["description"],
+                "offset": start,
+                "size": len(file_data),
+                "md5": md5,
+                "sha256": sha256,
+                "carved_path": str(output_path),
+                "filename": filename,
             }
 
         except Exception as e:
@@ -287,7 +207,7 @@ class FileCarver:
         file_id = 1
 
         try:
-            with open(source_path, 'rb') as f:
+            with open(source_path, "rb") as f:
                 offset = 0
 
                 while True:
@@ -308,7 +228,7 @@ class FileCarver:
                             # Try to find footer
                             sig = self.signatures[file_type]
 
-                            if 'footer' in sig:
+                            if "footer" in sig:
                                 # Read more data to find footer (max 10MB)
                                 current_pos = f.tell()
                                 f.seek(offset + i)
@@ -323,12 +243,10 @@ class FileCarver:
                                     file_data = f.read(footer_pos)
                                     f.seek(current_pos)
 
-                                    result = self.extract_file(
-                                        file_data, 0, len(file_data), file_type, file_id
-                                    )
+                                    result = self.extract_file(file_data, 0, len(file_data), file_type, file_id)
 
                                     if result:
-                                        result['offset'] = offset + i
+                                        result["offset"] = offset + i
                                         carved_files.append(result)
                                         file_id += 1
 
@@ -339,12 +257,10 @@ class FileCarver:
                                 file_data = f.read(min(1024 * 1024, len(chunk) - i))
                                 current_pos = f.tell()
 
-                                result = self.extract_file(
-                                    file_data, 0, len(file_data), file_type, file_id
-                                )
+                                result = self.extract_file(file_data, 0, len(file_data), file_type, file_id)
 
                                 if result:
-                                    result['offset'] = offset + i
+                                    result["offset"] = offset + i
                                     carved_files.append(result)
                                     file_id += 1
 
@@ -366,17 +282,13 @@ class FileCarver:
 
 def format_output_json(metadata: Dict, carved_files: List[Dict], stats: Dict) -> str:
     """Format output as JSON"""
-    output = {
-        'metadata': metadata,
-        'statistics': stats,
-        'carved_files': carved_files
-    }
+    output = {"metadata": metadata, "statistics": stats, "carved_files": carved_files}
     return json.dumps(output, indent=2)
 
 
 def format_output_csv(carved_files: List[Dict]) -> str:
     """Format output as CSV"""
-    lines = ['File ID,Type,MIME Type,Offset,Size,MD5,SHA256,Carved Path']
+    lines = ["File ID,Type,MIME Type,Offset,Size,MD5,SHA256,Carved Path"]
 
     for f in carved_files:
         lines.append(
@@ -390,7 +302,7 @@ def format_output_csv(carved_files: List[Dict]) -> str:
             f'"{f["carved_path"]}"'
         )
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def format_output_text(carved_files: List[Dict], stats: Dict) -> str:
@@ -407,7 +319,7 @@ def format_output_text(carved_files: List[Dict], stats: Dict) -> str:
     lines.append("")
 
     lines.append("Files by Type:")
-    for file_type, count in stats['by_type'].items():
+    for file_type, count in stats["by_type"].items():
         lines.append(f"  {file_type}: {count}")
     lines.append("")
 
@@ -427,15 +339,15 @@ def format_output_text(carved_files: List[Dict], stats: Dict) -> str:
             lines.append("-" * 80)
 
     lines.append("=" * 80)
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
-        description='File Carver - Extract Files from Disk Images and Memory Dumps',
+        description="File Carver - Extract Files from Disk Images and Memory Dumps",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
+        epilog="""
 Examples:
   # Carve all file types from disk image
   python carver.py --image disk.dd --output /carved/
@@ -451,17 +363,16 @@ Examples:
 
   # List supported file types
   python carver.py --list-types
-        '''
+        """,
     )
 
-    parser.add_argument('--image', '-i', help='Source file/image to carve from')
-    parser.add_argument('--output', '-o', default='./carved', help='Output directory (default: ./carved)')
-    parser.add_argument('--types', '-t', help='File types to carve (comma-separated)')
-    parser.add_argument('--format', '-f', choices=['json', 'csv', 'txt'], default='txt',
-                       help='Output format')
-    parser.add_argument('--report', '-r', help='Report output file')
-    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
-    parser.add_argument('--list-types', action='store_true', help='List supported file types')
+    parser.add_argument("--image", "-i", help="Source file/image to carve from")
+    parser.add_argument("--output", "-o", default="./carved", help="Output directory (default: ./carved)")
+    parser.add_argument("--types", "-t", help="File types to carve (comma-separated)")
+    parser.add_argument("--format", "-f", choices=["json", "csv", "txt"], default="txt", help="Output format")
+    parser.add_argument("--report", "-r", help="Report output file")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    parser.add_argument("--list-types", action="store_true", help="List supported file types")
 
     return parser.parse_args()
 
@@ -486,7 +397,7 @@ def main():
     # Parse file types
     file_types = None
     if args.types:
-        file_types = [t.strip().lower() for t in args.types.split(',')]
+        file_types = [t.strip().lower() for t in args.types.split(",")]
 
         # Validate file types
         invalid = [t for t in file_types if t not in FILE_SIGNATURES]
@@ -500,34 +411,35 @@ def main():
 
     # Carve files
     import time
+
     start_time = time.time()
 
     carved_files = carver.carve_from_file(args.image, file_types=file_types)
 
-    carver.stats['scan_time'] = time.time() - start_time
+    carver.stats["scan_time"] = time.time() - start_time
 
     # Prepare metadata
     metadata = {
-        'tool': 'file_carver',
-        'version': '1.0.0',
-        'carve_date': datetime.utcnow().isoformat() + 'Z',
-        'source_image': args.image,
-        'output_directory': args.output,
-        'file_types_filter': file_types,
-        'scan_time_seconds': round(carver.stats['scan_time'], 2)
+        "tool": "file_carver",
+        "version": "1.0.0",
+        "carve_date": datetime.utcnow().isoformat() + "Z",
+        "source_image": args.image,
+        "output_directory": args.output,
+        "file_types_filter": file_types,
+        "scan_time_seconds": round(carver.stats["scan_time"], 2),
     }
 
     # Format output
-    if args.format == 'json':
+    if args.format == "json":
         report = format_output_json(metadata, carved_files, carver.stats)
-    elif args.format == 'csv':
+    elif args.format == "csv":
         report = format_output_csv(carved_files)
     else:  # txt
         report = format_output_text(carved_files, carver.stats)
 
     # Write report
     if args.report:
-        with open(args.report, 'w') as f:
+        with open(args.report, "w") as f:
             f.write(report)
         print(f"\nReport written to {args.report}", file=sys.stderr)
     else:
@@ -541,5 +453,5 @@ def main():
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

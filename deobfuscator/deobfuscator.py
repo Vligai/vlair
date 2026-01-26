@@ -32,7 +32,7 @@ class EncodingDetector:
             return False
 
         # Check character set
-        base64_pattern = r'^[A-Za-z0-9+/]*={0,2}$'
+        base64_pattern = r"^[A-Za-z0-9+/]*={0,2}$"
         if not re.match(base64_pattern, data):
             return False
 
@@ -45,19 +45,19 @@ class EncodingDetector:
     @staticmethod
     def is_hex(data: str) -> bool:
         """Check if string is hex encoded"""
-        data = data.strip().replace(' ', '').replace('0x', '')
+        data = data.strip().replace(" ", "").replace("0x", "")
 
         if len(data) < 10 or len(data) % 2 != 0:
             return False
 
-        hex_pattern = r'^[0-9A-Fa-f]+$'
+        hex_pattern = r"^[0-9A-Fa-f]+$"
         return bool(re.match(hex_pattern, data))
 
     @staticmethod
     def is_url_encoded(data: str) -> bool:
         """Check if string is URL encoded"""
         # Look for %XX patterns
-        url_pattern = r'%[0-9A-Fa-f]{2}'
+        url_pattern = r"%[0-9A-Fa-f]{2}"
         matches = re.findall(url_pattern, data)
         return len(matches) >= 3  # At least 3 encoded characters
 
@@ -70,16 +70,16 @@ class Decoder:
         """Decode base64 string"""
         try:
             # Remove whitespace
-            data = data.strip().replace('\n', '').replace('\r', '').replace(' ', '')
+            data = data.strip().replace("\n", "").replace("\r", "").replace(" ", "")
 
             # Try standard base64
             decoded = base64.b64decode(data)
-            return decoded.decode('utf-8', errors='ignore')
+            return decoded.decode("utf-8", errors="ignore")
         except Exception:
             try:
                 # Try URL-safe base64
                 decoded = base64.urlsafe_b64decode(data)
-                return decoded.decode('utf-8', errors='ignore')
+                return decoded.decode("utf-8", errors="ignore")
             except Exception:
                 return None
 
@@ -87,9 +87,9 @@ class Decoder:
     def decode_hex(data: str) -> Optional[str]:
         """Decode hex string"""
         try:
-            data = data.strip().replace(' ', '').replace('0x', '').replace('\\x', '')
+            data = data.strip().replace(" ", "").replace("0x", "").replace("\\x", "")
             decoded = binascii.unhexlify(data)
-            return decoded.decode('utf-8', errors='ignore')
+            return decoded.decode("utf-8", errors="ignore")
         except Exception:
             return None
 
@@ -105,7 +105,8 @@ class Decoder:
     def decode_rot13(data: str) -> str:
         """Decode ROT13"""
         import codecs
-        return codecs.decode(data, 'rot_13')
+
+        return codecs.decode(data, "rot_13")
 
 
 class PowerShellDeobfuscator:
@@ -115,16 +116,12 @@ class PowerShellDeobfuscator:
     def remove_backticks(code: str) -> str:
         """Remove PowerShell backtick obfuscation"""
         # Remove backticks that aren't at end of line (line continuation)
-        return re.sub(r'`([^\\r\\n])', r'\1', code)
+        return re.sub(r"`([^\\r\\n])", r"\1", code)
 
     @staticmethod
     def decode_encoded_command(code: str) -> Optional[str]:
         """Decode PowerShell -EncodedCommand"""
-        patterns = [
-            r'-[Ee]ncodedcommand\s+([A-Za-z0-9+/=]+)',
-            r'-[Ee]nc\s+([A-Za-z0-9+/=]+)',
-            r'-[Ee]\s+([A-Za-z0-9+/=]+)'
-        ]
+        patterns = [r"-[Ee]ncodedcommand\s+([A-Za-z0-9+/=]+)", r"-[Ee]nc\s+([A-Za-z0-9+/=]+)", r"-[Ee]\s+([A-Za-z0-9+/=]+)"]
 
         for pattern in patterns:
             match = re.search(pattern, code)
@@ -133,7 +130,7 @@ class PowerShellDeobfuscator:
                 try:
                     # PowerShell uses UTF-16LE encoding
                     decoded = base64.b64decode(encoded)
-                    return decoded.decode('utf-16le', errors='ignore')
+                    return decoded.decode("utf-16le", errors="ignore")
                 except Exception:
                     pass
 
@@ -165,7 +162,7 @@ class PowerShellDeobfuscator:
                 try:
                     with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as f:
                         decompressed = f.read()
-                        return decompressed.decode('utf-8', errors='ignore')
+                        return decompressed.decode("utf-8", errors="ignore")
                 except Exception:
                     pass
             except Exception:
@@ -181,10 +178,10 @@ class JavaScriptDeobfuscator:
     def decode_escape_sequences(code: str) -> str:
         """Decode JavaScript escape sequences"""
         # Decode hex escape sequences
-        code = re.sub(r'\\x([0-9A-Fa-f]{2})', lambda m: chr(int(m.group(1), 16)), code)
+        code = re.sub(r"\\x([0-9A-Fa-f]{2})", lambda m: chr(int(m.group(1), 16)), code)
 
         # Decode unicode escape sequences
-        code = re.sub(r'\\u([0-9A-Fa-f]{4})', lambda m: chr(int(m.group(1), 16)), code)
+        code = re.sub(r"\\u([0-9A-Fa-f]{4})", lambda m: chr(int(m.group(1), 16)), code)
 
         return code
 
@@ -201,22 +198,23 @@ class JavaScriptDeobfuscator:
     @staticmethod
     def decode_charcode(code: str) -> str:
         """Decode String.fromCharCode()"""
+
         def replace_charcode(match):
             codes = match.group(1)
             try:
-                nums = [int(x.strip()) for x in codes.split(',')]
-                return '"' + ''.join(chr(n) for n in nums if 0 <= n <= 127) + '"'
+                nums = [int(x.strip()) for x in codes.split(",")]
+                return '"' + "".join(chr(n) for n in nums if 0 <= n <= 127) + '"'
             except Exception:
                 return match.group(0)
 
-        code = re.sub(r'String\.fromCharCode\(([0-9,\s]+)\)', replace_charcode, code)
+        code = re.sub(r"String\.fromCharCode\(([0-9,\s]+)\)", replace_charcode, code)
         return code
 
 
 class Deobfuscator:
     """Main deobfuscation engine"""
 
-    def __init__(self, language='auto', max_layers=10, verbose=False):
+    def __init__(self, language="auto", max_layers=10, verbose=False):
         self.language = language
         self.max_layers = max_layers
         self.verbose = verbose
@@ -230,30 +228,30 @@ class Deobfuscator:
         code_lower = code.lower()[:500]  # Check first 500 chars
 
         # PowerShell indicators
-        ps_indicators = ['powershell', '-encodedcommand', 'invoke-expression', '$_', 'param(']
+        ps_indicators = ["powershell", "-encodedcommand", "invoke-expression", "$_", "param("]
         if any(ind in code_lower for ind in ps_indicators):
-            return 'powershell'
+            return "powershell"
 
         # JavaScript indicators
-        js_indicators = ['function', 'var ', 'let ', 'const ', 'eval(', 'document.']
+        js_indicators = ["function", "var ", "let ", "const ", "eval(", "document."]
         if any(ind in code_lower for ind in js_indicators):
-            return 'javascript'
+            return "javascript"
 
         # VBScript indicators
-        vb_indicators = ['dim ', 'set ', 'wscript.', 'createobject']
+        vb_indicators = ["dim ", "set ", "wscript.", "createobject"]
         if any(ind in code_lower for ind in vb_indicators):
-            return 'vbscript'
+            return "vbscript"
 
         # Batch indicators
-        batch_indicators = ['@echo', 'set ', 'goto ', 'call ']
+        batch_indicators = ["@echo", "set ", "goto ", "call "]
         if any(ind in code_lower for ind in batch_indicators):
-            return 'batch'
+            return "batch"
 
-        return 'unknown'
+        return "unknown"
 
     def deobfuscate(self, code: str) -> Dict:
         """Perform multi-layer deobfuscation"""
-        if self.language == 'auto':
+        if self.language == "auto":
             detected_lang = self.detect_language(code)
             if self.verbose:
                 print(f"Detected language: {detected_lang}", file=sys.stderr)
@@ -283,22 +281,24 @@ class Deobfuscator:
                 break
 
             # Record layer
-            layers.append({
-                'layer': layer_num,
-                'techniques': techniques_applied,
-                'size_before': len(current_code),
-                'size_after': len(new_code)
-            })
+            layers.append(
+                {
+                    "layer": layer_num,
+                    "techniques": techniques_applied,
+                    "size_before": len(current_code),
+                    "size_after": len(new_code),
+                }
+            )
 
             current_code = new_code
 
         result = {
-            'original_code': code,
-            'final_code': current_code,
-            'language': detected_lang,
-            'layers_processed': layer_num - 1 if layers else 0,
-            'layers': layers,
-            'fully_deobfuscated': len(layers) == 0 or layers[-1]['size_before'] == layers[-1]['size_after']
+            "original_code": code,
+            "final_code": current_code,
+            "language": detected_lang,
+            "layers_processed": layer_num - 1 if layers else 0,
+            "layers": layers,
+            "fully_deobfuscated": len(layers) == 0 or layers[-1]["size_before"] == layers[-1]["size_after"],
         }
 
         return result
@@ -313,59 +313,59 @@ class Deobfuscator:
             decoded = self.decoder.decode_base64(code)
             if decoded and decoded != code and len(decoded) < len(code) * 2:
                 code = decoded
-                techniques.append('base64_decoding')
+                techniques.append("base64_decoding")
 
         # Check for hex
         if self.detector.is_hex(code):
             decoded = self.decoder.decode_hex(code)
             if decoded and decoded != code:
                 code = decoded
-                techniques.append('hex_decoding')
+                techniques.append("hex_decoding")
 
         # Check for URL encoding
         if self.detector.is_url_encoded(code):
             decoded = self.decoder.decode_url(code)
             if decoded and decoded != code:
                 code = decoded
-                techniques.append('url_decoding')
+                techniques.append("url_decoding")
 
         # Language-specific deobfuscation
-        if language == 'powershell':
+        if language == "powershell":
             # PowerShell encoded command
             ps_decoded = self.ps_deobf.decode_encoded_command(code)
             if ps_decoded:
                 code = ps_decoded
-                techniques.append('powershell_encoded_command')
+                techniques.append("powershell_encoded_command")
 
             # Remove backticks
             code_no_backticks = self.ps_deobf.remove_backticks(code)
             if code_no_backticks != code:
                 code = code_no_backticks
-                techniques.append('powershell_backtick_removal')
+                techniques.append("powershell_backtick_removal")
 
             # Expand compressed
             ps_decompressed = self.ps_deobf.expand_compressed(code)
             if ps_decompressed:
                 code = ps_decompressed
-                techniques.append('powershell_decompression')
+                techniques.append("powershell_decompression")
 
-        elif language == 'javascript':
+        elif language == "javascript":
             # Decode escape sequences
             code_unescaped = self.js_deobf.decode_escape_sequences(code)
             if code_unescaped != code:
                 code = code_unescaped
-                techniques.append('javascript_escape_sequences')
+                techniques.append("javascript_escape_sequences")
 
             # Decode fromCharCode
             code_charcode = self.js_deobf.decode_charcode(code)
             if code_charcode != code:
                 code = code_charcode
-                techniques.append('javascript_char_code')
+                techniques.append("javascript_char_code")
 
         # If still looks like base64 after language processing, try again
         if not techniques and len(code) > 50:
             # Look for base64 chunks within the code
-            b64_pattern = r'[A-Za-z0-9+/]{30,}={0,2}'
+            b64_pattern = r"[A-Za-z0-9+/]{30,}={0,2}"
             matches = re.findall(b64_pattern, code)
 
             for match in matches:
@@ -373,7 +373,7 @@ class Deobfuscator:
                     decoded = self.decoder.decode_base64(match)
                     if decoded and decoded != match:
                         code = code.replace(match, decoded)
-                        techniques.append('embedded_base64_decoding')
+                        techniques.append("embedded_base64_decoding")
                         break
 
         return code, techniques
@@ -385,35 +385,29 @@ class IOCExtractor:
     @staticmethod
     def extract_iocs(code: str) -> Dict:
         """Extract common IOCs"""
-        iocs = {
-            'urls': [],
-            'ips': [],
-            'domains': [],
-            'file_paths': [],
-            'registry_keys': []
-        }
+        iocs = {"urls": [], "ips": [], "domains": [], "file_paths": [], "registry_keys": []}
 
         # URLs
         url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
-        iocs['urls'] = list(set(re.findall(url_pattern, code, re.IGNORECASE)))
+        iocs["urls"] = list(set(re.findall(url_pattern, code, re.IGNORECASE)))
 
         # IP addresses
-        ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
-        iocs['ips'] = list(set(re.findall(ip_pattern, code)))
+        ip_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
+        iocs["ips"] = list(set(re.findall(ip_pattern, code)))
 
         # Domains (simplified)
-        domain_pattern = r'[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(?:\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.[a-zA-Z]{2,6}'
+        domain_pattern = r"[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(?:\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.[a-zA-Z]{2,6}"
         potential_domains = re.findall(domain_pattern, code)
         # Filter out common false positives
-        iocs['domains'] = [d for d in set(potential_domains) if not d.endswith(('.dll', '.exe', '.js'))]
+        iocs["domains"] = [d for d in set(potential_domains) if not d.endswith((".dll", ".exe", ".js"))]
 
         # Windows file paths
         path_pattern = r'[A-Za-z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*'
-        iocs['file_paths'] = list(set(re.findall(path_pattern, code)))
+        iocs["file_paths"] = list(set(re.findall(path_pattern, code)))
 
         # Registry keys
         reg_pattern = r'HK[A-Z_]+\\[^\\s<>"]+'
-        iocs['registry_keys'] = list(set(re.findall(reg_pattern, code)))
+        iocs["registry_keys"] = list(set(re.findall(reg_pattern, code)))
 
         return iocs
 
@@ -437,16 +431,16 @@ def format_output_text(result: Dict) -> str:
     lines.append("")
 
     # Show techniques used
-    if result['layers']:
+    if result["layers"]:
         lines.append("Obfuscation Techniques Detected:")
-        for layer in result['layers']:
+        for layer in result["layers"]:
             lines.append(f"  Layer {layer['layer']}: {', '.join(layer['techniques'])}")
         lines.append("")
 
     # Show deobfuscated code (truncated if too long)
     lines.append("Deobfuscated Code:")
     lines.append("-" * 80)
-    final_code = result['final_code']
+    final_code = result["final_code"]
     if len(final_code) > 2000:
         lines.append(final_code[:2000])
         lines.append(f"\n... (truncated, {len(final_code)} total characters)")
@@ -456,9 +450,9 @@ def format_output_text(result: Dict) -> str:
     lines.append("")
 
     # Show IOCs if extracted
-    if 'iocs' in result and any(result['iocs'].values()):
+    if "iocs" in result and any(result["iocs"].values()):
         lines.append("Extracted IOCs:")
-        for ioc_type, ioc_list in result['iocs'].items():
+        for ioc_type, ioc_list in result["iocs"].items():
             if ioc_list:
                 lines.append(f"  {ioc_type.upper()}:")
                 for ioc in ioc_list[:10]:  # Limit to 10 per type
@@ -466,15 +460,15 @@ def format_output_text(result: Dict) -> str:
         lines.append("")
 
     lines.append("=" * 80)
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
-        description='Deobfuscator - Malicious Script Deobfuscation Tool',
+        description="Deobfuscator - Malicious Script Deobfuscation Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
+        epilog="""
 Examples:
   # Deobfuscate a JavaScript file
   python deobfuscator.py malware.js
@@ -496,22 +490,27 @@ Examples:
 
   # Decode hex string
   python deobfuscator.py --decode-hex "48656c6c6f"
-        '''
+        """,
     )
 
-    parser.add_argument('input_file', nargs='?', help='Script file to deobfuscate')
-    parser.add_argument('--language', '-l', choices=['auto', 'powershell', 'javascript', 'vbscript', 'batch'],
-                       default='auto', help='Script language (default: auto)')
-    parser.add_argument('--max-layers', type=int, default=10, help='Maximum deobfuscation layers')
-    parser.add_argument('--extract-iocs', action='store_true', help='Extract IOCs from deobfuscated code')
-    parser.add_argument('--format', '-f', choices=['json', 'txt'], default='txt', help='Output format')
-    parser.add_argument('--output', '-o', help='Output file (default: stdout)')
-    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    parser.add_argument("input_file", nargs="?", help="Script file to deobfuscate")
+    parser.add_argument(
+        "--language",
+        "-l",
+        choices=["auto", "powershell", "javascript", "vbscript", "batch"],
+        default="auto",
+        help="Script language (default: auto)",
+    )
+    parser.add_argument("--max-layers", type=int, default=10, help="Maximum deobfuscation layers")
+    parser.add_argument("--extract-iocs", action="store_true", help="Extract IOCs from deobfuscated code")
+    parser.add_argument("--format", "-f", choices=["json", "txt"], default="txt", help="Output format")
+    parser.add_argument("--output", "-o", help="Output file (default: stdout)")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     # Quick decode options
-    parser.add_argument('--decode-base64', help='Decode base64 string directly')
-    parser.add_argument('--decode-hex', help='Decode hex string directly')
-    parser.add_argument('--decode-url', help='Decode URL-encoded string directly')
+    parser.add_argument("--decode-base64", help="Decode base64 string directly")
+    parser.add_argument("--decode-hex", help="Decode hex string directly")
+    parser.add_argument("--decode-url", help="Decode URL-encoded string directly")
 
     return parser.parse_args()
 
@@ -562,43 +561,39 @@ def main():
         sys.exit(1)
 
     # Read input file
-    with open(input_path, 'r', encoding='utf-8', errors='ignore') as f:
+    with open(input_path, "r", encoding="utf-8", errors="ignore") as f:
         code = f.read()
 
     if args.verbose:
         print(f"Loaded {len(code)} characters from {input_path}", file=sys.stderr)
 
     # Deobfuscate
-    deobf = Deobfuscator(
-        language=args.language,
-        max_layers=args.max_layers,
-        verbose=args.verbose
-    )
+    deobf = Deobfuscator(language=args.language, max_layers=args.max_layers, verbose=args.verbose)
 
     result = deobf.deobfuscate(code)
 
     # Extract IOCs if requested
     if args.extract_iocs:
         extractor = IOCExtractor()
-        result['iocs'] = extractor.extract_iocs(result['final_code'])
+        result["iocs"] = extractor.extract_iocs(result["final_code"])
 
     # Add metadata
-    result['metadata'] = {
-        'tool': 'deobfuscator',
-        'version': '1.0.0',
-        'analysis_date': datetime.utcnow().isoformat() + 'Z',
-        'input_file': str(input_path)
+    result["metadata"] = {
+        "tool": "deobfuscator",
+        "version": "1.0.0",
+        "analysis_date": datetime.utcnow().isoformat() + "Z",
+        "input_file": str(input_path),
     }
 
     # Format output
-    if args.format == 'json':
+    if args.format == "json":
         output = format_output_json(result)
     else:
         output = format_output_text(result)
 
     # Write output
     if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
+        with open(args.output, "w", encoding="utf-8") as f:
             f.write(output)
         print(f"Results written to {args.output}", file=sys.stderr)
     else:
@@ -607,5 +602,5 @@ def main():
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -21,12 +21,14 @@ from collections import defaultdict
 
 try:
     import yara
+
     YARA_AVAILABLE = True
 except ImportError:
     YARA_AVAILABLE = False
 
 try:
     from tqdm import tqdm
+
     TQDM_AVAILABLE = True
 except ImportError:
     TQDM_AVAILABLE = False
@@ -64,7 +66,7 @@ class YaraRuleManager:
             return None
 
         # Find all .yar and .yara files
-        patterns = ['*.yar', '*.yara']
+        patterns = ["*.yar", "*.yara"]
         for pattern in patterns:
             if recursive:
                 files = dir_path.rglob(pattern)
@@ -125,40 +127,36 @@ class YaraRuleManager:
 class MatchAnalyzer:
     """Analyze and enrich YARA matches"""
 
-    SEVERITY_MAP = {
-        'critical': 4,
-        'high': 3,
-        'medium': 2,
-        'low': 1,
-        'info': 0
-    }
+    SEVERITY_MAP = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 
     @staticmethod
     def extract_match_info(match: yara.Match, file_path: str, file_hash: str, file_size: int) -> Dict:
         """Extract detailed information from a YARA match"""
         match_info = {
-            'file_path': file_path,
-            'file_hash': file_hash,
-            'file_size': file_size,
-            'scan_date': datetime.utcnow().isoformat() + 'Z',
-            'rule_name': match.rule,
-            'namespace': match.namespace if match.namespace else 'default',
-            'tags': list(match.tags) if match.tags else [],
-            'meta': dict(match.meta) if match.meta else {},
-            'strings': []
+            "file_path": file_path,
+            "file_hash": file_hash,
+            "file_size": file_size,
+            "scan_date": datetime.utcnow().isoformat() + "Z",
+            "rule_name": match.rule,
+            "namespace": match.namespace if match.namespace else "default",
+            "tags": list(match.tags) if match.tags else [],
+            "meta": dict(match.meta) if match.meta else {},
+            "strings": [],
         }
 
         # Extract matched strings
         for string_match in match.strings:
             for instance in string_match.instances:
-                match_info['strings'].append({
-                    'identifier': string_match.identifier,
-                    'value': instance.matched_data.decode('utf-8', errors='replace')[:100],
-                    'offset': instance.offset
-                })
+                match_info["strings"].append(
+                    {
+                        "identifier": string_match.identifier,
+                        "value": instance.matched_data.decode("utf-8", errors="replace")[:100],
+                        "offset": instance.offset,
+                    }
+                )
 
         # Determine severity
-        match_info['severity'] = MatchAnalyzer.classify_severity(match)
+        match_info["severity"] = MatchAnalyzer.classify_severity(match)
 
         return match_info
 
@@ -166,8 +164,8 @@ class MatchAnalyzer:
     def classify_severity(match: yara.Match) -> str:
         """Classify match severity based on tags and metadata"""
         # Check metadata for severity
-        if match.meta and 'severity' in match.meta:
-            severity = match.meta['severity'].lower()
+        if match.meta and "severity" in match.meta:
+            severity = match.meta["severity"].lower()
             if severity in MatchAnalyzer.SEVERITY_MAP:
                 return severity
 
@@ -175,52 +173,49 @@ class MatchAnalyzer:
         tags = [tag.lower() for tag in match.tags] if match.tags else []
 
         # Critical indicators
-        critical_tags = ['apt', 'ransomware', 'rat', 'backdoor', 'rootkit', 'critical']
+        critical_tags = ["apt", "ransomware", "rat", "backdoor", "rootkit", "critical"]
         if any(tag in tags for tag in critical_tags):
-            return 'critical'
+            return "critical"
 
         # High severity indicators
-        high_tags = ['trojan', 'malware', 'exploit', 'suspicious', 'high']
+        high_tags = ["trojan", "malware", "exploit", "suspicious", "high"]
         if any(tag in tags for tag in high_tags):
-            return 'high'
+            return "high"
 
         # Medium severity
-        medium_tags = ['pup', 'adware', 'medium']
+        medium_tags = ["pup", "adware", "medium"]
         if any(tag in tags for tag in medium_tags):
-            return 'medium'
+            return "medium"
 
         # Low severity
-        low_tags = ['test', 'generic', 'low']
+        low_tags = ["test", "generic", "low"]
         if any(tag in tags for tag in low_tags):
-            return 'low'
+            return "low"
 
         # Default to medium
-        return 'medium'
+        return "medium"
 
     @staticmethod
     def classify_verdict(matches: List[Dict]) -> Tuple[str, int]:
         """Classify overall verdict based on matches"""
         if not matches:
-            return 'clean', 0
+            return "clean", 0
 
         # Find highest severity
-        max_severity = max(
-            MatchAnalyzer.SEVERITY_MAP.get(m.get('severity', 'low'), 1)
-            for m in matches
-        )
+        max_severity = max(MatchAnalyzer.SEVERITY_MAP.get(m.get("severity", "low"), 1) for m in matches)
 
         # Calculate risk score
         risk_score = min(100, max_severity * 20 + len(matches) * 5)
 
         # Determine verdict
         if max_severity >= 4:  # Critical
-            return 'malicious', risk_score
+            return "malicious", risk_score
         elif max_severity >= 3:  # High
-            return 'malicious', risk_score
+            return "malicious", risk_score
         elif max_severity >= 2:  # Medium
-            return 'suspicious', risk_score
+            return "suspicious", risk_score
         else:
-            return 'informational', risk_score
+            return "informational", risk_score
 
 
 class YaraScanner:
@@ -230,23 +225,18 @@ class YaraScanner:
         self.rules = rules
         self.verbose = verbose
         self.timeout = timeout
-        self.stats = {
-            'files_scanned': 0,
-            'matches_found': 0,
-            'errors': 0,
-            'total_time': 0
-        }
+        self.stats = {"files_scanned": 0, "matches_found": 0, "errors": 0, "total_time": 0}
 
     def calculate_file_hash(self, file_path: str) -> str:
         """Calculate SHA256 hash of file"""
         try:
             sha256 = hashlib.sha256()
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 while chunk := f.read(8192):
                     sha256.update(chunk)
             return sha256.hexdigest()
         except Exception:
-            return 'unknown'
+            return "unknown"
 
     def scan_file(self, file_path: str) -> Optional[Dict]:
         """Scan a single file with YARA rules"""
@@ -270,56 +260,53 @@ class YaraScanner:
             matches = self.rules.match(str(file_path), timeout=self.timeout)
             scan_time = time.time() - start_time
 
-            self.stats['files_scanned'] += 1
-            self.stats['total_time'] += scan_time
+            self.stats["files_scanned"] += 1
+            self.stats["total_time"] += scan_time
 
             if matches:
-                self.stats['matches_found'] += len(matches)
+                self.stats["matches_found"] += len(matches)
 
                 # Extract match details
                 match_details = []
                 for match in matches:
-                    detail = MatchAnalyzer.extract_match_info(
-                        match, str(file_path), file_hash, file_size
-                    )
+                    detail = MatchAnalyzer.extract_match_info(match, str(file_path), file_hash, file_size)
                     match_details.append(detail)
 
                 # Classify verdict
                 verdict, risk_score = MatchAnalyzer.classify_verdict(match_details)
 
                 return {
-                    'file_path': str(file_path),
-                    'file_hash': file_hash,
-                    'file_size': file_size,
-                    'scan_time': round(scan_time, 3),
-                    'matches': match_details,
-                    'verdict': verdict,
-                    'risk_score': risk_score
+                    "file_path": str(file_path),
+                    "file_hash": file_hash,
+                    "file_size": file_size,
+                    "scan_time": round(scan_time, 3),
+                    "matches": match_details,
+                    "verdict": verdict,
+                    "risk_score": risk_score,
                 }
 
             return {
-                'file_path': str(file_path),
-                'file_hash': file_hash,
-                'file_size': file_size,
-                'scan_time': round(scan_time, 3),
-                'matches': [],
-                'verdict': 'clean',
-                'risk_score': 0
+                "file_path": str(file_path),
+                "file_hash": file_hash,
+                "file_size": file_size,
+                "scan_time": round(scan_time, 3),
+                "matches": [],
+                "verdict": "clean",
+                "risk_score": 0,
             }
 
         except yara.TimeoutError:
-            self.stats['errors'] += 1
+            self.stats["errors"] += 1
             if self.verbose:
                 print(f"Timeout scanning: {file_path}", file=sys.stderr)
             return None
         except Exception as e:
-            self.stats['errors'] += 1
+            self.stats["errors"] += 1
             if self.verbose:
                 print(f"Error scanning {file_path}: {e}", file=sys.stderr)
             return None
 
-    def scan_directory(self, dir_path: str, recursive=True, extensions=None,
-                      max_workers=4) -> List[Dict]:
+    def scan_directory(self, dir_path: str, recursive=True, extensions=None, max_workers=4) -> List[Dict]:
         """Scan all files in a directory"""
         dir_path = Path(dir_path)
 
@@ -331,15 +318,15 @@ class YaraScanner:
         files_to_scan = []
 
         if recursive:
-            files = dir_path.rglob('*')
+            files = dir_path.rglob("*")
         else:
-            files = dir_path.glob('*')
+            files = dir_path.glob("*")
 
         for file_path in files:
             if file_path.is_file():
                 # Filter by extension if specified
                 if extensions:
-                    if file_path.suffix.lower().lstrip('.') not in extensions:
+                    if file_path.suffix.lower().lstrip(".") not in extensions:
                         continue
                 files_to_scan.append(str(file_path))
 
@@ -354,10 +341,7 @@ class YaraScanner:
         results = []
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(self.scan_file, file_path): file_path
-                for file_path in files_to_scan
-            }
+            futures = {executor.submit(self.scan_file, file_path): file_path for file_path in files_to_scan}
 
             # Progress bar if tqdm available
             if TQDM_AVAILABLE and not self.verbose:
@@ -389,20 +373,17 @@ def format_output_json(results: List[Dict], metadata: Dict) -> str:
     by_severity = defaultdict(int)
 
     for result in results:
-        verdict = result.get('verdict', 'unknown')
+        verdict = result.get("verdict", "unknown")
         by_verdict[verdict] += 1
 
-        for match in result.get('matches', []):
-            severity = match.get('severity', 'unknown')
+        for match in result.get("matches", []):
+            severity = match.get("severity", "unknown")
             by_severity[severity] += 1
 
     output = {
-        'metadata': metadata,
-        'statistics': {
-            'by_verdict': dict(by_verdict),
-            'by_severity': dict(by_severity)
-        },
-        'results': results
+        "metadata": metadata,
+        "statistics": {"by_verdict": dict(by_verdict), "by_severity": dict(by_severity)},
+        "results": results,
     }
 
     return json.dumps(output, indent=2)
@@ -410,24 +391,24 @@ def format_output_json(results: List[Dict], metadata: Dict) -> str:
 
 def format_output_csv(results: List[Dict]) -> str:
     """Format results as CSV"""
-    lines = ['File Path,File Hash,File Size,Scan Time,Matches,Verdict,Risk Score,Matched Rules']
+    lines = ["File Path,File Hash,File Size,Scan Time,Matches,Verdict,Risk Score,Matched Rules"]
 
     for result in results:
-        matches = result.get('matches', [])
-        matched_rules = ';'.join([m['rule_name'] for m in matches])
+        matches = result.get("matches", [])
+        matched_rules = ";".join([m["rule_name"] for m in matches])
 
         lines.append(
             f'"{result["file_path"]}",'
             f'{result["file_hash"]},'
             f'{result["file_size"]},'
             f'{result["scan_time"]},'
-            f'{len(matches)},'
+            f"{len(matches)},"
             f'{result["verdict"]},'
             f'{result["risk_score"]},'
             f'"{matched_rules}"'
         )
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def format_output_text(results: List[Dict]) -> str:
@@ -440,8 +421,8 @@ def format_output_text(results: List[Dict]) -> str:
 
     # Summary statistics
     total_files = len(results)
-    files_with_matches = sum(1 for r in results if r.get('matches'))
-    total_matches = sum(len(r.get('matches', [])) for r in results)
+    files_with_matches = sum(1 for r in results if r.get("matches"))
+    total_matches = sum(len(r.get("matches", [])) for r in results)
 
     lines.append(f"Files Scanned: {total_files}")
     lines.append(f"Files with Matches: {files_with_matches}")
@@ -450,7 +431,7 @@ def format_output_text(results: List[Dict]) -> str:
 
     # Detail results (only files with matches)
     for result in results:
-        matches = result.get('matches', [])
+        matches = result.get("matches", [])
         if not matches:
             continue
 
@@ -467,33 +448,33 @@ def format_output_text(results: List[Dict]) -> str:
         for match in matches:
             lines.append(f"  [{match['severity'].upper()}] {match['rule_name']} ({match['namespace']})")
 
-            if match.get('meta'):
-                meta = match['meta']
-                if 'description' in meta:
+            if match.get("meta"):
+                meta = match["meta"]
+                if "description" in meta:
                     lines.append(f"    Description: {meta['description']}")
-                if 'author' in meta:
+                if "author" in meta:
                     lines.append(f"    Author: {meta['author']}")
 
-            if match.get('tags'):
+            if match.get("tags"):
                 lines.append(f"    Tags: {', '.join(match['tags'])}")
 
-            if match.get('strings'):
+            if match.get("strings"):
                 lines.append(f"    Matched Strings:")
-                for string in match['strings'][:5]:  # Limit to 5
+                for string in match["strings"][:5]:  # Limit to 5
                     lines.append(f"      - {string['identifier']}: \"{string['value']}\" at offset {string['offset']}")
 
             lines.append("")
 
     lines.append("=" * 80)
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
-        description='YARA Scanner - Malware detection and pattern matching',
+        description="YARA Scanner - Malware detection and pattern matching",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
+        epilog="""
 Examples:
   # Scan single file
   python scanner.py scan suspicious.exe --rules ./rules/
@@ -512,28 +493,27 @@ Examples:
 
   # Validate all rules in directory
   python scanner.py validate ./rules/ --recursive
-        '''
+        """,
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
     # Scan command
-    scan_parser = subparsers.add_parser('scan', help='Scan files with YARA rules')
-    scan_parser.add_argument('target', help='File or directory to scan')
-    scan_parser.add_argument('--rules', '-r', required=True, help='YARA rule file or directory')
-    scan_parser.add_argument('--recursive', action='store_true', help='Scan directories recursively')
-    scan_parser.add_argument('--extensions', help='File extensions to scan (comma-separated)')
-    scan_parser.add_argument('--threads', '-t', type=int, default=4, help='Number of worker threads')
-    scan_parser.add_argument('--timeout', type=int, default=60, help='Timeout per file (seconds)')
-    scan_parser.add_argument('--format', '-f', choices=['json', 'csv', 'txt'],
-                           default='json', help='Output format')
-    scan_parser.add_argument('--output', '-o', help='Output file (default: stdout)')
-    scan_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    scan_parser = subparsers.add_parser("scan", help="Scan files with YARA rules")
+    scan_parser.add_argument("target", help="File or directory to scan")
+    scan_parser.add_argument("--rules", "-r", required=True, help="YARA rule file or directory")
+    scan_parser.add_argument("--recursive", action="store_true", help="Scan directories recursively")
+    scan_parser.add_argument("--extensions", help="File extensions to scan (comma-separated)")
+    scan_parser.add_argument("--threads", "-t", type=int, default=4, help="Number of worker threads")
+    scan_parser.add_argument("--timeout", type=int, default=60, help="Timeout per file (seconds)")
+    scan_parser.add_argument("--format", "-f", choices=["json", "csv", "txt"], default="json", help="Output format")
+    scan_parser.add_argument("--output", "-o", help="Output file (default: stdout)")
+    scan_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     # Validate command
-    validate_parser = subparsers.add_parser('validate', help='Validate YARA rules')
-    validate_parser.add_argument('rules', help='YARA rule file or directory')
-    validate_parser.add_argument('--recursive', action='store_true', help='Validate all rules in directory')
+    validate_parser = subparsers.add_parser("validate", help="Validate YARA rules")
+    validate_parser.add_argument("rules", help="YARA rule file or directory")
+    validate_parser.add_argument("--recursive", action="store_true", help="Validate all rules in directory")
 
     return parser.parse_args()
 
@@ -552,7 +532,7 @@ def main():
         sys.exit(1)
 
     # Validate command
-    if args.command == 'validate':
+    if args.command == "validate":
         manager = YaraRuleManager(verbose=True)
         rules_path = Path(args.rules)
 
@@ -572,7 +552,7 @@ def main():
 
         elif rules_path.is_dir():
             # Validate all rules in directory
-            patterns = ['*.yar', '*.yara']
+            patterns = ["*.yar", "*.yara"]
             rule_files = []
 
             for pattern in patterns:
@@ -604,7 +584,7 @@ def main():
             sys.exit(0 if invalid_count == 0 else 1)
 
     # Scan command
-    elif args.command == 'scan':
+    elif args.command == "scan":
         # Load rules
         manager = YaraRuleManager(verbose=args.verbose)
         rules_path = Path(args.rules)
@@ -628,7 +608,7 @@ def main():
         # Parse extensions
         extensions = None
         if args.extensions:
-            extensions = [ext.strip().lower().lstrip('.') for ext in args.extensions.split(',')]
+            extensions = [ext.strip().lower().lstrip(".") for ext in args.extensions.split(",")]
 
         # Scan target
         target_path = Path(args.target)
@@ -646,38 +626,35 @@ def main():
         else:
             # Scan directory
             results = scanner.scan_directory(
-                str(target_path),
-                recursive=args.recursive,
-                extensions=extensions,
-                max_workers=args.threads
+                str(target_path), recursive=args.recursive, extensions=extensions, max_workers=args.threads
             )
 
         total_time = time.time() - start_time
 
         # Prepare metadata
         metadata = {
-            'tool': 'yara_scanner',
-            'version': '1.0.0',
-            'scan_date': datetime.utcnow().isoformat() + 'Z',
-            'target': str(target_path),
-            'rules_path': str(rules_path),
-            'files_scanned': scanner.stats['files_scanned'],
-            'matches_found': scanner.stats['matches_found'],
-            'errors': scanner.stats['errors'],
-            'total_time': round(total_time, 2)
+            "tool": "yara_scanner",
+            "version": "1.0.0",
+            "scan_date": datetime.utcnow().isoformat() + "Z",
+            "target": str(target_path),
+            "rules_path": str(rules_path),
+            "files_scanned": scanner.stats["files_scanned"],
+            "matches_found": scanner.stats["matches_found"],
+            "errors": scanner.stats["errors"],
+            "total_time": round(total_time, 2),
         }
 
         # Format output
-        if args.format == 'json':
+        if args.format == "json":
             output = format_output_json(results, metadata)
-        elif args.format == 'csv':
+        elif args.format == "csv":
             output = format_output_csv(results)
         else:  # txt
             output = format_output_text(results)
 
         # Write output
         if args.output:
-            with open(args.output, 'w', encoding='utf-8') as f:
+            with open(args.output, "w", encoding="utf-8") as f:
                 f.write(output)
             print(f"Results written to {args.output}", file=sys.stderr)
         else:
@@ -686,5 +663,5 @@ def main():
         sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

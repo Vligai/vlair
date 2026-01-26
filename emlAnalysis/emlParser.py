@@ -38,7 +38,7 @@ def extract_basic_headers(parsed):
         "X-Mailer": raw.get("x-mailer", ["N/A"]),
         "X-Priority": raw.get("x-priority", ["N/A"]),
         "X-Originating-IP": raw.get("x-originating-ip", ["N/A"]),
-        "Message-ID": raw.get("message-id", ["N/A"])
+        "Message-ID": raw.get("message-id", ["N/A"]),
     }
 
 
@@ -67,18 +67,14 @@ def extract_ips_and_servers(parsed):
         "last_relay_ip": last_relay_ip,
         "last_relay_server": last_relay_server,
         "all_ips": received_ips,
-        "all_servers": relay_servers
+        "all_servers": relay_servers,
     }
 
 
 def extract_auth_results(parsed):
     header_fields = parsed.get("header", {}).get("header", {})
     auth_field = header_fields.get("authentication-results", ["N/A"])[0]
-    return {
-        "SPF": header_fields.get("received-spf", ["N/A"])[0],
-        "DKIM": auth_field,
-        "DMARC": auth_field
-    }
+    return {"SPF": header_fields.get("received-spf", ["N/A"])[0], "DKIM": auth_field, "DMARC": auth_field}
 
 
 def vt_lookup_sha256(sha256, verbose=False):
@@ -100,7 +96,7 @@ def vt_lookup_sha256(sha256, verbose=False):
                 "VT_Malicious": stats.get("malicious", 0),
                 "VT_Suspicious": stats.get("suspicious", 0),
                 "VT_Undetected": stats.get("undetected", 0),
-                "VT_Link": permalink
+                "VT_Link": permalink,
             }
         else:
             return {"VT_Error": f"HTTP {response.status_code}"}
@@ -116,19 +112,21 @@ def extract_attachments(parsed, vt_enabled=False, verbose=False):
         sha256 = hash_data.get("sha256", "N/A")
         vt = vt_lookup_sha256(sha256, verbose=verbose) if vt_enabled else {}
 
-        output.append({
-            "filename": att.get("filename", "unknown"),
-            "size": att.get("size", 0),
-            "extension": att.get("extension", "unknown"),
-            "content_type": att.get("content_header", {}).get("content-type", ["unknown"])[0],
-            "hashes": {
-                "md5": hash_data.get("md5", "N/A"),
-                "sha1": hash_data.get("sha1", "N/A"),
-                "sha256": sha256,
-                "sha512": hash_data.get("sha512", "N/A")
-            },
-            "VirusTotal": vt
-        })
+        output.append(
+            {
+                "filename": att.get("filename", "unknown"),
+                "size": att.get("size", 0),
+                "extension": att.get("extension", "unknown"),
+                "content_type": att.get("content_header", {}).get("content-type", ["unknown"])[0],
+                "hashes": {
+                    "md5": hash_data.get("md5", "N/A"),
+                    "sha1": hash_data.get("sha1", "N/A"),
+                    "sha256": sha256,
+                    "sha512": hash_data.get("sha512", "N/A"),
+                },
+                "VirusTotal": vt,
+            }
+        )
     return output
 
 
@@ -145,17 +143,18 @@ def extract_body(parsed):
 
         body_preview = body_preview.strip()[:500]
 
-        body_summary.append({
-            "content_type": b.get("content_type", "N/A"),
-            "hash": b.get("hash", "N/A"),
-            "uri_hashes": b.get("uri_hash", []),
-            "email_hashes": b.get("email_hash", []),
-            "domain_hashes": b.get("domain_hash", []),
-            "body_text": body_preview
-        })
+        body_summary.append(
+            {
+                "content_type": b.get("content_type", "N/A"),
+                "hash": b.get("hash", "N/A"),
+                "uri_hashes": b.get("uri_hash", []),
+                "email_hashes": b.get("email_hash", []),
+                "domain_hashes": b.get("domain_hash", []),
+                "body_text": body_preview,
+            }
+        )
 
     return body_summary
-
 
 
 def build_summary(parsed, file_path, vt_enabled=False, verbose=False):
@@ -169,16 +168,13 @@ def build_summary(parsed, file_path, vt_enabled=False, verbose=False):
         "File": file_path,
         "Headers": headers,
         "Source IP (likely attacker)": ips["source_ip"],
-        "Mail Server that Relayed to Victim": {
-            "IP": ips["last_relay_ip"],
-            "Server": ips["last_relay_server"]
-        },
+        "Mail Server that Relayed to Victim": {"IP": ips["last_relay_ip"], "Server": ips["last_relay_server"]},
         "All Relay IPs": ips["all_ips"],
         "All Relay Servers": ips["all_servers"],
         "SPF/DKIM/DMARC Results": auth,
         "Potentially Phishing Domains Found in URLs": [],
         "Attachments": attachments,
-        "Body Content": body_content
+        "Body Content": body_content,
     }
 
 
@@ -187,27 +183,13 @@ def parse_args():
         description="EML Parser — Extract metadata, attachments, relay info, and optional VirusTotal verdicts."
     )
 
-    parser.add_argument(
-        "eml",
-        help="Path to the .eml file to analyze"
-    )
+    parser.add_argument("eml", help="Path to the .eml file to analyze")
 
-    parser.add_argument(
-        "--output", "-o",
-        help="Path to output JSON report file (e.g. report.json)"
-    )
+    parser.add_argument("--output", "-o", help="Path to output JSON report file (e.g. report.json)")
 
-    parser.add_argument(
-        "--vt",
-        action="store_true",
-        help="Enable VirusTotal scan for SHA256 of attachments"
-    )
+    parser.add_argument("--vt", action="store_true", help="Enable VirusTotal scan for SHA256 of attachments")
 
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Enable verbose output (e.g. VT status per hash)"
-    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output (e.g. VT status per hash)")
 
     return parser.parse_args()
 

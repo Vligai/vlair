@@ -27,9 +27,9 @@ class ApacheLogParser(LogParser):
 
     # Combined log format pattern
     PATTERN = re.compile(
-        r'(?P<ip>\S+) \S+ \S+ \[(?P<timestamp>[^\]]+)\] '
+        r"(?P<ip>\S+) \S+ \S+ \[(?P<timestamp>[^\]]+)\] "
         r'"(?P<method>\S+) (?P<path>\S+) (?P<protocol>[^"]+)" '
-        r'(?P<status>\d+) (?P<size>\S+) '
+        r"(?P<status>\d+) (?P<size>\S+) "
         r'"(?P<referer>[^"]*)" "(?P<user_agent>[^"]*)"'
     )
 
@@ -43,23 +43,20 @@ class ApacheLogParser(LogParser):
 
         # Parse timestamp
         try:
-            timestamp = datetime.strptime(
-                data['timestamp'],
-                '%d/%b/%Y:%H:%M:%S %z'
-            )
+            timestamp = datetime.strptime(data["timestamp"], "%d/%b/%Y:%H:%M:%S %z")
         except ValueError:
             timestamp = None
 
         return {
-            'timestamp': timestamp,
-            'source_ip': data['ip'],
-            'method': data['method'],
-            'path': data['path'],
-            'status': int(data['status']),
-            'size': data['size'] if data['size'] != '-' else '0',
-            'referer': data['referer'],
-            'user_agent': data['user_agent'],
-            'log_type': 'apache'
+            "timestamp": timestamp,
+            "source_ip": data["ip"],
+            "method": data["method"],
+            "path": data["path"],
+            "status": int(data["status"]),
+            "size": data["size"] if data["size"] != "-" else "0",
+            "referer": data["referer"],
+            "user_agent": data["user_agent"],
+            "log_type": "apache",
         }
 
 
@@ -68,9 +65,9 @@ class SyslogParser(LogParser):
 
     # Simplified syslog pattern
     PATTERN = re.compile(
-        r'(?P<month>\w+)\s+(?P<day>\d+) (?P<time>\d+:\d+:\d+) '
-        r'(?P<host>\S+) (?P<process>\S+?)(?:\[(?P<pid>\d+)\])?: '
-        r'(?P<message>.*)'
+        r"(?P<month>\w+)\s+(?P<day>\d+) (?P<time>\d+:\d+:\d+) "
+        r"(?P<host>\S+) (?P<process>\S+?)(?:\[(?P<pid>\d+)\])?: "
+        r"(?P<message>.*)"
     )
 
     def parse_line(self, line: str) -> Optional[Dict]:
@@ -85,17 +82,17 @@ class SyslogParser(LogParser):
         try:
             current_year = datetime.now().year
             timestamp_str = f"{data['month']} {data['day']} {current_year} {data['time']}"
-            timestamp = datetime.strptime(timestamp_str, '%b %d %Y %H:%M:%S')
+            timestamp = datetime.strptime(timestamp_str, "%b %d %Y %H:%M:%S")
         except ValueError:
             timestamp = None
 
         return {
-            'timestamp': timestamp,
-            'host': data['host'],
-            'process': data['process'],
-            'pid': data.get('pid'),
-            'message': data['message'],
-            'log_type': 'syslog'
+            "timestamp": timestamp,
+            "host": data["host"],
+            "process": data["process"],
+            "pid": data.get("pid"),
+            "message": data["message"],
+            "log_type": "syslog",
         }
 
 
@@ -158,59 +155,69 @@ class ThreatDetector:
         """Analyze web log entry for attacks"""
         alerts = []
 
-        path = entry.get('path', '')
-        user_agent = entry.get('user_agent', '')
+        path = entry.get("path", "")
+        user_agent = entry.get("user_agent", "")
 
         # Check for SQL injection
         if self.detect_sql_injection(path):
-            alerts.append({
-                'type': 'sql_injection',
-                'severity': 'high',
-                'description': f"SQL injection attempt detected in path: {path[:100]}",
-                'source_ip': entry.get('source_ip'),
-                'timestamp': entry.get('timestamp')
-            })
+            alerts.append(
+                {
+                    "type": "sql_injection",
+                    "severity": "high",
+                    "description": f"SQL injection attempt detected in path: {path[:100]}",
+                    "source_ip": entry.get("source_ip"),
+                    "timestamp": entry.get("timestamp"),
+                }
+            )
 
         # Check for XSS
         if self.detect_xss(path):
-            alerts.append({
-                'type': 'xss',
-                'severity': 'medium',
-                'description': f"XSS attempt detected in path: {path[:100]}",
-                'source_ip': entry.get('source_ip'),
-                'timestamp': entry.get('timestamp')
-            })
+            alerts.append(
+                {
+                    "type": "xss",
+                    "severity": "medium",
+                    "description": f"XSS attempt detected in path: {path[:100]}",
+                    "source_ip": entry.get("source_ip"),
+                    "timestamp": entry.get("timestamp"),
+                }
+            )
 
         # Check for path traversal
         if self.detect_path_traversal(path):
-            alerts.append({
-                'type': 'path_traversal',
-                'severity': 'high',
-                'description': f"Path traversal attempt detected: {path[:100]}",
-                'source_ip': entry.get('source_ip'),
-                'timestamp': entry.get('timestamp')
-            })
+            alerts.append(
+                {
+                    "type": "path_traversal",
+                    "severity": "high",
+                    "description": f"Path traversal attempt detected: {path[:100]}",
+                    "source_ip": entry.get("source_ip"),
+                    "timestamp": entry.get("timestamp"),
+                }
+            )
 
         # Check for scanning (404s)
-        if entry.get('status') == 404:
-            alerts.append({
-                'type': '404_scan',
-                'severity': 'low',
-                'description': f"404 response for {path}",
-                'source_ip': entry.get('source_ip'),
-                'timestamp': entry.get('timestamp')
-            })
+        if entry.get("status") == 404:
+            alerts.append(
+                {
+                    "type": "404_scan",
+                    "severity": "low",
+                    "description": f"404 response for {path}",
+                    "source_ip": entry.get("source_ip"),
+                    "timestamp": entry.get("timestamp"),
+                }
+            )
 
         # Suspicious user agents
-        suspicious_agents = ['sqlmap', 'nikto', 'nmap', 'masscan', 'nessus']
+        suspicious_agents = ["sqlmap", "nikto", "nmap", "masscan", "nessus"]
         if any(agent in user_agent.lower() for agent in suspicious_agents):
-            alerts.append({
-                'type': 'scanner_detected',
-                'severity': 'medium',
-                'description': f"Suspicious user agent: {user_agent}",
-                'source_ip': entry.get('source_ip'),
-                'timestamp': entry.get('timestamp')
-            })
+            alerts.append(
+                {
+                    "type": "scanner_detected",
+                    "severity": "medium",
+                    "description": f"Suspicious user agent: {user_agent}",
+                    "source_ip": entry.get("source_ip"),
+                    "timestamp": entry.get("timestamp"),
+                }
+            )
 
         return alerts
 
@@ -218,16 +225,18 @@ class ThreatDetector:
         """Analyze authentication log for brute force"""
         alerts = []
 
-        message = entry.get('message', '')
+        message = entry.get("message", "")
 
         if self.detect_brute_force(message):
-            alerts.append({
-                'type': 'brute_force_attempt',
-                'severity': 'medium',
-                'description': message[:200],
-                'host': entry.get('host'),
-                'timestamp': entry.get('timestamp')
-            })
+            alerts.append(
+                {
+                    "type": "brute_force_attempt",
+                    "severity": "medium",
+                    "description": message[:200],
+                    "host": entry.get("host"),
+                    "timestamp": entry.get("timestamp"),
+                }
+            )
 
         return alerts
 
@@ -239,44 +248,44 @@ class LogAnalyzer:
         self.verbose = verbose
         self.detector = ThreatDetector()
         self.parsers = {
-            'apache': ApacheLogParser(),
-            'nginx': ApacheLogParser(),  # Same format
-            'syslog': SyslogParser(),
+            "apache": ApacheLogParser(),
+            "nginx": ApacheLogParser(),  # Same format
+            "syslog": SyslogParser(),
         }
 
     def detect_format(self, sample_lines: List[str]) -> str:
         """Auto-detect log format"""
         for line in sample_lines[:10]:
             # Try Apache/Nginx
-            if re.match(r'^\S+ \S+ \S+ \[[^\]]+\]', line):
-                return 'apache'
+            if re.match(r"^\S+ \S+ \S+ \[[^\]]+\]", line):
+                return "apache"
 
             # Try Syslog
-            if re.match(r'^\w+\s+\d+ \d+:\d+:\d+', line):
-                return 'syslog'
+            if re.match(r"^\w+\s+\d+ \d+:\d+:\d+", line):
+                return "syslog"
 
-        return 'unknown'
+        return "unknown"
 
-    def analyze_file(self, file_path: str, log_type: str = 'auto') -> Dict:
+    def analyze_file(self, file_path: str, log_type: str = "auto") -> Dict:
         """Analyze log file"""
         if not Path(file_path).exists():
-            return {'error': f'File not found: {file_path}'}
+            return {"error": f"File not found: {file_path}"}
 
         # Read file
-        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
 
         if not lines:
-            return {'error': 'Empty log file'}
+            return {"error": "Empty log file"}
 
         # Auto-detect format
-        if log_type == 'auto':
+        if log_type == "auto":
             log_type = self.detect_format(lines)
             if self.verbose:
                 print(f"Detected log format: {log_type}", file=sys.stderr)
 
         if log_type not in self.parsers:
-            return {'error': f'Unsupported log type: {log_type}'}
+            return {"error": f"Unsupported log type: {log_type}"}
 
         parser = self.parsers[log_type]
 
@@ -291,7 +300,7 @@ class LogAnalyzer:
                 entries.append(entry)
 
         if not entries:
-            return {'error': 'No valid log entries parsed'}
+            return {"error": "No valid log entries parsed"}
 
         if self.verbose:
             print(f"Parsed {len(entries)} log entries", file=sys.stderr)
@@ -300,9 +309,9 @@ class LogAnalyzer:
         all_alerts = []
 
         for entry in entries:
-            if log_type in ['apache', 'nginx']:
+            if log_type in ["apache", "nginx"]:
                 alerts = self.detector.analyze_web_log(entry)
-            elif log_type == 'syslog':
+            elif log_type == "syslog":
                 alerts = self.detector.analyze_auth_log(entry)
             else:
                 alerts = []
@@ -314,19 +323,19 @@ class LogAnalyzer:
 
         # Compile results
         result = {
-            'metadata': {
-                'log_file': file_path,
-                'log_type': log_type,
-                'total_entries': len(entries),
-                'total_alerts': len(all_alerts),
-                'analysis_date': datetime.now().isoformat()
+            "metadata": {
+                "log_file": file_path,
+                "log_type": log_type,
+                "total_entries": len(entries),
+                "total_alerts": len(all_alerts),
+                "analysis_date": datetime.now().isoformat(),
             },
-            'summary': {
-                'alerts_by_type': self._count_by_type(all_alerts),
-                'alerts_by_severity': self._count_by_severity(all_alerts)
+            "summary": {
+                "alerts_by_type": self._count_by_type(all_alerts),
+                "alerts_by_severity": self._count_by_severity(all_alerts),
             },
-            'statistics': stats,
-            'alerts': all_alerts[:100],  # Limit to first 100 alerts
+            "statistics": stats,
+            "alerts": all_alerts[:100],  # Limit to first 100 alerts
         }
 
         return result
@@ -335,60 +344,48 @@ class LogAnalyzer:
         """Generate statistics from log entries"""
         stats = {}
 
-        if log_type in ['apache', 'nginx']:
+        if log_type in ["apache", "nginx"]:
             # Web log statistics
-            ips = [e['source_ip'] for e in entries]
-            paths = [e['path'] for e in entries]
-            statuses = [e['status'] for e in entries]
-            user_agents = [e['user_agent'] for e in entries]
+            ips = [e["source_ip"] for e in entries]
+            paths = [e["path"] for e in entries]
+            statuses = [e["status"] for e in entries]
+            user_agents = [e["user_agent"] for e in entries]
 
             ip_counter = Counter(ips)
             path_counter = Counter(paths)
             status_counter = Counter(statuses)
 
             stats = {
-                'top_ips': [
-                    {'ip': ip, 'count': count}
-                    for ip, count in ip_counter.most_common(10)
-                ],
-                'top_paths': [
-                    {'path': path, 'count': count}
-                    for path, count in path_counter.most_common(10)
-                ],
-                'status_codes': dict(status_counter),
-                'total_requests': len(entries)
+                "top_ips": [{"ip": ip, "count": count} for ip, count in ip_counter.most_common(10)],
+                "top_paths": [{"path": path, "count": count} for path, count in path_counter.most_common(10)],
+                "status_codes": dict(status_counter),
+                "total_requests": len(entries),
             }
 
-        elif log_type == 'syslog':
+        elif log_type == "syslog":
             # Syslog statistics
-            hosts = [e['host'] for e in entries]
-            processes = [e['process'] for e in entries]
+            hosts = [e["host"] for e in entries]
+            processes = [e["process"] for e in entries]
 
             host_counter = Counter(hosts)
             process_counter = Counter(processes)
 
             stats = {
-                'top_hosts': [
-                    {'host': host, 'count': count}
-                    for host, count in host_counter.most_common(10)
-                ],
-                'top_processes': [
-                    {'process': proc, 'count': count}
-                    for proc, count in process_counter.most_common(10)
-                ],
-                'total_events': len(entries)
+                "top_hosts": [{"host": host, "count": count} for host, count in host_counter.most_common(10)],
+                "top_processes": [{"process": proc, "count": count} for proc, count in process_counter.most_common(10)],
+                "total_events": len(entries),
             }
 
         return stats
 
     def _count_by_type(self, alerts: List[Dict]) -> Dict:
         """Count alerts by type"""
-        counter = Counter(alert['type'] for alert in alerts)
+        counter = Counter(alert["type"] for alert in alerts)
         return dict(counter)
 
     def _count_by_severity(self, alerts: List[Dict]) -> Dict:
         """Count alerts by severity"""
-        counter = Counter(alert['severity'] for alert in alerts)
+        counter = Counter(alert["severity"] for alert in alerts)
         return dict(counter)
 
 
@@ -399,18 +396,18 @@ def format_output_json(results: Dict) -> str:
 
 def format_output_csv(results: Dict) -> str:
     """Format alerts as CSV"""
-    lines = ['Type,Severity,Description,Source,Timestamp']
+    lines = ["Type,Severity,Description,Source,Timestamp"]
 
-    for alert in results.get('alerts', []):
-        alert_type = alert.get('type', '')
-        severity = alert.get('severity', '')
-        description = alert.get('description', '').replace(',', ';')
-        source = alert.get('source_ip') or alert.get('host', '')
-        timestamp = alert.get('timestamp', '')
+    for alert in results.get("alerts", []):
+        alert_type = alert.get("type", "")
+        severity = alert.get("severity", "")
+        description = alert.get("description", "").replace(",", ";")
+        source = alert.get("source_ip") or alert.get("host", "")
+        timestamp = alert.get("timestamp", "")
 
-        lines.append(f'{alert_type},{severity},{description},{source},{timestamp}')
+        lines.append(f"{alert_type},{severity},{description},{source},{timestamp}")
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def format_output_text(results: Dict) -> str:
@@ -422,7 +419,7 @@ def format_output_text(results: Dict) -> str:
     lines.append("LOG ANALYSIS REPORT")
     lines.append("=" * 60)
 
-    metadata = results.get('metadata', {})
+    metadata = results.get("metadata", {})
     lines.append(f"\nLog File: {metadata.get('log_file')}")
     lines.append(f"Log Type: {metadata.get('log_type')}")
     lines.append(f"Total Entries: {metadata.get('total_entries')}")
@@ -430,46 +427,46 @@ def format_output_text(results: Dict) -> str:
     lines.append(f"Analysis Date: {metadata.get('analysis_date')}")
 
     # Summary
-    summary = results.get('summary', {})
+    summary = results.get("summary", {})
     lines.append("\n" + "=" * 60)
     lines.append("ALERT SUMMARY")
     lines.append("=" * 60)
 
-    alerts_by_type = summary.get('alerts_by_type', {})
+    alerts_by_type = summary.get("alerts_by_type", {})
     if alerts_by_type:
         lines.append("\nAlerts by Type:")
         for alert_type, count in sorted(alerts_by_type.items(), key=lambda x: x[1], reverse=True):
             lines.append(f"  {alert_type}: {count}")
 
-    alerts_by_severity = summary.get('alerts_by_severity', {})
+    alerts_by_severity = summary.get("alerts_by_severity", {})
     if alerts_by_severity:
         lines.append("\nAlerts by Severity:")
         for severity, count in alerts_by_severity.items():
             lines.append(f"  {severity}: {count}")
 
     # Statistics
-    stats = results.get('statistics', {})
+    stats = results.get("statistics", {})
     lines.append("\n" + "=" * 60)
     lines.append("STATISTICS")
     lines.append("=" * 60)
 
-    if 'top_ips' in stats:
+    if "top_ips" in stats:
         lines.append("\nTop 10 Source IPs:")
-        for item in stats['top_ips']:
+        for item in stats["top_ips"]:
             lines.append(f"  {item['ip']}: {item['count']} requests")
 
-    if 'top_paths' in stats:
+    if "top_paths" in stats:
         lines.append("\nTop 10 Requested Paths:")
-        for item in stats['top_paths'][:10]:
+        for item in stats["top_paths"][:10]:
             lines.append(f"  {item['path']}: {item['count']} requests")
 
-    if 'status_codes' in stats:
+    if "status_codes" in stats:
         lines.append("\nHTTP Status Codes:")
-        for status, count in sorted(stats['status_codes'].items()):
+        for status, count in sorted(stats["status_codes"].items()):
             lines.append(f"  {status}: {count}")
 
     # Top Alerts
-    alerts = results.get('alerts', [])
+    alerts = results.get("alerts", [])
     if alerts:
         lines.append("\n" + "=" * 60)
         lines.append(f"TOP ALERTS (showing first 20 of {len(alerts)})")
@@ -481,14 +478,14 @@ def format_output_text(results: Dict) -> str:
             lines.append(f"   Source: {alert.get('source_ip') or alert.get('host', 'N/A')}")
             lines.append(f"   Time: {alert.get('timestamp')}")
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Log Analysis - Parse and analyze security logs for threats',
+        description="Log Analysis - Parse and analyze security logs for threats",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
+        epilog="""
 Examples:
   # Analyze Apache access log
   python analyzer.py /var/log/apache2/access.log
@@ -501,38 +498,20 @@ Examples:
 
   # Text report
   python analyzer.py access.log --format txt --output report.txt
-        '''
+        """,
     )
 
-    parser.add_argument(
-        'log_file',
-        help='Path to log file to analyze'
-    )
+    parser.add_argument("log_file", help="Path to log file to analyze")
 
     parser.add_argument(
-        '--type', '-t',
-        choices=['auto', 'apache', 'nginx', 'syslog'],
-        default='auto',
-        help='Log type (default: auto-detect)'
+        "--type", "-t", choices=["auto", "apache", "nginx", "syslog"], default="auto", help="Log type (default: auto-detect)"
     )
 
-    parser.add_argument(
-        '--output', '-o',
-        help='Output file (default: stdout)'
-    )
+    parser.add_argument("--output", "-o", help="Output file (default: stdout)")
 
-    parser.add_argument(
-        '--format', '-f',
-        choices=['json', 'csv', 'txt'],
-        default='json',
-        help='Output format (default: json)'
-    )
+    parser.add_argument("--format", "-f", choices=["json", "csv", "txt"], default="json", help="Output format (default: json)")
 
-    parser.add_argument(
-        '--verbose', '-v',
-        action='store_true',
-        help='Verbose output'
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     return parser.parse_args()
 
@@ -550,21 +529,21 @@ def main():
     results = analyzer.analyze_file(args.log_file, args.type)
 
     # Check for errors
-    if 'error' in results:
+    if "error" in results:
         print(f"Error: {results['error']}", file=sys.stderr)
         sys.exit(1)
 
     # Format output
-    if args.format == 'json':
+    if args.format == "json":
         output = format_output_json(results)
-    elif args.format == 'csv':
+    elif args.format == "csv":
         output = format_output_csv(results)
-    elif args.format == 'txt':
+    elif args.format == "txt":
         output = format_output_text(results)
 
     # Write output
     if args.output:
-        with open(args.output, 'w') as f:
+        with open(args.output, "w") as f:
             f.write(output)
         if args.verbose:
             print(f"\nOutput written to {args.output}", file=sys.stderr)
@@ -573,10 +552,10 @@ def main():
 
     # Print summary to stderr if verbose
     if args.verbose:
-        metadata = results.get('metadata', {})
+        metadata = results.get("metadata", {})
         print(f"\nAnalyzed {metadata.get('total_entries')} log entries", file=sys.stderr)
         print(f"Found {metadata.get('total_alerts')} alerts", file=sys.stderr)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

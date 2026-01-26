@@ -35,7 +35,7 @@ class STIXExporter:
 
     def _get_timestamp(self) -> str:
         """Get current timestamp in STIX format"""
-        return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     def _create_identity(self) -> Dict:
         """Create identity object for the creator"""
@@ -46,11 +46,12 @@ class STIXExporter:
             "created": self.created,
             "modified": self.created,
             "name": self.identity_name,
-            "identity_class": self.identity_class
+            "identity_class": self.identity_class,
         }
 
-    def _create_indicator(self, pattern: str, ioc_type: str, name: str = None,
-                         description: str = None, labels: List[str] = None) -> Dict:
+    def _create_indicator(
+        self, pattern: str, ioc_type: str, name: str = None, description: str = None, labels: List[str] = None
+    ) -> Dict:
         """
         Create STIX indicator object
 
@@ -76,7 +77,7 @@ class STIXExporter:
             "pattern": pattern,
             "pattern_type": "stix",
             "valid_from": timestamp,
-            "indicator_types": [ioc_type]
+            "indicator_types": [ioc_type],
         }
 
         if name:
@@ -88,8 +89,7 @@ class STIXExporter:
 
         return indicator
 
-    def export_iocs(self, ioc_data: Dict, description: str = None,
-                   labels: List[str] = None) -> str:
+    def export_iocs(self, ioc_data: Dict, description: str = None, labels: List[str] = None) -> str:
         """
         Export IOC extraction results to STIX 2.1 bundle
 
@@ -111,87 +111,84 @@ class STIXExporter:
             labels = ["malicious-activity"]
 
         # Process IPs
-        for ip in ioc_data.get('ips', []):
+        for ip in ioc_data.get("ips", []):
             # Remove defanging if present
-            clean_ip = ip.replace('[.]', '.').replace('[', '').replace(']', '')
+            clean_ip = ip.replace("[.]", ".").replace("[", "").replace("]", "")
             pattern = f"[ipv4-addr:value = '{clean_ip}']"
             indicator = self._create_indicator(
                 pattern=pattern,
                 ioc_type="malicious-activity",
                 name=f"Malicious IP: {clean_ip}",
                 description=description,
-                labels=labels
+                labels=labels,
             )
             objects.append(indicator)
 
         # Process domains
-        for domain in ioc_data.get('domains', []):
+        for domain in ioc_data.get("domains", []):
             # Remove defanging if present
-            clean_domain = domain.replace('[.]', '.').replace('[', '').replace(']', '')
+            clean_domain = domain.replace("[.]", ".").replace("[", "").replace("]", "")
             pattern = f"[domain-name:value = '{clean_domain}']"
             indicator = self._create_indicator(
                 pattern=pattern,
                 ioc_type="malicious-activity",
                 name=f"Malicious Domain: {clean_domain}",
                 description=description,
-                labels=labels
+                labels=labels,
             )
             objects.append(indicator)
 
         # Process URLs
-        for url in ioc_data.get('urls', []):
+        for url in ioc_data.get("urls", []):
             # Remove defanging if present
-            clean_url = url.replace('hxxp', 'http').replace('[.]', '.').replace('[', '').replace(']', '')
+            clean_url = url.replace("hxxp", "http").replace("[.]", ".").replace("[", "").replace("]", "")
             pattern = f"[url:value = '{clean_url}']"
             indicator = self._create_indicator(
                 pattern=pattern,
                 ioc_type="malicious-activity",
                 name=f"Malicious URL: {clean_url}",
                 description=description,
-                labels=labels
+                labels=labels,
             )
             objects.append(indicator)
 
         # Process email addresses
-        for email in ioc_data.get('emails', []):
+        for email in ioc_data.get("emails", []):
             # Remove defanging if present
-            clean_email = email.replace('[@]', '@').replace('[.]', '.').replace('[', '').replace(']', '')
+            clean_email = email.replace("[@]", "@").replace("[.]", ".").replace("[", "").replace("]", "")
             pattern = f"[email-addr:value = '{clean_email}']"
             indicator = self._create_indicator(
                 pattern=pattern,
                 ioc_type="malicious-activity",
                 name=f"Malicious Email: {clean_email}",
                 description=description,
-                labels=labels
+                labels=labels,
             )
             objects.append(indicator)
 
         # Process hashes
-        hashes = ioc_data.get('hashes', {})
-        for hash_type in ['md5', 'sha1', 'sha256', 'sha512']:
+        hashes = ioc_data.get("hashes", {})
+        for hash_type in ["md5", "sha1", "sha256", "sha512"]:
             for hash_value in hashes.get(hash_type, []):
-                hash_type_upper = hash_type.upper().replace('SHA', 'SHA-')
+                hash_type_upper = hash_type.upper().replace("SHA", "SHA-")
                 pattern = f"[file:hashes.'{hash_type_upper}' = '{hash_value}']"
                 indicator = self._create_indicator(
                     pattern=pattern,
                     ioc_type="malicious-activity",
                     name=f"Malicious File Hash ({hash_type_upper}): {hash_value[:16]}...",
                     description=description,
-                    labels=labels
+                    labels=labels,
                 )
                 objects.append(indicator)
 
         # Create STIX bundle
-        bundle = {
-            "type": "bundle",
-            "id": self._generate_stix_id("bundle"),
-            "objects": objects
-        }
+        bundle = {"type": "bundle", "id": self._generate_stix_id("bundle"), "objects": objects}
 
         return json.dumps(bundle, indent=2)
 
-    def export_threat_report(self, title: str, description: str, ioc_data: Dict,
-                            confidence: int = 50, threat_actor: str = None) -> str:
+    def export_threat_report(
+        self, title: str, description: str, ioc_data: Dict, confidence: int = 50, threat_actor: str = None
+    ) -> str:
         """
         Export comprehensive threat report as STIX 2.1 bundle
 
@@ -225,7 +222,7 @@ class STIXExporter:
             "description": description,
             "published": timestamp,
             "report_types": ["threat-report"],
-            "object_refs": []
+            "object_refs": [],
         }
 
         # Create threat actor if specified
@@ -239,7 +236,7 @@ class STIXExporter:
                 "created_by_ref": self.identity_id,
                 "name": threat_actor,
                 "threat_actor_types": ["unknown"],
-                "labels": ["malicious-activity"]
+                "labels": ["malicious-activity"],
             }
             objects.append(actor)
             report["object_refs"].append(actor["id"])
@@ -247,48 +244,44 @@ class STIXExporter:
         # Add indicators
         labels = ["malicious-activity"]
         if threat_actor:
-            labels.append(threat_actor.lower().replace(' ', '-'))
+            labels.append(threat_actor.lower().replace(" ", "-"))
 
         # Process all IOCs
-        for ip in ioc_data.get('ips', []):
-            clean_ip = ip.replace('[.]', '.').replace('[', '').replace(']', '')
+        for ip in ioc_data.get("ips", []):
+            clean_ip = ip.replace("[.]", ".").replace("[", "").replace("]", "")
             pattern = f"[ipv4-addr:value = '{clean_ip}']"
             indicator = self._create_indicator(
                 pattern=pattern,
                 ioc_type="malicious-activity",
                 name=f"IP: {clean_ip}",
                 description=f"IP address associated with {threat_actor or 'malicious activity'}",
-                labels=labels
+                labels=labels,
             )
             objects.append(indicator)
             report["object_refs"].append(indicator["id"])
 
-        for domain in ioc_data.get('domains', []):
-            clean_domain = domain.replace('[.]', '.').replace('[', '').replace(']', '')
+        for domain in ioc_data.get("domains", []):
+            clean_domain = domain.replace("[.]", ".").replace("[", "").replace("]", "")
             pattern = f"[domain-name:value = '{clean_domain}']"
             indicator = self._create_indicator(
                 pattern=pattern,
                 ioc_type="malicious-activity",
                 name=f"Domain: {clean_domain}",
                 description=f"Domain associated with {threat_actor or 'malicious activity'}",
-                labels=labels
+                labels=labels,
             )
             objects.append(indicator)
             report["object_refs"].append(indicator["id"])
 
         # Create bundle
-        bundle = {
-            "type": "bundle",
-            "id": self._generate_stix_id("bundle"),
-            "objects": objects
-        }
+        bundle = {"type": "bundle", "id": self._generate_stix_id("bundle"), "objects": objects}
 
         return json.dumps(bundle, indent=2)
 
 
-def export_to_stix(ioc_data: Dict, output_type: str = "simple",
-                  title: str = None, description: str = None,
-                  threat_actor: str = None) -> str:
+def export_to_stix(
+    ioc_data: Dict, output_type: str = "simple", title: str = None, description: str = None, threat_actor: str = None
+) -> str:
     """
     Convenience function to export IOCs to STIX format
 
@@ -310,13 +303,7 @@ def export_to_stix(ioc_data: Dict, output_type: str = "simple",
         if not description:
             description = "IOCs extracted by SecOps Helper"
         return exporter.export_threat_report(
-            title=title,
-            description=description,
-            ioc_data=ioc_data,
-            threat_actor=threat_actor
+            title=title, description=description, ioc_data=ioc_data, threat_actor=threat_actor
         )
     else:
-        return exporter.export_iocs(
-            ioc_data=ioc_data,
-            description=description
-        )
+        return exporter.export_iocs(ioc_data=ioc_data, description=description)

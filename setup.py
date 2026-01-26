@@ -18,7 +18,7 @@ requirements_file = Path(__file__).parent / "requirements.txt"
 requirements = []
 if requirements_file.exists():
     with open(requirements_file) as f:
-        requirements = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        requirements = [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
 setup(
     name="secops-helper",
