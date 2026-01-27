@@ -158,9 +158,9 @@ class TestIOCWorkflow:
 class TestThreatAnalysisWorkflow:
     """Test threat analysis workflows"""
 
-    @patch("domainIpIntel.intel.VirusTotalAPI")
-    @patch("domainIpIntel.intel.AbuseIPDBAPI")
-    @patch("domainIpIntel.intel.DNSLookup.resolve_ptr")
+    @patch("secops_helper.tools.domain_ip_intel.VirusTotalAPI")
+    @patch("secops_helper.tools.domain_ip_intel.AbuseIPDBAPI")
+    @patch("secops_helper.tools.domain_ip_intel.DNSLookup.resolve_ptr")
     def test_ip_reputation_analysis(self, mock_resolve_ptr, mock_abuseipdb, mock_vt):
         """Test complete IP reputation analysis workflow"""
         # Mock DNS
@@ -197,8 +197,8 @@ class TestThreatAnalysisWorkflow:
         if result.get("threat_intelligence"):
             assert result["reputation"]["score"] >= 0
 
-    @patch("domainIpIntel.intel.VirusTotalAPI")
-    @patch("domainIpIntel.intel.DNSLookup.get_dns_info")
+    @patch("secops_helper.tools.domain_ip_intel.VirusTotalAPI")
+    @patch("secops_helper.tools.domain_ip_intel.DNSLookup.get_dns_info")
     def test_domain_reputation_analysis(self, mock_dns, mock_vt):
         """Test complete domain reputation analysis workflow"""
         # Mock DNS
