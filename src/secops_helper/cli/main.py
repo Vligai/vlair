@@ -45,21 +45,21 @@ class ToolDiscovery:
         package_root = Path(__file__).parent.parent  # src/secops_helper
         for tool_id, metadata in tool_definitions.items():
             # Convert module name to path: secops_helper.tools.eml_parser -> tools/eml_parser.py
-            module_parts = metadata['module'].split('.')
+            module_parts = metadata["module"].split(".")
             if len(module_parts) >= 3:
                 # Expected format: secops_helper.tools.tool_name
-                relative_path = '/'.join(module_parts[1:]) + '.py'
+                relative_path = "/".join(module_parts[1:]) + ".py"
                 module_path = package_root / relative_path
             else:
-                module_path = self.base_dir / (metadata['module'].replace('.', '/') + '.py')
+                module_path = self.base_dir / (metadata["module"].replace(".", "/") + ".py")
 
             if module_path.exists():
                 self.tools[tool_id] = metadata
-                self.tools[tool_id]['available'] = True
-                self.tools[tool_id]['path'] = str(module_path)
+                self.tools[tool_id]["available"] = True
+                self.tools[tool_id]["path"] = str(module_path)
             else:
                 self.tools[tool_id] = metadata
-                self.tools[tool_id]['available'] = False
+                self.tools[tool_id]["available"] = False
 
     def get_tool(self, tool_id: str) -> Optional[Dict]:
         """Get tool metadata by ID"""
@@ -71,8 +71,7 @@ class ToolDiscovery:
 
     def get_by_category(self, category: str) -> List[Tuple[str, Dict]]:
         """Get tools by category"""
-        return [(tid, tool) for tid, tool in self.tools.items()
-                if tool['category'] == category]
+        return [(tid, tool) for tid, tool in self.tools.items() if tool["category"] == category]
 
     def search_tools(self, keyword: str) -> List[Tuple[str, Dict]]:
         """Search tools by keyword"""
@@ -81,9 +80,11 @@ class ToolDiscovery:
 
         for tool_id, tool in self.tools.items():
             # Search in name, description, and keywords
-            if (keyword in tool['name'].lower() or
-                keyword in tool['description'].lower() or
-                any(keyword in kw.lower() for kw in tool['keywords'])):
+            if (
+                keyword in tool["name"].lower()
+                or keyword in tool["description"].lower()
+                or any(keyword in kw.lower() for kw in tool["keywords"])
+            ):
                 results.append((tool_id, tool))
 
         return results
@@ -104,26 +105,29 @@ class ToolManager:
             print(f"Run 'secops list' to see available tools", file=sys.stderr)
             sys.exit(1)
 
-        if not tool['available']:
-            print(f"Error: Tool '{tool_id}' not found at {tool.get('path', 'unknown path')}",
-                  file=sys.stderr)
+        if not tool["available"]:
+            print(
+                f"Error: Tool '{tool_id}' not found at {tool.get('path', 'unknown path')}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         # Import and run the tool
         try:
-            module_name = tool['module']
-            parts = module_name.split('.')
+            module_name = tool["module"]
+            parts = module_name.split(".")
 
             # Use importlib to import the module from the package
             import importlib
+
             module = importlib.import_module(module_name)
 
             # Set up argv for the tool
-            tool_script_name = parts[-1] + '.py'
+            tool_script_name = parts[-1] + ".py"
             sys.argv = [tool_script_name] + args
 
             # Execute
-            if hasattr(module, 'main'):
+            if hasattr(module, "main"):
                 module.main()
             else:
                 print(f"Error: Tool module has no main() function", file=sys.stderr)
@@ -132,6 +136,7 @@ class ToolManager:
         except Exception as e:
             print(f"Error running tool '{tool_id}': {e}", file=sys.stderr)
             import traceback
+
             traceback.print_exc()
             sys.exit(1)
 
@@ -145,9 +150,9 @@ class InteractiveMenu:
 
     def show_main_menu(self):
         """Display the main menu"""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("  SecOps Helper - Security Operations Toolkit")
-        print("="*70)
+        print("=" * 70)
         print("\nWhat would you like to do?\n")
         print("  1. Browse tools by category")
         print("  2. Search for a tool")
@@ -155,21 +160,21 @@ class InteractiveMenu:
         print("  4. View API key status")
         print("  5. Quick start guide")
         print("  0. Exit")
-        print("\n" + "-"*70)
+        print("\n" + "-" * 70)
 
         choice = input("\nEnter your choice (0-5): ").strip()
 
-        if choice == '1':
+        if choice == "1":
             self.browse_by_category()
-        elif choice == '2':
+        elif choice == "2":
             self.search_tools()
-        elif choice == '3':
+        elif choice == "3":
             self.list_all_tools()
-        elif choice == '4':
+        elif choice == "4":
             self.show_api_status()
-        elif choice == '5':
+        elif choice == "5":
             self.show_quick_start()
-        elif choice == '0':
+        elif choice == "0":
             print("\nGoodbye!")
             sys.exit(0)
         else:
@@ -179,18 +184,20 @@ class InteractiveMenu:
     def browse_by_category(self):
         """Browse tools by category"""
         # Get all unique categories
-        categories = sorted(set(tool['category'] for tool in self.discovery.get_all_tools().values()))
+        categories = sorted(
+            set(tool["category"] for tool in self.discovery.get_all_tools().values())
+        )
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("  Tool Categories")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
         for i, category in enumerate(categories, 1):
             tools_in_category = self.discovery.get_by_category(category)
             print(f"  {i}. {category} ({len(tools_in_category)} tools)")
 
         print("  0. Back to main menu")
-        print("\n" + "-"*70)
+        print("\n" + "-" * 70)
 
         choice = input("\nSelect category (0-{}): ".format(len(categories))).strip()
 
@@ -213,25 +220,25 @@ class InteractiveMenu:
         """Show tools in a specific category"""
         tools = self.discovery.get_by_category(category)
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print(f"  {category} Tools")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
         for i, (tool_id, tool) in enumerate(tools, 1):
-            status = "✓" if tool['available'] else "✗"
+            status = "✓" if tool["available"] else "✗"
             print(f"  {i}. [{status}] {tool['name']}")
             print(f"      {tool['description']}")
             print()
 
         print("  i. Get info on a tool")
         print("  0. Back")
-        print("\n" + "-"*70)
+        print("\n" + "-" * 70)
 
         choice = input("\nEnter choice: ").strip()
 
-        if choice == '0':
+        if choice == "0":
             self.browse_by_category()
-        elif choice.lower() == 'i':
+        elif choice.lower() == "i":
             tool_num = input("Enter tool number: ").strip()
             try:
                 idx = int(tool_num) - 1
@@ -256,15 +263,15 @@ class InteractiveMenu:
 
         results = self.discovery.search_tools(keyword)
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print(f"  Search Results for '{keyword}'")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
         if not results:
             print(f"  No tools found matching '{keyword}'\n")
         else:
             for tool_id, tool in results:
-                status = "✓" if tool['available'] else "✗"
+                status = "✓" if tool["available"] else "✗"
                 print(f"  [{status}] {tool['name']} ({tool_id})")
                 print(f"      Category: {tool['category']}")
                 print(f"      {tool['description']}")
@@ -275,21 +282,20 @@ class InteractiveMenu:
 
     def list_all_tools(self):
         """List all available tools"""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("  All Available Tools")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
-        tools = sorted(self.discovery.get_all_tools().items(),
-                      key=lambda x: x[1]['category'])
+        tools = sorted(self.discovery.get_all_tools().items(), key=lambda x: x[1]["category"])
 
         current_category = None
         for tool_id, tool in tools:
-            if tool['category'] != current_category:
-                current_category = tool['category']
+            if tool["category"] != current_category:
+                current_category = tool["category"]
                 print(f"\n  {current_category}:")
                 print("  " + "-" * 40)
 
-            status = "✓" if tool['available'] else "✗"
+            status = "✓" if tool["available"] else "✗"
             print(f"    [{status}] {tool_id:12s} - {tool['name']}")
 
         print("\n  Legend: ✓ = Available, ✗ = Not Found")
@@ -304,43 +310,43 @@ class InteractiveMenu:
             print(f"\nTool '{tool_id}' not found.")
             return
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print(f"  {tool['name']}")
-        print("="*70)
+        print("=" * 70)
         print(f"\nCommand ID: {tool_id}")
         print(f"Category:   {tool['category']}")
         print(f"Status:     {'Available ✓' if tool['available'] else 'Not Found ✗'}")
         print(f"\nDescription:")
         print(f"  {tool['description']}")
 
-        if tool['keywords']:
+        if tool["keywords"]:
             print(f"\nKeywords: {', '.join(tool['keywords'])}")
 
-        if tool['requires_api']:
+        if tool["requires_api"]:
             print(f"\nAPI Keys Required:")
-            for api_key in tool['requires_api']:
+            for api_key in tool["requires_api"]:
                 status = "✓" if os.getenv(api_key.split()[0]) else "✗"
                 print(f"  [{status}] {api_key}")
 
-        if tool['examples']:
+        if tool["examples"]:
             print(f"\nUsage Examples:")
-            for example in tool['examples']:
+            for example in tool["examples"]:
                 print(f"  $ {example}")
 
-        print("\n" + "-"*70)
+        print("\n" + "-" * 70)
         input("\nPress Enter to continue...")
 
     def show_api_status(self):
         """Show status of API keys"""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("  API Key Status")
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
         api_keys = {
-            'VT_API_KEY': 'VirusTotal API Key',
-            'ABUSEIPDB_KEY': 'AbuseIPDB API Key',
-            'THREATFOX_API_KEY': 'ThreatFox API Key (optional)',
-            'URLHAUS_API_KEY': 'URLHaus API Key (optional)'
+            "VT_API_KEY": "VirusTotal API Key",
+            "ABUSEIPDB_KEY": "AbuseIPDB API Key",
+            "THREATFOX_API_KEY": "ThreatFox API Key (optional)",
+            "URLHAUS_API_KEY": "URLHaus API Key (optional)",
         }
 
         for key, description in api_keys.items():
@@ -355,10 +361,11 @@ class InteractiveMenu:
 
     def show_quick_start(self):
         """Show quick start guide"""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("  Quick Start Guide")
-        print("="*70)
-        print("""
+        print("=" * 70)
+        print(
+            """
 1. Basic Usage:
 
    Interactive Mode:
@@ -410,7 +417,8 @@ class InteractiveMenu:
    - Multiple output formats (JSON, CSV, TXT)
    - Caching for improved performance
    - STIX 2.1 export support
-        """)
+        """
+        )
 
         input("\nPress Enter to continue...")
         self.show_main_menu()
@@ -418,7 +426,8 @@ class InteractiveMenu:
 
 def print_usage():
     """Print usage information"""
-    print("""
+    print(
+        """
 SecOps Helper - Security Operations Toolkit
 
 Quick Start:
@@ -475,7 +484,8 @@ Individual Tools:
     carve        File carving and extraction
 
 Documentation: https://github.com/Vligai/secops-helper
-    """)
+    """
+    )
 
 
 def main():
@@ -497,35 +507,34 @@ def main():
             print("\n\nGoodbye!")
             sys.exit(0)
 
-    elif sys.argv[1] in ['--help', '-h', 'help']:
+    elif sys.argv[1] in ["--help", "-h", "help"]:
         print_usage()
         sys.exit(0)
 
-    elif sys.argv[1] in ['--version', '-v']:
+    elif sys.argv[1] in ["--version", "-v"]:
         print("SecOps Helper v4.0.0")
         print("Phase 5: Operationalization - Smart analyze command")
         sys.exit(0)
 
-    elif sys.argv[1] == 'list':
+    elif sys.argv[1] == "list":
         # List all tools
-        tools = sorted(discovery.get_all_tools().items(),
-                      key=lambda x: x[1]['category'])
+        tools = sorted(discovery.get_all_tools().items(), key=lambda x: x[1]["category"])
 
         print("\nAvailable Tools:\n")
         current_category = None
         for tool_id, tool in tools:
-            if tool['category'] != current_category:
-                current_category = tool['category']
+            if tool["category"] != current_category:
+                current_category = tool["category"]
                 print(f"\n{current_category}:")
                 print("-" * 40)
 
-            status = "✓" if tool['available'] else "✗"
+            status = "✓" if tool["available"] else "✗"
             print(f"  [{status}] {tool_id:12s} - {tool['name']}")
 
         print("\nUse 'secops info <tool>' for detailed information")
         print("Use 'secops <tool> --help' for usage help\n")
 
-    elif sys.argv[1] == 'info':
+    elif sys.argv[1] == "info":
         if len(sys.argv) < 3:
             print("Usage: secops info <tool>", file=sys.stderr)
             sys.exit(1)
@@ -540,7 +549,7 @@ def main():
 
         menu.show_tool_info(tool_id)
 
-    elif sys.argv[1] == 'search':
+    elif sys.argv[1] == "search":
         if len(sys.argv) < 3:
             print("Usage: secops search <keyword>", file=sys.stderr)
             sys.exit(1)
@@ -554,11 +563,11 @@ def main():
             print(f"No tools found matching '{keyword}'\n")
         else:
             for tool_id, tool in results:
-                status = "✓" if tool['available'] else "✗"
+                status = "✓" if tool["available"] else "✗"
                 print(f"  [{status}] {tool_id:12s} - {tool['name']}")
                 print(f"      {tool['description']}\n")
 
-    elif sys.argv[1] == 'analyze':
+    elif sys.argv[1] == "analyze":
         # Smart analyze command - auto-detect and run appropriate tools
         if len(sys.argv) < 3:
             print("Usage: secops analyze <input> [--verbose] [--json] [--quiet]", file=sys.stderr)
@@ -571,6 +580,7 @@ def main():
 
         try:
             import time as _time
+
             _analyze_start = _time.time()
 
             from secops_helper.core.analyzer import Analyzer
@@ -578,21 +588,21 @@ def main():
 
             # Parse analyze arguments
             input_value = sys.argv[2]
-            verbose = '--verbose' in sys.argv or '-v' in sys.argv[3:]
-            json_output = '--json' in sys.argv or '-j' in sys.argv
-            quiet = '--quiet' in sys.argv or '-q' in sys.argv
+            verbose = "--verbose" in sys.argv or "-v" in sys.argv[3:]
+            json_output = "--json" in sys.argv or "-j" in sys.argv
+            quiet = "--quiet" in sys.argv or "-q" in sys.argv
 
             # Parse report arguments
             report_format = None
             output_path = None
             args_list = sys.argv[3:]
             for i, arg in enumerate(args_list):
-                if arg == '--report':
-                    if i + 1 < len(args_list) and args_list[i + 1] in ('html', 'markdown', 'md'):
+                if arg == "--report":
+                    if i + 1 < len(args_list) and args_list[i + 1] in ("html", "markdown", "md"):
                         report_format = args_list[i + 1]
                     else:
-                        report_format = 'html'
-                if arg in ('--output', '-o'):
+                        report_format = "html"
+                if arg in ("--output", "-o"):
                     if i + 1 < len(args_list):
                         output_path = args_list[i + 1]
 
@@ -604,35 +614,42 @@ def main():
             reporter = Reporter()
 
             if quiet:
-                print(reporter.format_quiet(result['scorer']))
+                print(reporter.format_quiet(result["scorer"]))
             elif json_output:
-                print(reporter.format_json(
-                    result['input'],
-                    result['type'],
-                    result['scorer'],
-                    result['iocs'],
-                    result['tool_results']
-                ))
+                print(
+                    reporter.format_json(
+                        result["input"],
+                        result["type"],
+                        result["scorer"],
+                        result["iocs"],
+                        result["tool_results"],
+                    )
+                )
             elif verbose:
-                print(reporter.format_verbose(
-                    result['input'],
-                    result['type'],
-                    result['scorer'],
-                    result['iocs'],
-                    result['tool_results']
-                ))
+                print(
+                    reporter.format_verbose(
+                        result["input"],
+                        result["type"],
+                        result["scorer"],
+                        result["iocs"],
+                        result["tool_results"],
+                    )
+                )
             else:
-                print(reporter.format_console(
-                    result['input'],
-                    result['type'],
-                    result['scorer'],
-                    result['iocs'],
-                    result['tool_results']
-                ))
+                print(
+                    reporter.format_console(
+                        result["input"],
+                        result["type"],
+                        result["scorer"],
+                        result["iocs"],
+                        result["tool_results"],
+                    )
+                )
 
             # Generate report if requested
             if report_format:
                 from secops_helper.core.report_generator import ReportGenerator
+
                 generator = ReportGenerator()
                 report_path = generator.generate(result, report_format, output_path)
                 print(f"\nReport saved to: {report_path}", file=sys.stderr)
@@ -640,20 +657,21 @@ def main():
             # Record in history
             try:
                 from secops_helper.core.history import AnalysisHistory
+
                 history = AnalysisHistory()
-                scorer = result['scorer']
+                scorer = result["scorer"]
                 history.record(
                     input_value=input_value,
-                    input_type=result['type'],
-                    verdict=scorer.get_summary().get('verdict', 'UNKNOWN'),
-                    risk_score=scorer.get_summary().get('risk_score'),
-                    command='analyze',
-                    duration_seconds=_time.time() - _analyze_start
+                    input_type=result["type"],
+                    verdict=scorer.get_summary().get("verdict", "UNKNOWN"),
+                    risk_score=scorer.get_summary().get("risk_score"),
+                    command="analyze",
+                    duration_seconds=_time.time() - _analyze_start,
                 )
             except Exception:
                 pass
 
-            sys.exit(reporter.get_exit_code(result['scorer']))
+            sys.exit(reporter.get_exit_code(result["scorer"]))
 
         except ImportError as e:
             print(f"Error: Could not load analyzer module: {e}", file=sys.stderr)
@@ -663,7 +681,7 @@ def main():
             print(f"Error during analysis: {e}", file=sys.stderr)
             sys.exit(1)
 
-    elif sys.argv[1] == 'check':
+    elif sys.argv[1] == "check":
         # Quick indicator lookup - direct tool invocation without full analysis pipeline
         if len(sys.argv) < 3:
             print("Usage: secops check <type> <value> [--json] [--verbose]", file=sys.stderr)
@@ -682,114 +700,125 @@ def main():
             sys.exit(1)
 
         check_type = sys.argv[2]
-        verbose = '--verbose' in sys.argv or '-v' in sys.argv[3:]
-        json_output = '--json' in sys.argv or '-j' in sys.argv
+        verbose = "--verbose" in sys.argv or "-v" in sys.argv[3:]
+        json_output = "--json" in sys.argv or "-j" in sys.argv
 
         try:
             import time as _time
+
             start_time = _time.time()
 
             # Known type keywords route directly to tools
-            if check_type == 'hash':
+            if check_type == "hash":
                 if len(sys.argv) < 4:
                     print("Error: Missing hash value", file=sys.stderr)
                     print("Usage: secops check hash <md5|sha1|sha256>", file=sys.stderr)
                     sys.exit(1)
                 hash_value = sys.argv[3]
                 from secops_helper.tools.hash_lookup import HashLookup
+
                 lookup = HashLookup(verbose=verbose)
                 result = lookup.lookup(hash_value)
-                indicator_type = 'hash'
+                indicator_type = "hash"
 
                 if json_output:
                     print(json.dumps(result, indent=2, default=str))
                 else:
-                    verdict = result.get('verdict', 'UNKNOWN')
-                    detections = result.get('detections', 0)
-                    total = result.get('total_engines', 0)
+                    verdict = result.get("verdict", "UNKNOWN")
+                    detections = result.get("detections", 0)
+                    total = result.get("total_engines", 0)
                     print(f"Hash: {hash_value}")
                     print(f"Verdict: {verdict}")
                     if detections or total:
                         print(f"Detections: {detections}/{total}")
-                    malware_family = result.get('malware_family') or result.get('suggested_threat_label')
+                    malware_family = result.get("malware_family") or result.get(
+                        "suggested_threat_label"
+                    )
                     if malware_family:
                         print(f"Family: {malware_family}")
-                    sources = result.get('sources', [])
+                    sources = result.get("sources", [])
                     if sources:
                         print(f"Sources: {', '.join(sources)}")
 
-            elif check_type == 'domain':
+            elif check_type == "domain":
                 if len(sys.argv) < 4:
                     print("Error: Missing domain value", file=sys.stderr)
                     print("Usage: secops check domain <domain>", file=sys.stderr)
                     sys.exit(1)
                 domain_value = sys.argv[3]
-                from secops_helper.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
+                from secops_helper.tools.domain_ip_intel import (
+                    DomainIPIntelligence as DomainIPIntel,
+                )
+
                 intel = DomainIPIntel(verbose=verbose)
                 result = intel.lookup(domain_value)
-                indicator_type = 'domain'
+                indicator_type = "domain"
 
                 if json_output:
                     print(json.dumps(result, indent=2, default=str))
                 else:
-                    verdict = result.get('verdict', 'UNKNOWN')
-                    risk_score = result.get('risk_score', 0)
+                    verdict = result.get("verdict", "UNKNOWN")
+                    risk_score = result.get("risk_score", 0)
                     print(f"Domain: {domain_value}")
                     print(f"Verdict: {verdict}")
                     print(f"Risk Score: {risk_score}/100")
-                    dns = result.get('dns', {})
-                    if dns.get('a_records'):
+                    dns = result.get("dns", {})
+                    if dns.get("a_records"):
                         print(f"IPs: {', '.join(dns['a_records'][:5])}")
-                    categories = result.get('categories', [])
+                    categories = result.get("categories", [])
                     if categories:
                         print(f"Categories: {', '.join(categories[:5])}")
 
-            elif check_type == 'ip':
+            elif check_type == "ip":
                 if len(sys.argv) < 4:
                     print("Error: Missing IP address", file=sys.stderr)
                     print("Usage: secops check ip <ip_address>", file=sys.stderr)
                     sys.exit(1)
                 ip_value = sys.argv[3]
-                from secops_helper.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
+                from secops_helper.tools.domain_ip_intel import (
+                    DomainIPIntelligence as DomainIPIntel,
+                )
+
                 intel = DomainIPIntel(verbose=verbose)
                 result = intel.lookup(ip_value)
-                indicator_type = 'ip'
+                indicator_type = "ip"
 
                 if json_output:
                     print(json.dumps(result, indent=2, default=str))
                 else:
-                    verdict = result.get('verdict', 'UNKNOWN')
-                    risk_score = result.get('risk_score', 0)
+                    verdict = result.get("verdict", "UNKNOWN")
+                    risk_score = result.get("risk_score", 0)
                     print(f"IP: {ip_value}")
                     print(f"Verdict: {verdict}")
                     print(f"Risk Score: {risk_score}/100")
-                    abuse_score = result.get('abuse_confidence_score')
+                    abuse_score = result.get("abuse_confidence_score")
                     if abuse_score is not None:
                         print(f"Abuse Score: {abuse_score}%")
-                    country = result.get('country')
+                    country = result.get("country")
                     if country:
                         print(f"Country: {country}")
 
-            elif check_type == 'url':
+            elif check_type == "url":
                 if len(sys.argv) < 4:
                     print("Error: Missing URL", file=sys.stderr)
                     print("Usage: secops check url <url>", file=sys.stderr)
                     sys.exit(1)
                 url_value = sys.argv[3]
                 from secops_helper.tools.url_analyzer import URLAnalyzer
+
                 analyzer = URLAnalyzer(verbose=verbose)
                 result = analyzer.analyze(url_value)
-                indicator_type = 'url'
+                indicator_type = "url"
 
                 if json_output:
                     print(json.dumps(result, indent=2, default=str))
                 else:
-                    verdict = result.get('verdict', 'UNKNOWN')
-                    risk_score = result.get('risk_score', 0)
+                    verdict = result.get("verdict", "UNKNOWN")
+                    risk_score = result.get("risk_score", 0)
                     print(f"URL: {url_value}")
                     print(f"Verdict: {verdict}")
                     print(f"Risk Score: {risk_score}/100")
-                    threats = result.get('threats', [])
+                    threats = result.get("threats", [])
                     if threats:
                         for threat in threats[:5]:
                             print(f"  [!] {threat}")
@@ -801,20 +830,30 @@ def main():
 
                 analyzer_instance = Analyzer(verbose=verbose)
                 result = analyzer_instance.analyze(check_type)
-                indicator_type = result.get('type', 'file')
+                indicator_type = result.get("type", "file")
 
                 reporter = Reporter()
                 if json_output:
-                    print(reporter.format_json(
-                        result['input'], result['type'],
-                        result['scorer'], result['iocs'], result['tool_results']
-                    ))
+                    print(
+                        reporter.format_json(
+                            result["input"],
+                            result["type"],
+                            result["scorer"],
+                            result["iocs"],
+                            result["tool_results"],
+                        )
+                    )
                 else:
-                    print(reporter.format_console(
-                        result['input'], result['type'],
-                        result['scorer'], result['iocs'], result['tool_results']
-                    ))
-                sys.exit(reporter.get_exit_code(result['scorer']))
+                    print(
+                        reporter.format_console(
+                            result["input"],
+                            result["type"],
+                            result["scorer"],
+                            result["iocs"],
+                            result["tool_results"],
+                        )
+                    )
+                sys.exit(reporter.get_exit_code(result["scorer"]))
 
             else:
                 print(f"Error: Unknown check type '{check_type}'", file=sys.stderr)
@@ -826,16 +865,19 @@ def main():
             duration = _time.time() - start_time
             try:
                 from secops_helper.core.history import AnalysisHistory
+
                 history = AnalysisHistory()
-                verdict_val = result.get('verdict', 'UNKNOWN') if isinstance(result, dict) else 'UNKNOWN'
-                score_val = result.get('risk_score') if isinstance(result, dict) else None
+                verdict_val = (
+                    result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
+                )
+                score_val = result.get("risk_score") if isinstance(result, dict) else None
                 history.record(
                     input_value=sys.argv[3] if len(sys.argv) > 3 else check_type,
                     input_type=indicator_type,
                     verdict=verdict_val,
                     risk_score=score_val,
-                    command='check',
-                    duration_seconds=duration
+                    command="check",
+                    duration_seconds=duration,
                 )
             except Exception:
                 pass
@@ -847,15 +889,18 @@ def main():
             print(f"Error during check: {e}", file=sys.stderr)
             if verbose:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
 
-    elif sys.argv[1] == 'workflow':
+    elif sys.argv[1] == "workflow":
         # Pre-built investigation workflows
         if len(sys.argv) < 3:
             print("Usage: secops workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
             print("\nAvailable workflows:", file=sys.stderr)
-            print("  phishing-email     Comprehensive phishing email investigation", file=sys.stderr)
+            print(
+                "  phishing-email     Comprehensive phishing email investigation", file=sys.stderr
+            )
             print("  malware-triage     Quick malware analysis and triage", file=sys.stderr)
             print("  ioc-hunt           Bulk IOC threat hunting", file=sys.stderr)
             print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
@@ -874,20 +919,20 @@ def main():
             sys.exit(1)
 
         input_value = sys.argv[3]
-        verbose = '--verbose' in sys.argv or '-v' in sys.argv[4:]
-        json_output = '--json' in sys.argv or '-j' in sys.argv
+        verbose = "--verbose" in sys.argv or "-v" in sys.argv[4:]
+        json_output = "--json" in sys.argv or "-j" in sys.argv
 
         # Parse report arguments
         report_format = None
         output_path = None
         args_list = sys.argv[4:]
         for i, arg in enumerate(args_list):
-            if arg == '--report':
-                if i + 1 < len(args_list) and args_list[i + 1] in ('html', 'markdown', 'md'):
+            if arg == "--report":
+                if i + 1 < len(args_list) and args_list[i + 1] in ("html", "markdown", "md"):
                     report_format = args_list[i + 1]
                 else:
-                    report_format = 'html'
-            if arg in ('--output', '-o'):
+                    report_format = "html"
+            if arg in ("--output", "-o"):
                 if i + 1 < len(args_list):
                     output_path = args_list[i + 1]
 
@@ -901,7 +946,7 @@ def main():
                 MalwareTriageWorkflow,
                 IOCHuntWorkflow,
                 NetworkForensicsWorkflow,
-                LogInvestigationWorkflow
+                LogInvestigationWorkflow,
             )
 
             # Get workflow class
@@ -918,6 +963,7 @@ def main():
             # Generate report before potentially modifying result for JSON output
             if report_format:
                 from secops_helper.core.report_generator import ReportGenerator
+
                 generator = ReportGenerator()
                 report_path = generator.generate(result, report_format, output_path)
                 print(f"\nReport saved to: {report_path}", file=sys.stderr)
@@ -927,27 +973,29 @@ def main():
 
             if json_output:
                 # Convert scorer to summary for JSON
-                result['summary'] = result['scorer'].get_summary()
-                result['findings'] = result['scorer'].get_findings()
-                result['recommendations'] = result['scorer'].get_recommendations()
-                del result['scorer']
+                result["summary"] = result["scorer"].get_summary()
+                result["findings"] = result["scorer"].get_findings()
+                result["recommendations"] = result["scorer"].get_recommendations()
+                del result["scorer"]
                 print(json.dumps(result, indent=2, default=str))
             else:
                 # Console output
-                print(reporter.format_console(
-                    result['input'],
-                    result['type'],
-                    result['scorer'],
-                    result['iocs'],
-                    result['tool_results']
-                ))
+                print(
+                    reporter.format_console(
+                        result["input"],
+                        result["type"],
+                        result["scorer"],
+                        result["iocs"],
+                        result["tool_results"],
+                    )
+                )
 
                 # Print workflow-specific info
                 print(f"\nWorkflow: {result['workflow']}")
                 print(f"Steps completed: {result['steps_completed']}/{result['steps_total']}")
                 print(f"Duration: {result['duration_seconds']:.1f}s")
 
-            sys.exit(reporter.get_exit_code(result['scorer']) if 'scorer' in result else 0)
+            sys.exit(reporter.get_exit_code(result["scorer"]) if "scorer" in result else 0)
 
         except ImportError as e:
             print(f"Error: Could not load workflow module: {e}", file=sys.stderr)
@@ -956,10 +1004,11 @@ def main():
             print(f"Error during workflow execution: {e}", file=sys.stderr)
             if verbose:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
 
-    elif sys.argv[1] == 'investigate':
+    elif sys.argv[1] == "investigate":
         # Interactive investigation mode
         try:
             from secops_helper.core.interactive import InteractiveInvestigation
@@ -975,20 +1024,21 @@ def main():
             print(f"Error during investigation: {e}", file=sys.stderr)
             sys.exit(1)
 
-    elif sys.argv[1] == 'status':
+    elif sys.argv[1] == "status":
         # Quick status dashboard
         print("\nSecOps Helper Status Dashboard")
         print("=" * 50)
 
         # Check API keys
         from dotenv import load_dotenv
+
         load_dotenv()
 
         api_keys = {
-            'VT_API_KEY': 'VirusTotal',
-            'ABUSEIPDB_KEY': 'AbuseIPDB',
-            'THREATFOX_API_KEY': 'ThreatFox',
-            'URLHAUS_API_KEY': 'URLhaus'
+            "VT_API_KEY": "VirusTotal",
+            "ABUSEIPDB_KEY": "AbuseIPDB",
+            "THREATFOX_API_KEY": "ThreatFox",
+            "URLHAUS_API_KEY": "URLhaus",
         }
 
         print("\nAPI Keys:")
@@ -1004,18 +1054,18 @@ def main():
         # Check tool availability
         base_path = Path(__file__).parent
         tool_files = {
-            'EML Parser': base_path / 'emlAnalysis' / 'emlParser.py',
-            'IOC Extractor': base_path / 'iocExtractor' / 'extractor.py',
-            'Hash Lookup': base_path / 'hashLookup' / 'lookup.py',
-            'Domain/IP Intel': base_path / 'domainIpIntel' / 'intel.py',
-            'Log Analyzer': base_path / 'logAnalysis' / 'analyzer.py',
-            'PCAP Analyzer': base_path / 'pcapAnalyzer' / 'analyzer.py',
-            'URL Analyzer': base_path / 'urlAnalyzer' / 'analyzer.py',
-            'YARA Scanner': base_path / 'yaraScanner' / 'scanner.py',
-            'Cert Analyzer': base_path / 'certAnalyzer' / 'analyzer.py',
-            'Deobfuscator': base_path / 'deobfuscator' / 'deobfuscator.py',
-            'Threat Feeds': base_path / 'threatFeedAggregator' / 'aggregator.py',
-            'File Carver': base_path / 'fileCarver' / 'carver.py',
+            "EML Parser": base_path / "emlAnalysis" / "emlParser.py",
+            "IOC Extractor": base_path / "iocExtractor" / "extractor.py",
+            "Hash Lookup": base_path / "hashLookup" / "lookup.py",
+            "Domain/IP Intel": base_path / "domainIpIntel" / "intel.py",
+            "Log Analyzer": base_path / "logAnalysis" / "analyzer.py",
+            "PCAP Analyzer": base_path / "pcapAnalyzer" / "analyzer.py",
+            "URL Analyzer": base_path / "urlAnalyzer" / "analyzer.py",
+            "YARA Scanner": base_path / "yaraScanner" / "scanner.py",
+            "Cert Analyzer": base_path / "certAnalyzer" / "analyzer.py",
+            "Deobfuscator": base_path / "deobfuscator" / "deobfuscator.py",
+            "Threat Feeds": base_path / "threatFeedAggregator" / "aggregator.py",
+            "File Carver": base_path / "fileCarver" / "carver.py",
         }
 
         available_count = sum(1 for p in tool_files.values() if p.exists())
@@ -1025,25 +1075,29 @@ def main():
         print("\nCache:")
         try:
             from common.cache_manager import get_cache
+
             cache = get_cache()
             print(f"  Backend: {cache.backend}")
-            print(f"  Session stats - Hits: {cache.stats['hits']}, "
-                  f"Misses: {cache.stats['misses']}, "
-                  f"Sets: {cache.stats['sets']}")
+            print(
+                f"  Session stats - Hits: {cache.stats['hits']}, "
+                f"Misses: {cache.stats['misses']}, "
+                f"Sets: {cache.stats['sets']}"
+            )
         except Exception:
             print("  Not available")
 
         # Threat feed freshness
         print("\nThreat Feeds:")
         try:
-            feeds_db = Path.home() / '.threatFeedAggregator' / 'feeds.db'
+            feeds_db = Path.home() / ".threatFeedAggregator" / "feeds.db"
             if feeds_db.exists():
                 import sqlite3
+
                 conn = sqlite3.connect(str(feeds_db))
                 cursor = conn.cursor()
-                cursor.execute('SELECT COUNT(*) FROM iocs')
+                cursor.execute("SELECT COUNT(*) FROM iocs")
                 ioc_count = cursor.fetchone()[0]
-                cursor.execute('SELECT MAX(last_seen) FROM iocs')
+                cursor.execute("SELECT MAX(last_seen) FROM iocs")
                 last_update = cursor.fetchone()[0]
                 conn.close()
                 print(f"  IOCs in database: {ioc_count}")
@@ -1057,15 +1111,16 @@ def main():
         print("\nRecent Analyses:")
         try:
             from secops_helper.core.history import AnalysisHistory
+
             history = AnalysisHistory()
             stats = history.get_stats()
 
-            if stats['total_analyses'] > 0:
+            if stats["total_analyses"] > 0:
                 print(f"  Total: {stats['total_analyses']}")
-                if stats['verdicts']:
-                    verdict_str = ', '.join(f"{v}: {c}" for v, c in stats['verdicts'].items())
+                if stats["verdicts"]:
+                    verdict_str = ", ".join(f"{v}: {c}" for v, c in stats["verdicts"].items())
                     print(f"  Verdicts: {verdict_str}")
-                if stats['last_analysis']:
+                if stats["last_analysis"]:
                     print(f"  Last: {stats['last_analysis']}")
 
                 # Show last 5 analyses
@@ -1073,13 +1128,13 @@ def main():
                 if recent:
                     print("\n  Last 5:")
                     for entry in recent:
-                        verdict = entry.get('verdict', '?')
-                        score = entry.get('risk_score')
+                        verdict = entry.get("verdict", "?")
+                        score = entry.get("risk_score")
                         score_str = f" ({score}/100)" if score is not None else ""
-                        ts = entry['timestamp'][:16].replace('T', ' ')
-                        inp = entry['input_value']
+                        ts = entry["timestamp"][:16].replace("T", " ")
+                        inp = entry["input_value"]
                         if len(inp) > 30:
-                            inp = inp[:27] + '...'
+                            inp = inp[:27] + "..."
                         print(f"    {ts}  {inp:30s}  {verdict}{score_str}")
             else:
                 print("  No analyses recorded yet")
@@ -1103,7 +1158,7 @@ def main():
         manager.run_tool(tool_id, tool_args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
@@ -1117,5 +1172,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

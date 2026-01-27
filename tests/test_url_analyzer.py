@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.tools.url_analyzer import URLValidator, URLParser, SuspiciousPatterns
 
@@ -82,31 +82,31 @@ class TestURLParser:
     def test_parse_simple_url(self):
         """Test parsing simple URL"""
         result = URLParser.parse_url("https://example.com")
-        assert result['scheme'] == 'https'
-        assert result['domain'] == 'example.com'
+        assert result["scheme"] == "https"
+        assert result["domain"] == "example.com"
 
     def test_parse_url_with_path(self):
         """Test parsing URL with path"""
         result = URLParser.parse_url("https://example.com/path/to/file.html")
-        assert result['path'] == '/path/to/file.html'
-        assert result['file_extension'] == 'html'
+        assert result["path"] == "/path/to/file.html"
+        assert result["file_extension"] == "html"
 
     def test_parse_url_with_port(self):
         """Test parsing URL with port"""
         result = URLParser.parse_url("http://example.com:8080/admin")
-        assert result['port'] == 8080
+        assert result["port"] == 8080
 
     def test_parse_url_with_query(self):
         """Test parsing URL with query parameters"""
         result = URLParser.parse_url("https://example.com/search?q=test&page=1")
-        assert result['query'] == 'q=test&page=1'
-        assert 'q' in result['query_params']
+        assert result["query"] == "q=test&page=1"
+        assert "q" in result["query_params"]
 
     def test_parse_url_preserves_original(self):
         """Test that original URL is preserved"""
         url = "https://example.com/test"
         result = URLParser.parse_url(url)
-        assert result['original'] == url
+        assert result["original"] == url
 
 
 class TestSuspiciousPatterns:
@@ -116,15 +116,15 @@ class TestSuspiciousPatterns:
         """Test detection of IP address in URL"""
         patterns = SuspiciousPatterns()
         findings = patterns.check_url("http://192.168.1.1/malware.exe")
-        pattern_names = [f['pattern'] for f in findings]
-        assert 'ip_address' in pattern_names
+        pattern_names = [f["pattern"] for f in findings]
+        assert "ip_address" in pattern_names
 
     def test_detect_double_extension(self):
         """Test detection of double extension"""
         patterns = SuspiciousPatterns()
         findings = patterns.check_url("http://example.com/file.pdf.exe")
-        pattern_names = [f['pattern'] for f in findings]
-        assert 'double_extension' in pattern_names
+        pattern_names = [f["pattern"] for f in findings]
+        assert "double_extension" in pattern_names
 
     def test_detect_suspicious_tld(self):
         """Test detection of suspicious TLD"""
@@ -137,22 +137,22 @@ class TestSuspiciousPatterns:
         """Test detection of URL shortener"""
         patterns = SuspiciousPatterns()
         findings = patterns.check_url("http://bit.ly/abc123")
-        pattern_names = [f['pattern'] for f in findings]
-        assert 'url_shortener' in pattern_names
+        pattern_names = [f["pattern"] for f in findings]
+        assert "url_shortener" in pattern_names
 
     def test_detect_executable_extension(self):
         """Test detection of executable extension"""
         patterns = SuspiciousPatterns()
         findings = patterns.check_url("http://example.com/setup.exe")
-        pattern_names = [f['pattern'] for f in findings]
-        assert 'executable_extension' in pattern_names
+        pattern_names = [f["pattern"] for f in findings]
+        assert "executable_extension" in pattern_names
 
     def test_clean_url_no_findings(self):
         """Test clean URL has no critical findings"""
         patterns = SuspiciousPatterns()
         findings = patterns.check_url("https://www.google.com/search?q=test")
         # Clean URLs should have few or no high-severity findings
-        high_severity = [f for f in findings if f.get('severity') in ['high', 'critical']]
+        high_severity = [f for f in findings if f.get("severity") in ["high", "critical"]]
         assert len(high_severity) == 0
 
 
@@ -185,25 +185,25 @@ class TestURLAnalyzerIntegration:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            'data': {
-                'attributes': {
-                    'last_analysis_stats': {
-                        'malicious': 0,
-                        'suspicious': 0,
-                        'harmless': 70,
-                        'undetected': 5
+            "data": {
+                "attributes": {
+                    "last_analysis_stats": {
+                        "malicious": 0,
+                        "suspicious": 0,
+                        "harmless": 70,
+                        "undetected": 5,
                     }
                 }
             }
         }
         mock_get.return_value = mock_response
 
-        with patch.dict('os.environ', {'VT_API_KEY': 'test_key'}):
+        with patch.dict("os.environ", {"VT_API_KEY": "test_key"}):
             analyzer = URLAnalyzer(verbose=False)
             result = analyzer.analyze("http://example.com")
 
         assert result is not None
-        assert 'url' in result or 'original' in result
+        assert "url" in result or "original" in result
 
 
 class TestURLRiskScoring:

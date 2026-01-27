@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.core.reporter import Reporter, Colors
 from secops_helper.core.scorer import RiskScorer, Severity, Verdict
@@ -97,7 +97,11 @@ class TestJSONOutput:
         """Test that JSON output is valid JSON"""
         self.scorer.add_finding(Severity.HIGH, "Test finding", "test")
         output = self.reporter.format_json(
-            "test_input", "hash", self.scorer, {"hashes": ["abc123"]}, {"hash_lookup": {"result": "clean"}}
+            "test_input",
+            "hash",
+            self.scorer,
+            {"hashes": ["abc123"]},
+            {"hash_lookup": {"result": "clean"}},
         )
 
         # Should be parseable JSON
@@ -108,7 +112,11 @@ class TestJSONOutput:
         """Test JSON output structure"""
         self.scorer.add_finding(Severity.HIGH, "Test finding", "test")
         output = self.reporter.format_json(
-            "test_input", "hash", self.scorer, {"hashes": ["abc123"]}, {"hash_lookup": {"result": "clean"}}
+            "test_input",
+            "hash",
+            self.scorer,
+            {"hashes": ["abc123"]},
+            {"hash_lookup": {"result": "clean"}},
         )
         parsed = json.loads(output)
 
@@ -143,7 +151,11 @@ class TestJSONOutput:
 
     def test_json_iocs_included(self):
         """Test that IOCs are included in JSON"""
-        iocs = {"hashes": ["abc123", "def456"], "domains": ["evil.com"], "urls": ["http://bad.com/malware"]}
+        iocs = {
+            "hashes": ["abc123", "def456"],
+            "domains": ["evil.com"],
+            "urls": ["http://bad.com/malware"],
+        }
         output = self.reporter.format_json("input", "email", self.scorer, iocs, {})
         parsed = json.loads(output)
 
@@ -152,7 +164,10 @@ class TestJSONOutput:
 
     def test_json_tool_results_included(self):
         """Test that tool results are included in JSON"""
-        tool_results = {"hash_lookup": {"verdict": "malicious", "detections": 45}, "domain_intel": {"risk_score": 85}}
+        tool_results = {
+            "hash_lookup": {"verdict": "malicious", "detections": 45},
+            "domain_intel": {"risk_score": 85},
+        }
         output = self.reporter.format_json("input", "hash", self.scorer, {}, tool_results)
         parsed = json.loads(output)
 
@@ -195,7 +210,13 @@ class TestConsoleOutput:
 
     def test_console_shows_iocs(self):
         """Test that console output shows extracted IOCs"""
-        iocs = {"hashes": ["44d88612fea8a8f36de82e1278abb02f"], "domains": ["evil.com"], "urls": [], "ips": [], "emails": []}
+        iocs = {
+            "hashes": ["44d88612fea8a8f36de82e1278abb02f"],
+            "domains": ["evil.com"],
+            "urls": [],
+            "ips": [],
+            "emails": [],
+        }
         output = self.reporter.format_console("test.eml", "email", self.scorer, iocs, {})
         assert "Extracted IOCs" in output
         assert "Hashes" in output
@@ -287,7 +308,13 @@ class TestDefanging:
 
     def test_url_defanged(self):
         """Test that URLs are defanged in console output"""
-        iocs = {"urls": ["http://evil.com/malware"], "hashes": [], "domains": [], "ips": [], "emails": []}
+        iocs = {
+            "urls": ["http://evil.com/malware"],
+            "hashes": [],
+            "domains": [],
+            "ips": [],
+            "emails": [],
+        }
         output = self.reporter.format_console("test.eml", "email", self.scorer, iocs, {})
         # URL should be defanged
         assert "hxxp://" in output
@@ -311,7 +338,11 @@ class TestEmptyResults:
     def test_empty_iocs(self):
         """Test output with no IOCs"""
         output = self.reporter.format_console(
-            "test.txt", "file", self.scorer, {"hashes": [], "domains": [], "urls": [], "ips": [], "emails": []}, {}
+            "test.txt",
+            "file",
+            self.scorer,
+            {"hashes": [], "domains": [], "urls": [], "ips": [], "emails": []},
+            {},
         )
         # Should not show IOCs section if all empty
         # Or show it but with no entries

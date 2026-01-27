@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 class TestYaraRuleValidation:
@@ -88,6 +88,7 @@ class TestYaraScannerIntegration:
         """Test creating scanner instance"""
         try:
             from secops_helper.tools.yara_scanner import YaraScanner
+
             scanner = YaraScanner(verbose=False)
             assert scanner is not None
         except ImportError:

@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.core.scorer import RiskScorer, Severity, Verdict, Finding
 
@@ -52,13 +52,21 @@ class TestFinding:
     def test_finding_with_details(self):
         """Test creating a finding with details"""
         finding = Finding(
-            severity=Severity.CRITICAL, message="Critical finding", source="test_tool", details={"count": 5, "type": "malware"}
+            severity=Severity.CRITICAL,
+            message="Critical finding",
+            source="test_tool",
+            details={"count": 5, "type": "malware"},
         )
         assert finding.details == {"count": 5, "type": "malware"}
 
     def test_finding_to_dict(self):
         """Test finding serialization"""
-        finding = Finding(severity=Severity.MEDIUM, message="Medium finding", source="scanner", details={"file": "test.exe"})
+        finding = Finding(
+            severity=Severity.MEDIUM,
+            message="Medium finding",
+            source="scanner",
+            details={"file": "test.exe"},
+        )
         result = finding.to_dict()
 
         assert result["severity"] == "medium"
@@ -294,7 +302,12 @@ class TestRecommendations:
 
     def test_recommendations_for_malware(self):
         """Test recommendations when malware is detected"""
-        self.scorer.add_finding(Severity.CRITICAL, "Hash matches known malware", "hash_lookup", {"malware_family": "Emotet"})
+        self.scorer.add_finding(
+            Severity.CRITICAL,
+            "Hash matches known malware",
+            "hash_lookup",
+            {"malware_family": "Emotet"},
+        )
         recommendations = self.scorer.get_recommendations()
 
         assert any("isolate" in r.lower() for r in recommendations)
@@ -302,7 +315,9 @@ class TestRecommendations:
 
     def test_recommendations_for_phishing(self):
         """Test recommendations for phishing indicators"""
-        self.scorer.add_finding(Severity.HIGH, "SPF validation failed", "eml_parser", {"spf": "fail"})
+        self.scorer.add_finding(
+            Severity.HIGH, "SPF validation failed", "eml_parser", {"spf": "fail"}
+        )
         recommendations = self.scorer.get_recommendations()
 
         assert any("block" in r.lower() and "domain" in r.lower() for r in recommendations)
@@ -376,7 +391,13 @@ class TestAddFindingsFromToolResults:
 
     def test_email_analysis_spf_fail(self):
         """Test adding findings from email with SPF failure"""
-        result = {"authentication": {"spf": {"result": "fail"}, "dkim": {"result": "pass"}, "dmarc": {"result": "pass"}}}
+        result = {
+            "authentication": {
+                "spf": {"result": "fail"},
+                "dkim": {"result": "pass"},
+                "dmarc": {"result": "pass"},
+            }
+        }
         self.scorer.add_findings_from_email_analysis(result)
 
         assert len(self.scorer.findings) > 0
@@ -396,7 +417,9 @@ class TestAddFindingsFromToolResults:
 
     def test_log_analysis_sql_injection(self):
         """Test adding findings from log analysis with SQL injection"""
-        result = {"threats": {"sql_injection": [{"ip": "1.2.3.4", "payload": "' OR 1=1"}], "xss": []}}
+        result = {
+            "threats": {"sql_injection": [{"ip": "1.2.3.4", "payload": "' OR 1=1"}], "xss": []}
+        }
         self.scorer.add_findings_from_log_analysis(result)
 
         assert len(self.scorer.findings) > 0

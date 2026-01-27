@@ -12,9 +12,16 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.core.workflow import Workflow, WorkflowStep, StepResult, WorkflowContext, WorkflowRegistry, workflow
+from secops_helper.core.workflow import (
+    Workflow,
+    WorkflowStep,
+    StepResult,
+    WorkflowContext,
+    WorkflowRegistry,
+    workflow,
+)
 from secops_helper.core.scorer import Severity
 
 
@@ -32,12 +39,19 @@ class TestWorkflowStep:
 
     def test_step_with_dependencies(self):
         """Test step with dependencies"""
-        step = WorkflowStep(name="dependent_step", description="Depends on others", tool="tool", depends_on=["step1", "step2"])
+        step = WorkflowStep(
+            name="dependent_step",
+            description="Depends on others",
+            tool="tool",
+            depends_on=["step1", "step2"],
+        )
         assert step.depends_on == ["step1", "step2"]
 
     def test_optional_step(self):
         """Test optional step"""
-        step = WorkflowStep(name="optional", description="Optional step", tool="tool", required=False)
+        step = WorkflowStep(
+            name="optional", description="Optional step", tool="tool", required=False
+        )
         assert step.required == False
 
 
@@ -324,8 +338,12 @@ class TestLogInvestigationWorkflow:
 
         # Create a test log file
         with tempfile.NamedTemporaryFile(suffix=".log", delete=False, mode="w") as f:
-            f.write('192.168.1.100 - - [01/Jan/2025:00:00:00 +0000] "GET /admin HTTP/1.1" 200 1234\n')
-            f.write('192.168.1.100 - - [01/Jan/2025:00:00:01 +0000] "GET /login HTTP/1.1" 200 1234\n')
+            f.write(
+                '192.168.1.100 - - [01/Jan/2025:00:00:00 +0000] "GET /admin HTTP/1.1" 200 1234\n'
+            )
+            f.write(
+                '192.168.1.100 - - [01/Jan/2025:00:00:01 +0000] "GET /login HTTP/1.1" 200 1234\n'
+            )
             temp_path = f.name
 
         try:

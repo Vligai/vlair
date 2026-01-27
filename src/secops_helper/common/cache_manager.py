@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -43,36 +44,27 @@ class CacheManager:
         self.default_ttl = default_ttl
         self.redis_client = None
         self.fallback_cache = {}  # In-memory fallback
-        self.stats = {
-            'hits': 0,
-            'misses': 0,
-            'sets': 0,
-            'deletes': 0,
-            'errors': 0
-        }
+        self.stats = {"hits": 0, "misses": 0, "sets": 0, "deletes": 0, "errors": 0}
 
         # Try to connect to Redis
         if REDIS_AVAILABLE:
             if not redis_url:
-                redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+                redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
             try:
                 self.redis_client = redis.from_url(
-                    redis_url,
-                    decode_responses=True,
-                    socket_connect_timeout=2,
-                    socket_timeout=2
+                    redis_url, decode_responses=True, socket_connect_timeout=2, socket_timeout=2
                 )
                 # Test connection
                 self.redis_client.ping()
-                self.backend = 'redis'
+                self.backend = "redis"
             except (redis.ConnectionError, redis.TimeoutError) as e:
                 print(f"Warning: Redis connection failed ({e}). Using in-memory cache.")
                 self.redis_client = None
-                self.backend = 'memory'
+                self.backend = "memory"
         else:
             print("Warning: redis-py not installed. Using in-memory cache.")
-            self.backend = 'memory'
+            self.backend = "memory"
 
     def _make_key(self, namespace: str, key: str) -> str:
         """Generate namespaced cache key"""
@@ -82,7 +74,7 @@ class CacheManager:
         """Generate stats key for namespace"""
         return f"secops:stats:{namespace}"
 
-    def get(self, key: str, namespace: str = 'default') -> Optional[Any]:
+    def get(self, key: str, namespace: str = "default") -> Optional[Any]:
         """
         Get value from cache.
 
@@ -100,37 +92,36 @@ class CacheManager:
                 # Try Redis
                 value = self.redis_client.get(cache_key)
                 if value:
-                    self.stats['hits'] += 1
-                    self._update_stats(namespace, 'hits')
+                    self.stats["hits"] += 1
+                    self._update_stats(namespace, "hits")
                     return json.loads(value)
                 else:
-                    self.stats['misses'] += 1
-                    self._update_stats(namespace, 'misses')
+                    self.stats["misses"] += 1
+                    self._update_stats(namespace, "misses")
                     return None
             else:
                 # Fallback to in-memory
                 if cache_key in self.fallback_cache:
                     entry = self.fallback_cache[cache_key]
                     # Check TTL
-                    if entry['expires_at'] > time.time():
-                        self.stats['hits'] += 1
-                        return entry['value']
+                    if entry["expires_at"] > time.time():
+                        self.stats["hits"] += 1
+                        return entry["value"]
                     else:
                         # Expired, remove it
                         del self.fallback_cache[cache_key]
-                        self.stats['misses'] += 1
+                        self.stats["misses"] += 1
                         return None
                 else:
-                    self.stats['misses'] += 1
+                    self.stats["misses"] += 1
                     return None
 
         except Exception as e:
-            self.stats['errors'] += 1
+            self.stats["errors"] += 1
             print(f"Cache get error: {e}")
             return None
 
-    def set(self, key: str, value: Any, namespace: str = 'default',
-            ttl: int = None) -> bool:
+    def set(self, key: str, value: Any, namespace: str = "default", ttl: int = None) -> bool:
         """
         Set value in cache.
 
@@ -156,21 +147,18 @@ class CacheManager:
                 self.redis_client.setex(cache_key, ttl, value_json)
             else:
                 # Store in memory with expiry time
-                self.fallback_cache[cache_key] = {
-                    'value': value,
-                    'expires_at': time.time() + ttl
-                }
+                self.fallback_cache[cache_key] = {"value": value, "expires_at": time.time() + ttl}
 
-            self.stats['sets'] += 1
-            self._update_stats(namespace, 'sets')
+            self.stats["sets"] += 1
+            self._update_stats(namespace, "sets")
             return True
 
         except Exception as e:
-            self.stats['errors'] += 1
+            self.stats["errors"] += 1
             print(f"Cache set error: {e}")
             return False
 
-    def delete(self, key: str, namespace: str = 'default') -> bool:
+    def delete(self, key: str, namespace: str = "default") -> bool:
         """
         Delete value from cache.
 
@@ -190,12 +178,12 @@ class CacheManager:
                 if cache_key in self.fallback_cache:
                     del self.fallback_cache[cache_key]
 
-            self.stats['deletes'] += 1
-            self._update_stats(namespace, 'deletes')
+            self.stats["deletes"] += 1
+            self._update_stats(namespace, "deletes")
             return True
 
         except Exception as e:
-            self.stats['errors'] += 1
+            self.stats["errors"] += 1
             print(f"Cache delete error: {e}")
             return False
 
@@ -211,7 +199,7 @@ class CacheManager:
         """
         try:
             if self.redis_client:
-                pattern = self._make_key(namespace, '*')
+                pattern = self._make_key(namespace, "*")
                 keys = self.redis_client.keys(pattern)
                 if keys:
                     return self.redis_client.delete(*keys)
@@ -219,14 +207,13 @@ class CacheManager:
             else:
                 # Clear from memory cache
                 pattern = f"secops:{namespace}:"
-                keys_to_delete = [k for k in self.fallback_cache.keys()
-                                 if k.startswith(pattern)]
+                keys_to_delete = [k for k in self.fallback_cache.keys() if k.startswith(pattern)]
                 for key in keys_to_delete:
                     del self.fallback_cache[key]
                 return len(keys_to_delete)
 
         except Exception as e:
-            self.stats['errors'] += 1
+            self.stats["errors"] += 1
             print(f"Cache clear error: {e}")
             return 0
 
@@ -239,7 +226,7 @@ class CacheManager:
         """
         try:
             if self.redis_client:
-                keys = self.redis_client.keys('secops:*')
+                keys = self.redis_client.keys("secops:*")
                 if keys:
                     self.redis_client.delete(*keys)
             else:
@@ -247,7 +234,7 @@ class CacheManager:
             return True
 
         except Exception as e:
-            self.stats['errors'] += 1
+            self.stats["errors"] += 1
             print(f"Cache clear all error: {e}")
             return False
 
@@ -268,7 +255,7 @@ class CacheManager:
             if stats:
                 return {k: int(v) for k, v in stats.items()}
             else:
-                return {'hits': 0, 'misses': 0, 'sets': 0}
+                return {"hits": 0, "misses": 0, "sets": 0}
         else:
             # Return overall stats
             stats = self.stats.copy()
@@ -276,23 +263,25 @@ class CacheManager:
             # Add additional info
             if self.redis_client:
                 try:
-                    info = self.redis_client.info('stats')
-                    stats['backend'] = 'redis'
-                    stats['total_keys'] = self.redis_client.dbsize()
-                    stats['memory_used'] = self.redis_client.info('memory').get('used_memory_human', 'N/A')
-                    stats['uptime_seconds'] = info.get('uptime_in_seconds', 0)
+                    info = self.redis_client.info("stats")
+                    stats["backend"] = "redis"
+                    stats["total_keys"] = self.redis_client.dbsize()
+                    stats["memory_used"] = self.redis_client.info("memory").get(
+                        "used_memory_human", "N/A"
+                    )
+                    stats["uptime_seconds"] = info.get("uptime_in_seconds", 0)
                 except:
                     pass
             else:
-                stats['backend'] = 'memory'
-                stats['total_keys'] = len(self.fallback_cache)
+                stats["backend"] = "memory"
+                stats["total_keys"] = len(self.fallback_cache)
 
             # Calculate hit rate
-            total_requests = stats['hits'] + stats['misses']
+            total_requests = stats["hits"] + stats["misses"]
             if total_requests > 0:
-                stats['hit_rate'] = round(stats['hits'] / total_requests * 100, 2)
+                stats["hit_rate"] = round(stats["hits"] / total_requests * 100, 2)
             else:
-                stats['hit_rate'] = 0.0
+                stats["hit_rate"] = 0.0
 
             return stats
 
@@ -314,17 +303,17 @@ class CacheManager:
         """
         try:
             if self.redis_client:
-                keys = self.redis_client.keys('secops:*:*')
+                keys = self.redis_client.keys("secops:*:*")
                 namespaces = set()
                 for key in keys:
-                    parts = key.split(':')
-                    if len(parts) >= 2 and parts[1] != 'stats':
+                    parts = key.split(":")
+                    if len(parts) >= 2 and parts[1] != "stats":
                         namespaces.add(parts[1])
                 return sorted(list(namespaces))
             else:
                 namespaces = set()
                 for key in self.fallback_cache.keys():
-                    parts = key.split(':')
+                    parts = key.split(":")
                     if len(parts) >= 2:
                         namespaces.add(parts[1])
                 return sorted(list(namespaces))
@@ -340,24 +329,22 @@ class CacheManager:
         Returns:
             Health status dictionary
         """
-        health = {
-            'backend': self.backend,
-            'healthy': True,
-            'error': None
-        }
+        health = {"backend": self.backend, "healthy": True, "error": None}
 
         if self.redis_client:
             try:
                 # Test Redis connection
                 self.redis_client.ping()
-                info = self.redis_client.info('server')
-                health['version'] = info.get('redis_version', 'unknown')
-                health['uptime_seconds'] = self.redis_client.info('stats').get('uptime_in_seconds', 0)
+                info = self.redis_client.info("server")
+                health["version"] = info.get("redis_version", "unknown")
+                health["uptime_seconds"] = self.redis_client.info("stats").get(
+                    "uptime_in_seconds", 0
+                )
             except Exception as e:
-                health['healthy'] = False
-                health['error'] = str(e)
+                health["healthy"] = False
+                health["error"] = str(e)
         else:
-            health['note'] = 'Using in-memory fallback cache'
+            health["note"] = "Using in-memory fallback cache"
 
         return health
 
@@ -389,5 +376,5 @@ def hash_key(*args) -> str:
     Returns:
         SHA256 hash string
     """
-    key_str = ':'.join(str(arg) for arg in args)
+    key_str = ":".join(str(arg) for arg in args)
     return hashlib.sha256(key_str.encode()).hexdigest()[:16]

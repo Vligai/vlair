@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch, mock_open
 from datetime import datetime
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.tools.eml_parser import (
     parse_eml,
@@ -113,7 +113,10 @@ class TestExtractIpsAndServers:
         """Test IP extraction from received headers"""
         parsed = {
             "header": {
-                "received": [{"src": "from mail.attacker.com [203.0.113.100]"}, {"src": "from relay.isp.com [198.51.100.1]"}],
+                "received": [
+                    {"src": "from mail.attacker.com [203.0.113.100]"},
+                    {"src": "from relay.isp.com [198.51.100.1]"},
+                ],
                 "received_ip": ["203.0.113.100", "198.51.100.1", "192.0.2.1"],
                 "header": {"x-originating-ip": ["[203.0.113.100]"], "x-sender-ip": [""]},
             }
@@ -127,7 +130,13 @@ class TestExtractIpsAndServers:
 
     def test_extract_ips_minimal(self):
         """Test IP extraction with minimal data"""
-        parsed = {"header": {"received": [], "received_ip": [], "header": {"x-originating-ip": [""], "x-sender-ip": [""]}}}
+        parsed = {
+            "header": {
+                "received": [],
+                "received_ip": [],
+                "header": {"x-originating-ip": [""], "x-sender-ip": [""]},
+            }
+        }
 
         result = extract_ips_and_servers(parsed)
 
@@ -196,7 +205,10 @@ class TestExtractAttachments:
         assert result[0]["size"] == 12345
         assert result[0]["extension"] == "pdf"
         assert result[0]["hashes"]["md5"] == "5d41402abc4b2a76b9719d911017c592"
-        assert result[0]["hashes"]["sha256"] == "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+        assert (
+            result[0]["hashes"]["sha256"]
+            == "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+        )
 
     def test_extract_attachments_no_attachments(self):
         """Test extraction with no attachments"""
@@ -209,7 +221,11 @@ class TestExtractAttachments:
     @patch("secops_helper.tools.eml_parser.vt_lookup_sha256")
     def test_extract_attachments_with_vt(self, mock_vt):
         """Test attachment extraction with VT lookup"""
-        mock_vt.return_value = {"VT_Malicious": 5, "VT_Suspicious": 2, "VT_Link": "https://www.virustotal.com/gui/file/abc123"}
+        mock_vt.return_value = {
+            "VT_Malicious": 5,
+            "VT_Suspicious": 2,
+            "VT_Link": "https://www.virustotal.com/gui/file/abc123",
+        }
 
         parsed = {
             "attachment": [
@@ -319,7 +335,11 @@ class TestVirusTotalLookup:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "data": {"attributes": {"last_analysis_stats": {"malicious": 10, "suspicious": 2, "undetected": 60}}}
+            "data": {
+                "attributes": {
+                    "last_analysis_stats": {"malicious": 10, "suspicious": 2, "undetected": 60}
+                }
+            }
         }
         mock_get.return_value = mock_response
 

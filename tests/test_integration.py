@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.tools.ioc_extractor import IOCExtractor
 from secops_helper.tools.hash_lookup import HashValidator
@@ -177,7 +177,11 @@ class TestThreatAnalysisWorkflow:
 
         # Mock VirusTotal with malicious detections
         mock_vt_instance = Mock()
-        mock_vt_instance.lookup_ip.return_value = {"source": "virustotal", "malicious": 10, "suspicious": 2}
+        mock_vt_instance.lookup_ip.return_value = {
+            "source": "virustotal",
+            "malicious": 10,
+            "suspicious": 2,
+        }
         mock_vt.return_value = mock_vt_instance
 
         # Analyze IP
@@ -202,7 +206,11 @@ class TestThreatAnalysisWorkflow:
 
         # Mock VirusTotal with malicious detections
         mock_vt_instance = Mock()
-        mock_vt_instance.lookup_domain.return_value = {"source": "virustotal", "malicious": 8, "suspicious": 3}
+        mock_vt_instance.lookup_domain.return_value = {
+            "source": "virustotal",
+            "malicious": 8,
+            "suspicious": 3,
+        }
         mock_vt.return_value = mock_vt_instance
 
         # Analyze domain

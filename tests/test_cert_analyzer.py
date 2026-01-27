@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone, timedelta
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 class TestCertificateRetriever:
@@ -24,7 +24,7 @@ class TestCertificateRetriever:
 
         # Mock SSL connection
         mock_ssock = MagicMock()
-        mock_ssock.getpeercert.return_value = b'fake_cert_data'
+        mock_ssock.getpeercert.return_value = b"fake_cert_data"
         mock_ctx.return_value.wrap_socket.return_value.__enter__.return_value = mock_ssock
         mock_conn.return_value.__enter__.return_value = MagicMock()
 

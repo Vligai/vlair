@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.tools.threat_feed_aggregator import ThreatFeedAggregator
 
@@ -30,13 +30,13 @@ class TestFeedSources:
         """Test ThreatFox source configuration"""
         aggregator = ThreatFeedAggregator()
         sources = aggregator.get_available_sources()
-        assert 'threatfox' in [s.lower() for s in sources]
+        assert "threatfox" in [s.lower() for s in sources]
 
     def test_urlhaus_source_config(self):
         """Test URLhaus source configuration"""
         aggregator = ThreatFeedAggregator()
         sources = aggregator.get_available_sources()
-        assert 'urlhaus' in [s.lower() for s in sources]
+        assert "urlhaus" in [s.lower() for s in sources]
 
 
 class TestFeedUpdate:
@@ -48,22 +48,22 @@ class TestFeedUpdate:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            'query_status': 'ok',
-            'data': [
+            "query_status": "ok",
+            "data": [
                 {
-                    'ioc': 'evil.com',
-                    'ioc_type': 'domain',
-                    'threat_type': 'botnet_cc',
-                    'malware': 'Emotet',
-                    'confidence_level': 75,
-                    'first_seen': '2025-01-01 00:00:00'
+                    "ioc": "evil.com",
+                    "ioc_type": "domain",
+                    "threat_type": "botnet_cc",
+                    "malware": "Emotet",
+                    "confidence_level": 75,
+                    "first_seen": "2025-01-01 00:00:00",
                 }
-            ]
+            ],
         }
         mock_get.return_value = mock_response
 
         aggregator = ThreatFeedAggregator()
-        result = aggregator.update_feed('threatfox')
+        result = aggregator.update_feed("threatfox")
         assert result is not None
 
     @patch("requests.get")
@@ -75,7 +75,7 @@ class TestFeedUpdate:
         mock_get.return_value = mock_response
 
         aggregator = ThreatFeedAggregator()
-        result = aggregator.update_feed('urlhaus')
+        result = aggregator.update_feed("urlhaus")
         assert result is not None
 
     @patch("requests.get")
@@ -83,7 +83,7 @@ class TestFeedUpdate:
         """Test updating all feeds"""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {'query_status': 'ok', 'data': []}
+        mock_response.json.return_value = {"query_status": "ok", "data": []}
         mock_response.text = "id,dateadded,url,url_status\n"
         mock_get.return_value = mock_response
 
@@ -104,51 +104,42 @@ class TestIOCStorage:
     def test_store_ioc(self, temp_db):
         """Test storing IOC to database"""
         aggregator = ThreatFeedAggregator(db_path=temp_db)
-        result = aggregator.store_ioc({
-            'value': 'evil.com',
-            'type': 'domain',
-            'source': 'test',
-            'confidence': 75,
-            'malware_family': 'TestMalware'
-        })
+        result = aggregator.store_ioc(
+            {
+                "value": "evil.com",
+                "type": "domain",
+                "source": "test",
+                "confidence": 75,
+                "malware_family": "TestMalware",
+            }
+        )
         assert result is True or result is None
         os.unlink(temp_db)
 
     def test_deduplication(self, temp_db):
         """Test that duplicate IOCs are deduplicated"""
         aggregator = ThreatFeedAggregator(db_path=temp_db)
-        ioc = {
-            'value': 'evil.com',
-            'type': 'domain',
-            'source': 'test',
-            'confidence': 75
-        }
+        ioc = {"value": "evil.com", "type": "domain", "source": "test", "confidence": 75}
         aggregator.store_ioc(ioc)
         aggregator.store_ioc(ioc)
         # Second insert should update, not duplicate
-        results = aggregator.search(value='evil.com')
+        results = aggregator.search(value="evil.com")
         assert len(results) <= 1
         os.unlink(temp_db)
 
     def test_confidence_aggregation(self, temp_db):
         """Test that confidence increases with multiple sources"""
         aggregator = ThreatFeedAggregator(db_path=temp_db)
-        aggregator.store_ioc({
-            'value': 'evil.com',
-            'type': 'domain',
-            'source': 'source1',
-            'confidence': 50
-        })
-        aggregator.store_ioc({
-            'value': 'evil.com',
-            'type': 'domain',
-            'source': 'source2',
-            'confidence': 60
-        })
-        results = aggregator.search(value='evil.com')
+        aggregator.store_ioc(
+            {"value": "evil.com", "type": "domain", "source": "source1", "confidence": 50}
+        )
+        aggregator.store_ioc(
+            {"value": "evil.com", "type": "domain", "source": "source2", "confidence": 60}
+        )
+        results = aggregator.search(value="evil.com")
         if results:
             # Confidence should be higher than individual sources
-            assert results[0].get('confidence', 0) >= 50
+            assert results[0].get("confidence", 0) >= 50
         os.unlink(temp_db)
 
 
@@ -163,9 +154,27 @@ class TestIOCSearch:
 
         aggregator = ThreatFeedAggregator(db_path=db_path)
         test_iocs = [
-            {'value': 'evil.com', 'type': 'domain', 'source': 'test', 'confidence': 75, 'malware_family': 'Emotet'},
-            {'value': '192.168.1.100', 'type': 'ip', 'source': 'test', 'confidence': 80, 'malware_family': 'TrickBot'},
-            {'value': 'http://bad.com/mal.exe', 'type': 'url', 'source': 'test', 'confidence': 90, 'malware_family': 'Emotet'},
+            {
+                "value": "evil.com",
+                "type": "domain",
+                "source": "test",
+                "confidence": 75,
+                "malware_family": "Emotet",
+            },
+            {
+                "value": "192.168.1.100",
+                "type": "ip",
+                "source": "test",
+                "confidence": 80,
+                "malware_family": "TrickBot",
+            },
+            {
+                "value": "http://bad.com/mal.exe",
+                "type": "url",
+                "source": "test",
+                "confidence": 90,
+                "malware_family": "Emotet",
+            },
         ]
         for ioc in test_iocs:
             aggregator.store_ioc(ioc)
@@ -176,19 +185,19 @@ class TestIOCSearch:
     def test_search_by_value(self, populated_db):
         """Test searching by IOC value"""
         aggregator = ThreatFeedAggregator(db_path=populated_db)
-        results = aggregator.search(value='evil.com')
+        results = aggregator.search(value="evil.com")
         assert len(results) >= 0  # May be 0 or more depending on implementation
 
     def test_search_by_type(self, populated_db):
         """Test searching by IOC type"""
         aggregator = ThreatFeedAggregator(db_path=populated_db)
-        results = aggregator.search(ioc_type='domain')
+        results = aggregator.search(ioc_type="domain")
         assert isinstance(results, list)
 
     def test_search_by_malware_family(self, populated_db):
         """Test searching by malware family"""
         aggregator = ThreatFeedAggregator(db_path=populated_db)
-        results = aggregator.search(malware_family='Emotet')
+        results = aggregator.search(malware_family="Emotet")
         assert isinstance(results, list)
 
     def test_search_by_confidence(self, populated_db):
@@ -196,7 +205,7 @@ class TestIOCSearch:
         aggregator = ThreatFeedAggregator(db_path=populated_db)
         results = aggregator.search(min_confidence=80)
         for r in results:
-            assert r.get('confidence', 0) >= 80
+            assert r.get("confidence", 0) >= 80
 
 
 class TestExport:
@@ -209,12 +218,9 @@ class TestExport:
             db_path = f.name
 
         aggregator = ThreatFeedAggregator(db_path=db_path)
-        aggregator.store_ioc({
-            'value': 'evil.com',
-            'type': 'domain',
-            'source': 'test',
-            'confidence': 75
-        })
+        aggregator.store_ioc(
+            {"value": "evil.com", "type": "domain", "source": "test", "confidence": 75}
+        )
 
         yield db_path
         os.unlink(db_path)
@@ -226,7 +232,7 @@ class TestExport:
             output_path = f.name
 
         try:
-            aggregator.export(output_path, format='json')
+            aggregator.export(output_path, format="json")
             assert os.path.exists(output_path)
         finally:
             if os.path.exists(output_path):
@@ -239,7 +245,7 @@ class TestExport:
             output_path = f.name
 
         try:
-            aggregator.export(output_path, format='csv')
+            aggregator.export(output_path, format="csv")
             assert os.path.exists(output_path)
         finally:
             if os.path.exists(output_path):

@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.tools.file_carver import FileCarver
 
@@ -23,43 +23,47 @@ class TestFileSignatures:
         """Test detecting JPEG file signature"""
         carver = FileCarver()
         # JPEG magic bytes: FF D8 FF
-        data = b'\xff\xd8\xff\xe0\x00\x10JFIF'
+        data = b"\xff\xd8\xff\xe0\x00\x10JFIF"
         signatures = carver.find_signatures(data)
-        assert any('jpeg' in s.get('type', '').lower() or 'jpg' in s.get('type', '').lower()
-                   for s in signatures)
+        assert any(
+            "jpeg" in s.get("type", "").lower() or "jpg" in s.get("type", "").lower()
+            for s in signatures
+        )
 
     def test_detect_png_signature(self):
         """Test detecting PNG file signature"""
         carver = FileCarver()
         # PNG magic bytes
-        data = b'\x89PNG\r\n\x1a\n'
+        data = b"\x89PNG\r\n\x1a\n"
         signatures = carver.find_signatures(data)
-        assert any('png' in s.get('type', '').lower() for s in signatures)
+        assert any("png" in s.get("type", "").lower() for s in signatures)
 
     def test_detect_pdf_signature(self):
         """Test detecting PDF file signature"""
         carver = FileCarver()
         # PDF magic bytes
-        data = b'%PDF-1.4'
+        data = b"%PDF-1.4"
         signatures = carver.find_signatures(data)
-        assert any('pdf' in s.get('type', '').lower() for s in signatures)
+        assert any("pdf" in s.get("type", "").lower() for s in signatures)
 
     def test_detect_exe_signature(self):
         """Test detecting PE executable signature"""
         carver = FileCarver()
         # MZ header
-        data = b'MZ\x90\x00'
+        data = b"MZ\x90\x00"
         signatures = carver.find_signatures(data)
-        assert any('exe' in s.get('type', '').lower() or 'pe' in s.get('type', '').lower()
-                   for s in signatures)
+        assert any(
+            "exe" in s.get("type", "").lower() or "pe" in s.get("type", "").lower()
+            for s in signatures
+        )
 
     def test_detect_zip_signature(self):
         """Test detecting ZIP file signature"""
         carver = FileCarver()
         # ZIP magic bytes
-        data = b'PK\x03\x04'
+        data = b"PK\x03\x04"
         signatures = carver.find_signatures(data)
-        assert any('zip' in s.get('type', '').lower() for s in signatures)
+        assert any("zip" in s.get("type", "").lower() for s in signatures)
 
     def test_no_signature_in_random_data(self):
         """Test that random data doesn't match signatures"""
@@ -80,7 +84,7 @@ class TestFileCarving:
             # Write some random data
             f.write(os.urandom(100))
             # Write PNG header
-            f.write(b'\x89PNG\r\n\x1a\n')
+            f.write(b"\x89PNG\r\n\x1a\n")
             # Write more random data
             f.write(os.urandom(100))
             return f.name
@@ -120,8 +124,8 @@ class TestHashCalculation:
 
         try:
             hashes = carver.calculate_hashes(temp_path)
-            assert 'md5' in hashes
-            assert len(hashes['md5']) == 32  # MD5 is 32 hex chars
+            assert "md5" in hashes
+            assert len(hashes["md5"]) == 32  # MD5 is 32 hex chars
         finally:
             os.unlink(temp_path)
 
@@ -135,8 +139,8 @@ class TestHashCalculation:
 
         try:
             hashes = carver.calculate_hashes(temp_path)
-            assert 'sha256' in hashes
-            assert len(hashes['sha256']) == 64  # SHA256 is 64 hex chars
+            assert "sha256" in hashes
+            assert len(hashes["sha256"]) == 64  # SHA256 is 64 hex chars
         finally:
             os.unlink(temp_path)
 

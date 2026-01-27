@@ -11,25 +11,28 @@ from enum import Enum
 
 class Verdict(Enum):
     """Analysis verdict levels"""
-    CLEAN = 'CLEAN'
-    LOW_RISK = 'LOW_RISK'
-    SUSPICIOUS = 'SUSPICIOUS'
-    MALICIOUS = 'MALICIOUS'
-    UNKNOWN = 'UNKNOWN'
+
+    CLEAN = "CLEAN"
+    LOW_RISK = "LOW_RISK"
+    SUSPICIOUS = "SUSPICIOUS"
+    MALICIOUS = "MALICIOUS"
+    UNKNOWN = "UNKNOWN"
 
 
 class Severity(Enum):
     """Finding severity levels"""
-    CRITICAL = 'critical'
-    HIGH = 'high'
-    MEDIUM = 'medium'
-    LOW = 'low'
-    INFO = 'info'
+
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    INFO = "info"
 
 
 @dataclass
 class Finding:
     """Represents a single finding from analysis"""
+
     severity: Severity
     message: str
     source: str  # Which tool produced this finding
@@ -37,10 +40,10 @@ class Finding:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'severity': self.severity.value,
-            'message': self.message,
-            'source': self.source,
-            'details': self.details or {}
+            "severity": self.severity.value,
+            "message": self.message,
+            "source": self.source,
+            "details": self.details or {},
         }
 
 
@@ -56,7 +59,7 @@ class RiskScorer:
         Severity.HIGH: 15,
         Severity.MEDIUM: 5,
         Severity.LOW: 2,
-        Severity.INFO: 0
+        Severity.INFO: 0,
     }
 
     # Maximum contribution per severity (prevents single category from maxing score)
@@ -65,27 +68,32 @@ class RiskScorer:
         Severity.HIGH: 40,
         Severity.MEDIUM: 15,
         Severity.LOW: 5,
-        Severity.INFO: 0
+        Severity.INFO: 0,
     }
 
     def __init__(self):
         self.findings: List[Finding] = []
 
-    def add_finding(self, severity: Severity, message: str, source: str,
-                   details: Optional[Dict[str, Any]] = None):
+    def add_finding(
+        self,
+        severity: Severity,
+        message: str,
+        source: str,
+        details: Optional[Dict[str, Any]] = None,
+    ):
         """Add a finding to the scorer."""
         self.findings.append(Finding(severity, message, source, details))
 
     def add_findings_from_hash_lookup(self, result: Dict[str, Any]):
         """Extract findings from hash lookup result."""
-        if not result or 'error' in result:
+        if not result or "error" in result:
             return
 
         # Check VirusTotal results
-        vt = result.get('sources', {}).get('virustotal', {})
+        vt = result.get("sources", {}).get("virustotal", {})
         if vt:
-            detections = vt.get('detections', 0)
-            total = vt.get('total', 0)
+            detections = vt.get("detections", 0)
+            total = vt.get("total", 0)
 
             if detections > 0:
                 ratio = detections / total if total > 0 else 0
@@ -93,177 +101,171 @@ class RiskScorer:
                     self.add_finding(
                         Severity.CRITICAL,
                         f"Hash detected as malicious by {detections}/{total} AV engines",
-                        'hash_lookup',
-                        {'detections': detections, 'total': total, 'ratio': ratio}
+                        "hash_lookup",
+                        {"detections": detections, "total": total, "ratio": ratio},
                     )
                 elif ratio > 0.2:
                     self.add_finding(
                         Severity.HIGH,
                         f"Hash flagged by {detections}/{total} AV engines",
-                        'hash_lookup',
-                        {'detections': detections, 'total': total}
+                        "hash_lookup",
+                        {"detections": detections, "total": total},
                     )
                 else:
                     self.add_finding(
                         Severity.MEDIUM,
                         f"Hash has some detections ({detections}/{total})",
-                        'hash_lookup',
-                        {'detections': detections, 'total': total}
+                        "hash_lookup",
+                        {"detections": detections, "total": total},
                     )
 
         # Check MalwareBazaar results
-        mb = result.get('sources', {}).get('malwarebazaar', {})
-        if mb and mb.get('found'):
-            family = mb.get('malware_family', 'Unknown')
+        mb = result.get("sources", {}).get("malwarebazaar", {})
+        if mb and mb.get("found"):
+            family = mb.get("malware_family", "Unknown")
             self.add_finding(
                 Severity.CRITICAL,
                 f"Hash matches known malware family: {family}",
-                'hash_lookup',
-                {'malware_family': family, 'source': 'MalwareBazaar'}
+                "hash_lookup",
+                {"malware_family": family, "source": "MalwareBazaar"},
             )
 
     def add_findings_from_domain_intel(self, result: Dict[str, Any]):
         """Extract findings from domain/IP intel result."""
-        if not result or 'error' in result:
+        if not result or "error" in result:
             return
 
         # Check risk score from tool
-        risk_score = result.get('risk_score', 0)
-        verdict = result.get('verdict', '').upper()
+        risk_score = result.get("risk_score", 0)
+        verdict = result.get("verdict", "").upper()
 
-        if verdict == 'MALICIOUS' or risk_score >= 70:
+        if verdict == "MALICIOUS" or risk_score >= 70:
             self.add_finding(
                 Severity.CRITICAL,
                 f"Domain/IP flagged as malicious (risk: {risk_score})",
-                'domain_intel',
-                {'risk_score': risk_score}
+                "domain_intel",
+                {"risk_score": risk_score},
             )
-        elif verdict == 'SUSPICIOUS' or risk_score >= 40:
+        elif verdict == "SUSPICIOUS" or risk_score >= 40:
             self.add_finding(
                 Severity.HIGH,
                 f"Domain/IP is suspicious (risk: {risk_score})",
-                'domain_intel',
-                {'risk_score': risk_score}
+                "domain_intel",
+                {"risk_score": risk_score},
             )
 
         # Check individual sources
-        vt = result.get('sources', {}).get('virustotal', {})
+        vt = result.get("sources", {}).get("virustotal", {})
         if vt:
-            malicious = vt.get('malicious', 0)
+            malicious = vt.get("malicious", 0)
             if malicious > 0:
                 self.add_finding(
                     Severity.HIGH,
                     f"VirusTotal: {malicious} vendors flagged as malicious",
-                    'domain_intel',
-                    {'malicious_count': malicious}
+                    "domain_intel",
+                    {"malicious_count": malicious},
                 )
 
-        abuse = result.get('sources', {}).get('abuseipdb', {})
+        abuse = result.get("sources", {}).get("abuseipdb", {})
         if abuse:
-            confidence = abuse.get('abuse_confidence', 0)
+            confidence = abuse.get("abuse_confidence", 0)
             if confidence > 50:
                 self.add_finding(
                     Severity.HIGH,
                     f"AbuseIPDB: {confidence}% abuse confidence",
-                    'domain_intel',
-                    {'abuse_confidence': confidence}
+                    "domain_intel",
+                    {"abuse_confidence": confidence},
                 )
 
     def add_findings_from_url_analysis(self, result: Dict[str, Any]):
         """Extract findings from URL analysis result."""
-        if not result or 'error' in result:
+        if not result or "error" in result:
             return
 
-        verdict = result.get('verdict', '').upper()
-        risk_score = result.get('risk_score', 0)
+        verdict = result.get("verdict", "").upper()
+        risk_score = result.get("risk_score", 0)
 
-        if verdict == 'MALICIOUS' or risk_score >= 70:
+        if verdict == "MALICIOUS" or risk_score >= 70:
             self.add_finding(
                 Severity.CRITICAL,
                 f"URL flagged as malicious (risk: {risk_score})",
-                'url_analyzer',
-                {'risk_score': risk_score}
+                "url_analyzer",
+                {"risk_score": risk_score},
             )
-        elif verdict == 'SUSPICIOUS' or risk_score >= 40:
+        elif verdict == "SUSPICIOUS" or risk_score >= 40:
             self.add_finding(
                 Severity.HIGH,
                 f"URL is suspicious (risk: {risk_score})",
-                'url_analyzer',
-                {'risk_score': risk_score}
+                "url_analyzer",
+                {"risk_score": risk_score},
             )
 
         # Check for specific patterns
-        patterns = result.get('suspicious_patterns', [])
+        patterns = result.get("suspicious_patterns", [])
         if patterns:
             self.add_finding(
                 Severity.MEDIUM,
                 f"URL has {len(patterns)} suspicious patterns",
-                'url_analyzer',
-                {'patterns': patterns}
+                "url_analyzer",
+                {"patterns": patterns},
             )
 
     def add_findings_from_email_analysis(self, result: Dict[str, Any]):
         """Extract findings from email analysis result."""
-        if not result or 'error' in result:
+        if not result or "error" in result:
             return
 
         # Check authentication
-        auth = result.get('authentication', {})
+        auth = result.get("authentication", {})
 
-        spf = auth.get('spf', {})
-        if spf.get('result') == 'fail':
+        spf = auth.get("spf", {})
+        if spf.get("result") == "fail":
             self.add_finding(
                 Severity.HIGH,
                 "SPF validation failed - sender may be spoofed",
-                'eml_parser',
-                {'spf_result': spf}
+                "eml_parser",
+                {"spf_result": spf},
             )
 
-        dkim = auth.get('dkim', {})
-        if dkim.get('result') == 'fail':
+        dkim = auth.get("dkim", {})
+        if dkim.get("result") == "fail":
             self.add_finding(
-                Severity.MEDIUM,
-                "DKIM validation failed",
-                'eml_parser',
-                {'dkim_result': dkim}
+                Severity.MEDIUM, "DKIM validation failed", "eml_parser", {"dkim_result": dkim}
             )
 
-        dmarc = auth.get('dmarc', {})
-        if dmarc.get('result') == 'fail':
+        dmarc = auth.get("dmarc", {})
+        if dmarc.get("result") == "fail":
             self.add_finding(
-                Severity.HIGH,
-                "DMARC validation failed",
-                'eml_parser',
-                {'dmarc_result': dmarc}
+                Severity.HIGH, "DMARC validation failed", "eml_parser", {"dmarc_result": dmarc}
             )
 
         # Check attachments
-        attachments = result.get('attachments', [])
+        attachments = result.get("attachments", [])
         for att in attachments:
-            if att.get('vt_detections', 0) > 0:
+            if att.get("vt_detections", 0) > 0:
                 self.add_finding(
                     Severity.CRITICAL,
                     f"Attachment '{att.get('filename')}' flagged as malicious",
-                    'eml_parser',
-                    {'attachment': att}
+                    "eml_parser",
+                    {"attachment": att},
                 )
 
     def add_findings_from_yara_scan(self, result: Dict[str, Any]):
         """Extract findings from YARA scan result."""
-        if not result or 'error' in result:
+        if not result or "error" in result:
             return
 
-        matches = result.get('matches', [])
+        matches = result.get("matches", [])
         for match in matches:
-            rule = match.get('rule', 'Unknown')
-            severity_str = match.get('severity', 'medium').lower()
+            rule = match.get("rule", "Unknown")
+            severity_str = match.get("severity", "medium").lower()
 
             # Map YARA severity to our severity
-            if severity_str == 'critical':
+            if severity_str == "critical":
                 sev = Severity.CRITICAL
-            elif severity_str == 'high':
+            elif severity_str == "high":
                 sev = Severity.HIGH
-            elif severity_str == 'medium':
+            elif severity_str == "medium":
                 sev = Severity.MEDIUM
             else:
                 sev = Severity.LOW
@@ -271,127 +273,127 @@ class RiskScorer:
             self.add_finding(
                 sev,
                 f"YARA rule matched: {rule}",
-                'yara_scanner',
-                {'rule': rule, 'meta': match.get('meta', {})}
+                "yara_scanner",
+                {"rule": rule, "meta": match.get("meta", {})},
             )
 
     def add_findings_from_log_analysis(self, result: Dict[str, Any]):
         """Extract findings from log analysis result."""
-        if not result or 'error' in result:
+        if not result or "error" in result:
             return
 
-        threats = result.get('threats', {})
+        threats = result.get("threats", {})
 
         # SQL injection attempts
-        sqli = threats.get('sql_injection', [])
+        sqli = threats.get("sql_injection", [])
         if sqli:
             self.add_finding(
                 Severity.CRITICAL,
                 f"Detected {len(sqli)} SQL injection attempts",
-                'log_analyzer',
-                {'count': len(sqli)}
+                "log_analyzer",
+                {"count": len(sqli)},
             )
 
         # XSS attempts
-        xss = threats.get('xss', [])
+        xss = threats.get("xss", [])
         if xss:
             self.add_finding(
                 Severity.HIGH,
                 f"Detected {len(xss)} XSS attempts",
-                'log_analyzer',
-                {'count': len(xss)}
+                "log_analyzer",
+                {"count": len(xss)},
             )
 
         # Path traversal
-        traversal = threats.get('path_traversal', [])
+        traversal = threats.get("path_traversal", [])
         if traversal:
             self.add_finding(
                 Severity.HIGH,
                 f"Detected {len(traversal)} path traversal attempts",
-                'log_analyzer',
-                {'count': len(traversal)}
+                "log_analyzer",
+                {"count": len(traversal)},
             )
 
         # Brute force
-        brute = threats.get('brute_force', [])
+        brute = threats.get("brute_force", [])
         if brute:
             self.add_finding(
                 Severity.MEDIUM,
                 f"Detected brute force patterns from {len(brute)} IPs",
-                'log_analyzer',
-                {'count': len(brute)}
+                "log_analyzer",
+                {"count": len(brute)},
             )
 
     def add_findings_from_pcap_analysis(self, result: Dict[str, Any]):
         """Extract findings from PCAP analysis result."""
-        if not result or 'error' in result:
+        if not result or "error" in result:
             return
 
-        threats = result.get('threats', {})
+        threats = result.get("threats", {})
 
         # Port scans
-        port_scans = threats.get('port_scans', [])
+        port_scans = threats.get("port_scans", [])
         if port_scans:
             self.add_finding(
                 Severity.MEDIUM,
                 f"Detected port scan activity from {len(port_scans)} sources",
-                'pcap_analyzer',
-                {'count': len(port_scans)}
+                "pcap_analyzer",
+                {"count": len(port_scans)},
             )
 
         # Suspicious DNS
-        dns_threats = threats.get('suspicious_dns', [])
+        dns_threats = threats.get("suspicious_dns", [])
         if dns_threats:
             self.add_finding(
                 Severity.HIGH,
                 f"Detected {len(dns_threats)} suspicious DNS queries",
-                'pcap_analyzer',
-                {'count': len(dns_threats)}
+                "pcap_analyzer",
+                {"count": len(dns_threats)},
             )
 
         # C2 indicators
-        c2 = threats.get('c2_indicators', [])
+        c2 = threats.get("c2_indicators", [])
         if c2:
             self.add_finding(
                 Severity.CRITICAL,
                 f"Detected potential C2 communication patterns",
-                'pcap_analyzer',
-                {'indicators': c2}
+                "pcap_analyzer",
+                {"indicators": c2},
             )
 
     def add_findings_from_deobfuscation(self, result: Dict[str, Any]):
         """Extract findings from script deobfuscation result."""
-        if not result or 'error' in result:
+        if not result or "error" in result:
             return
 
         # Check if obfuscation was detected
-        layers = result.get('layers_decoded', 0)
+        layers = result.get("layers_decoded", 0)
         if layers > 0:
             if layers >= 3:
                 self.add_finding(
                     Severity.HIGH,
                     f"Script was heavily obfuscated ({layers} layers)",
-                    'deobfuscator',
-                    {'layers': layers}
+                    "deobfuscator",
+                    {"layers": layers},
                 )
             else:
                 self.add_finding(
                     Severity.MEDIUM,
                     f"Script was obfuscated ({layers} layers)",
-                    'deobfuscator',
-                    {'layers': layers}
+                    "deobfuscator",
+                    {"layers": layers},
                 )
 
         # Check extracted IOCs
-        iocs = result.get('extracted_iocs', {})
+        iocs = result.get("extracted_iocs", {})
         if iocs:
             total_iocs = sum(len(v) for v in iocs.values() if isinstance(v, list))
             if total_iocs > 0:
                 self.add_finding(
                     Severity.MEDIUM,
                     f"Found {total_iocs} IOCs in deobfuscated script",
-                    'deobfuscator',
-                    {'iocs': iocs}
+                    "deobfuscator",
+                    {"iocs": iocs},
                 )
 
     def calculate_score(self) -> int:
@@ -457,20 +459,20 @@ class RiskScorer:
             severity_counts[finding.severity.value] += 1
 
         return {
-            'risk_score': score,
-            'verdict': verdict.value,
-            'confidence': self._get_confidence(),
-            'finding_counts': severity_counts,
-            'total_findings': len(self.findings)
+            "risk_score": score,
+            "verdict": verdict.value,
+            "confidence": self._get_confidence(),
+            "finding_counts": severity_counts,
+            "total_findings": len(self.findings),
         }
 
     def _get_confidence(self) -> str:
         """Determine confidence level based on findings."""
         if len(self.findings) == 0:
-            return 'low'
+            return "low"
         if len(self.findings) >= 3:
-            return 'high'
-        return 'medium'
+            return "high"
+        return "medium"
 
     def get_findings(self, min_severity: Optional[Severity] = None) -> List[Dict[str, Any]]:
         """
@@ -482,11 +484,17 @@ class RiskScorer:
         Returns:
             List of finding dicts
         """
-        severity_order = [Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW, Severity.INFO]
+        severity_order = [
+            Severity.CRITICAL,
+            Severity.HIGH,
+            Severity.MEDIUM,
+            Severity.LOW,
+            Severity.INFO,
+        ]
 
         if min_severity:
             min_index = severity_order.index(min_severity)
-            included = set(severity_order[:min_index + 1])
+            included = set(severity_order[: min_index + 1])
             findings = [f for f in self.findings if f.severity in included]
         else:
             findings = self.findings
@@ -513,27 +521,27 @@ class RiskScorer:
             details = finding.details or {}
 
             # Check for malware indicators
-            if 'malware_family' in details:
+            if "malware_family" in details:
                 has_malware = True
-            if finding.source == 'hash_lookup' and finding.severity == Severity.CRITICAL:
+            if finding.source == "hash_lookup" and finding.severity == Severity.CRITICAL:
                 has_malware = True
 
             # Check for phishing indicators
-            if 'spf' in str(details) or 'dkim' in str(details):
+            if "spf" in str(details) or "dkim" in str(details):
                 has_phishing = True
 
             # Check for network threats
-            if finding.source in ['pcap_analyzer', 'log_analyzer']:
+            if finding.source in ["pcap_analyzer", "log_analyzer"]:
                 has_network_threat = True
 
             # Collect malicious IOCs
             if finding.severity == Severity.CRITICAL:
-                if 'url' in str(finding.message).lower():
-                    malicious_iocs.append('url')
-                if 'domain' in str(finding.message).lower():
-                    malicious_iocs.append('domain')
-                if 'ip' in str(finding.message).lower():
-                    malicious_iocs.append('ip')
+                if "url" in str(finding.message).lower():
+                    malicious_iocs.append("url")
+                if "domain" in str(finding.message).lower():
+                    malicious_iocs.append("domain")
+                if "ip" in str(finding.message).lower():
+                    malicious_iocs.append("ip")
 
         # Generate recommendations
         if has_malware:
@@ -550,10 +558,10 @@ class RiskScorer:
             recommendations.append("Review firewall logs for additional indicators")
             recommendations.append("Check for data exfiltration attempts")
 
-        if 'url' in malicious_iocs or 'domain' in malicious_iocs:
+        if "url" in malicious_iocs or "domain" in malicious_iocs:
             recommendations.append("Block malicious URLs/domains at proxy")
 
-        if 'ip' in malicious_iocs:
+        if "ip" in malicious_iocs:
             recommendations.append("Block malicious IPs at firewall")
 
         # Generic recommendations based on verdict
@@ -581,19 +589,11 @@ def main():
     scorer.add_finding(
         Severity.CRITICAL,
         "Hash detected as malicious by 45/70 AV engines",
-        'hash_lookup',
-        {'detections': 45, 'total': 70}
+        "hash_lookup",
+        {"detections": 45, "total": 70},
     )
-    scorer.add_finding(
-        Severity.HIGH,
-        "SPF validation failed",
-        'eml_parser'
-    )
-    scorer.add_finding(
-        Severity.MEDIUM,
-        "Script was obfuscated (2 layers)",
-        'deobfuscator'
-    )
+    scorer.add_finding(Severity.HIGH, "SPF validation failed", "eml_parser")
+    scorer.add_finding(Severity.MEDIUM, "Script was obfuscated (2 layers)", "deobfuscator")
 
     print("Summary:", scorer.get_summary())
     print("\nFindings:")
@@ -604,5 +604,5 @@ def main():
         print(f"  - {r}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

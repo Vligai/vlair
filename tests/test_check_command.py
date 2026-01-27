@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock
 from io import StringIO
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 class TestCheckCommandRouting:
@@ -122,7 +122,12 @@ class TestCheckHashCommand:
     def test_check_hash_json_output(self, mock_lookup_class, capsys):
         """Test that check hash with --json outputs JSON"""
         mock_instance = MagicMock()
-        result_data = {"verdict": "MALICIOUS", "detections": 45, "total_engines": 70, "sources": ["VirusTotal"]}
+        result_data = {
+            "verdict": "MALICIOUS",
+            "detections": 45,
+            "total_engines": 70,
+            "sources": ["VirusTotal"],
+        }
         mock_instance.lookup.return_value = result_data
         mock_lookup_class.return_value = mock_instance
 
@@ -222,7 +227,12 @@ class TestCheckIPCommand:
     def test_check_ip_calls_intel(self, mock_intel_class, capsys):
         """Test that check ip calls DomainIPIntel"""
         mock_instance = MagicMock()
-        mock_instance.lookup.return_value = {"verdict": "CLEAN", "risk_score": 0, "abuse_confidence_score": 0, "country": "US"}
+        mock_instance.lookup.return_value = {
+            "verdict": "CLEAN",
+            "risk_score": 0,
+            "abuse_confidence_score": 0,
+            "country": "US",
+        }
         mock_intel_class.return_value = mock_instance
 
         with patch("core.history.AnalysisHistory"):
@@ -338,7 +348,13 @@ class TestCheckFileInput:
                 "input": temp_path,
                 "type": "ioc_list",
                 "scorer": mock_scorer,
-                "iocs": {"hashes": [], "domains": ["malicious.com"], "ips": ["192.168.1.1"], "urls": [], "emails": []},
+                "iocs": {
+                    "hashes": [],
+                    "domains": ["malicious.com"],
+                    "ips": ["192.168.1.1"],
+                    "urls": [],
+                    "emails": [],
+                },
                 "tool_results": {},
             }
             mock_analyzer_class.return_value = mock_instance

@@ -10,7 +10,7 @@ import os
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.core.report_generator import ReportGenerator, ReportData
 from secops_helper.core.scorer import RiskScorer, Severity, Verdict
@@ -78,7 +78,13 @@ class TestBuildReportData:
         assert data.duration_seconds == 2.5
 
     def test_build_with_empty_scorer(self):
-        result = {"input": "clean.txt", "type": "file", "scorer": self.scorer, "iocs": {}, "tool_results": {}}
+        result = {
+            "input": "clean.txt",
+            "type": "file",
+            "scorer": self.scorer,
+            "iocs": {},
+            "tool_results": {},
+        }
         data = self.gen._build_report_data(result)
         assert data.risk_score == 0
         assert data.verdict == "UNKNOWN"
@@ -228,20 +234,38 @@ class TestHTMLGeneration:
     def test_html_escapes_special_chars(self):
         """Test that special HTML characters are escaped"""
         self.scorer.add_finding(Severity.HIGH, '<script>alert("xss")</script>', "test")
-        result = {"input": "<b>bad</b>", "type": "hash", "scorer": self.scorer, "iocs": {}, "tool_results": {}}
+        result = {
+            "input": "<b>bad</b>",
+            "type": "hash",
+            "scorer": self.scorer,
+            "iocs": {},
+            "tool_results": {},
+        }
         data = self.gen._build_report_data(result)
         html = self.gen.format_html(data)
         assert "<script>alert" not in html
         assert "&lt;script&gt;" in html
 
     def test_html_empty_findings(self):
-        result = {"input": "clean", "type": "hash", "scorer": self.scorer, "iocs": {}, "tool_results": {}}
+        result = {
+            "input": "clean",
+            "type": "hash",
+            "scorer": self.scorer,
+            "iocs": {},
+            "tool_results": {},
+        }
         data = self.gen._build_report_data(result)
         html = self.gen.format_html(data)
         assert "No findings to report" in html
 
     def test_html_empty_iocs(self):
-        result = {"input": "clean", "type": "hash", "scorer": self.scorer, "iocs": {}, "tool_results": {}}
+        result = {
+            "input": "clean",
+            "type": "hash",
+            "scorer": self.scorer,
+            "iocs": {},
+            "tool_results": {},
+        }
         data = self.gen._build_report_data(result)
         html = self.gen.format_html(data)
         assert "No indicators of compromise" in html
@@ -342,7 +366,13 @@ class TestMarkdownGeneration:
         assert "test_input" in md
 
     def test_markdown_empty_findings(self):
-        result = {"input": "clean", "type": "hash", "scorer": self.scorer, "iocs": {}, "tool_results": {}}
+        result = {
+            "input": "clean",
+            "type": "hash",
+            "scorer": self.scorer,
+            "iocs": {},
+            "tool_results": {},
+        }
         data = self.gen._build_report_data(result)
         md = self.gen.format_markdown(data)
         assert "No findings to report" in md
@@ -365,7 +395,13 @@ class TestFileGeneration:
         self.scorer.add_finding(Severity.HIGH, "Test", "test")
 
     def _make_result(self):
-        return {"input": "test.eml", "type": "email", "scorer": self.scorer, "iocs": {}, "tool_results": {}}
+        return {
+            "input": "test.eml",
+            "type": "email",
+            "scorer": self.scorer,
+            "iocs": {},
+            "tool_results": {},
+        }
 
     def test_generate_html_file(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -453,7 +489,9 @@ class TestExecSummary:
     def setup_method(self):
         self.gen = ReportGenerator()
 
-    def _make_data(self, verdict="SUSPICIOUS", score=50, findings=None, iocs=None, finding_counts=None):
+    def _make_data(
+        self, verdict="SUSPICIOUS", score=50, findings=None, iocs=None, finding_counts=None
+    ):
         return ReportData(
             input_value="test.eml",
             input_type="email",
@@ -462,7 +500,8 @@ class TestExecSummary:
             verdict=verdict,
             confidence="medium",
             findings=findings or [],
-            finding_counts=finding_counts or {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
+            finding_counts=finding_counts
+            or {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
             iocs=iocs or {},
             recommendations=[],
             tool_results={},

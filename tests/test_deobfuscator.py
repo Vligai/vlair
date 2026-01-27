@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import base64
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.tools.deobfuscator import Deobfuscator
 
@@ -23,35 +23,35 @@ class TestLanguageDetection:
         deob = Deobfuscator()
         script = 'var x = "hello"; console.log(x);'
         lang = deob.detect_language(script)
-        assert lang == 'javascript'
+        assert lang == "javascript"
 
     def test_detect_powershell(self):
         """Test PowerShell detection"""
         deob = Deobfuscator()
         script = '$x = "hello"; Write-Host $x'
         lang = deob.detect_language(script)
-        assert lang == 'powershell'
+        assert lang == "powershell"
 
     def test_detect_vbscript(self):
         """Test VBScript detection"""
         deob = Deobfuscator()
         script = 'Dim x\nx = "hello"\nMsgBox x'
         lang = deob.detect_language(script)
-        assert lang == 'vbscript'
+        assert lang == "vbscript"
 
     def test_detect_batch(self):
         """Test Batch file detection"""
         deob = Deobfuscator()
-        script = '@echo off\nset x=hello\necho %x%'
+        script = "@echo off\nset x=hello\necho %x%"
         lang = deob.detect_language(script)
-        assert lang == 'batch'
+        assert lang == "batch"
 
     def test_detect_python(self):
         """Test Python detection"""
         deob = Deobfuscator()
         script = 'import os\nprint("hello")'
         lang = deob.detect_language(script)
-        assert lang == 'python'
+        assert lang == "python"
 
 
 class TestBase64Decoding:
@@ -107,24 +107,24 @@ class TestPowerShellDeobfuscation:
         deob = Deobfuscator()
         # Create encoded PowerShell command
         cmd = "Write-Host 'Hello'"
-        encoded = base64.b64encode(cmd.encode('utf-16-le')).decode()
+        encoded = base64.b64encode(cmd.encode("utf-16-le")).decode()
         script = f"powershell.exe -EncodedCommand {encoded}"
-        result = deob.deobfuscate(script, language='powershell')
+        result = deob.deobfuscate(script, language="powershell")
         assert "Write-Host" in result or encoded in result
 
     def test_remove_backticks(self):
         """Test removing backtick obfuscation"""
         deob = Deobfuscator()
         script = "I`n`v`o`k`e`-`E`x`p`r`e`s`s`i`o`n"
-        result = deob.deobfuscate(script, language='powershell')
+        result = deob.deobfuscate(script, language="powershell")
         assert "`" not in result or "Invoke" in result
 
     def test_decode_char_array(self):
         """Test decoding [char] array obfuscation"""
         deob = Deobfuscator()
         # [char]72 + [char]101 + ... = "Hello"
-        script = '([char]72+[char]101+[char]108+[char]108+[char]111)'
-        result = deob.deobfuscate(script, language='powershell')
+        script = "([char]72+[char]101+[char]108+[char]108+[char]111)"
+        result = deob.deobfuscate(script, language="powershell")
         # Should attempt to decode
         assert result is not None
 
@@ -137,21 +137,21 @@ class TestJavaScriptDeobfuscation:
         deob = Deobfuscator()
         # String.fromCharCode(72,101,108,108,111) = "Hello"
         script = "String.fromCharCode(72,101,108,108,111)"
-        result = deob.deobfuscate(script, language='javascript')
+        result = deob.deobfuscate(script, language="javascript")
         assert "Hello" in result or "fromCharCode" in result
 
     def test_decode_escape_sequences(self):
         """Test decoding escape sequences"""
         deob = Deobfuscator()
         script = r'var x = "\x48\x65\x6c\x6c\x6f";'
-        result = deob.deobfuscate(script, language='javascript')
+        result = deob.deobfuscate(script, language="javascript")
         assert "Hello" in result or "\\x" in result
 
     def test_decode_unicode_escapes(self):
         """Test decoding unicode escapes"""
         deob = Deobfuscator()
         script = r'var x = "\u0048\u0065\u006c\u006c\u006f";'
-        result = deob.deobfuscate(script, language='javascript')
+        result = deob.deobfuscate(script, language="javascript")
         assert "Hello" in result or "\\u" in result
 
 

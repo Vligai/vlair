@@ -9,9 +9,16 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.tools.domain_ip_intel import Validator, DNSLookup, RiskScorer, AbuseIPDBAPI, VirusTotalAPI, DomainIPIntelligence
+from secops_helper.tools.domain_ip_intel import (
+    Validator,
+    DNSLookup,
+    RiskScorer,
+    AbuseIPDBAPI,
+    VirusTotalAPI,
+    DomainIPIntelligence,
+)
 
 
 class TestValidator:
@@ -130,32 +137,57 @@ class TestRiskScorer:
 
     def test_calculate_ip_score_clean(self):
         """Test IP risk score for clean IP"""
-        intel_data = {"threat_intelligence": {"abuseipdb": {"abuse_confidence_score": 0}, "virustotal": {"malicious": 0}}}
+        intel_data = {
+            "threat_intelligence": {
+                "abuseipdb": {"abuse_confidence_score": 0},
+                "virustotal": {"malicious": 0},
+            }
+        }
         score = RiskScorer.calculate_ip_score(intel_data)
         assert score == 0
 
     def test_calculate_ip_score_abuseipdb(self):
         """Test IP risk score with AbuseIPDB data"""
-        intel_data = {"threat_intelligence": {"abuseipdb": {"abuse_confidence_score": 80}, "virustotal": {"malicious": 0}}}
+        intel_data = {
+            "threat_intelligence": {
+                "abuseipdb": {"abuse_confidence_score": 80},
+                "virustotal": {"malicious": 0},
+            }
+        }
         score = RiskScorer.calculate_ip_score(intel_data)
         assert score == 40  # 80 * 0.5 = 40
 
     def test_calculate_ip_score_virustotal(self):
         """Test IP risk score with VirusTotal data"""
-        intel_data = {"threat_intelligence": {"abuseipdb": {"abuse_confidence_score": 0}, "virustotal": {"malicious": 5}}}
+        intel_data = {
+            "threat_intelligence": {
+                "abuseipdb": {"abuse_confidence_score": 0},
+                "virustotal": {"malicious": 5},
+            }
+        }
         score = RiskScorer.calculate_ip_score(intel_data)
         assert score == 25  # 5 * 5 = 25
 
     def test_calculate_ip_score_combined(self):
         """Test IP risk score with combined sources"""
-        intel_data = {"threat_intelligence": {"abuseipdb": {"abuse_confidence_score": 100}, "virustotal": {"malicious": 10}}}
+        intel_data = {
+            "threat_intelligence": {
+                "abuseipdb": {"abuse_confidence_score": 100},
+                "virustotal": {"malicious": 10},
+            }
+        }
         score = RiskScorer.calculate_ip_score(intel_data)
         # 100 * 0.5 + min(10 * 5, 40) = 50 + 40 = 90
         assert score == 90
 
     def test_calculate_ip_score_max_cap(self):
         """Test IP risk score capping at 100"""
-        intel_data = {"threat_intelligence": {"abuseipdb": {"abuse_confidence_score": 100}, "virustotal": {"malicious": 20}}}
+        intel_data = {
+            "threat_intelligence": {
+                "abuseipdb": {"abuse_confidence_score": 100},
+                "virustotal": {"malicious": 20},
+            }
+        }
         score = RiskScorer.calculate_ip_score(intel_data)
         # VT is capped at 40, so max is 100*0.5 + 40 = 90
         assert score == 90
@@ -263,7 +295,12 @@ class TestVirusTotalAPI:
         mock_response.json.return_value = {
             "data": {
                 "attributes": {
-                    "last_analysis_stats": {"malicious": 5, "suspicious": 2, "harmless": 80, "undetected": 13},
+                    "last_analysis_stats": {
+                        "malicious": 5,
+                        "suspicious": 2,
+                        "harmless": 80,
+                        "undetected": 13,
+                    },
                     "as_owner": "Google LLC",
                     "country": "US",
                 }
@@ -287,7 +324,12 @@ class TestVirusTotalAPI:
         mock_response.json.return_value = {
             "data": {
                 "attributes": {
-                    "last_analysis_stats": {"malicious": 0, "suspicious": 0, "harmless": 90, "undetected": 10},
+                    "last_analysis_stats": {
+                        "malicious": 0,
+                        "suspicious": 0,
+                        "harmless": 90,
+                        "undetected": 10,
+                    },
                     "categories": {"Fortinet": "Search Engines"},
                     "creation_date": 1577836800,
                 }
@@ -361,7 +403,11 @@ class TestDomainIPIntelligence:
 
         # Mock VirusTotal
         mock_vt_instance = Mock()
-        mock_vt_instance.lookup_ip.return_value = {"source": "virustotal", "malicious": 0, "suspicious": 0}
+        mock_vt_instance.lookup_ip.return_value = {
+            "source": "virustotal",
+            "malicious": 0,
+            "suspicious": 0,
+        }
         mock_vt.return_value = mock_vt_instance
 
         intel = DomainIPIntelligence()
@@ -387,11 +433,18 @@ class TestDomainIPIntelligence:
     def test_analyze_valid_domain(self, mock_dns, mock_vt):
         """Test analysis of valid domain with mocked APIs"""
         # Mock DNS info
-        mock_dns.return_value = {"a_records": ["93.184.216.34"], "reverse_dns": {"93.184.216.34": "example.com"}}
+        mock_dns.return_value = {
+            "a_records": ["93.184.216.34"],
+            "reverse_dns": {"93.184.216.34": "example.com"},
+        }
 
         # Mock VirusTotal
         mock_vt_instance = Mock()
-        mock_vt_instance.lookup_domain.return_value = {"source": "virustotal", "malicious": 0, "suspicious": 0}
+        mock_vt_instance.lookup_domain.return_value = {
+            "source": "virustotal",
+            "malicious": 0,
+            "suspicious": 0,
+        }
         mock_vt.return_value = mock_vt_instance
 
         intel = DomainIPIntelligence()

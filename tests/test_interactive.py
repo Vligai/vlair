@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 from io import StringIO
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.core.interactive import InteractiveInvestigation, ProgressBar
 from secops_helper.core.reporter import Colors
@@ -73,7 +73,9 @@ class TestInvestigationTypes:
         """Test email investigation type"""
         investigation = InteractiveInvestigation()
 
-        email_type = next((t for t in investigation.INVESTIGATION_TYPES if t["id"] == "email"), None)
+        email_type = next(
+            (t for t in investigation.INVESTIGATION_TYPES if t["id"] == "email"), None
+        )
 
         assert email_type is not None
         assert email_type["workflow"] == "phishing-email"
@@ -83,7 +85,9 @@ class TestInvestigationTypes:
         """Test indicator investigation type (no workflow)"""
         investigation = InteractiveInvestigation()
 
-        indicator_type = next((t for t in investigation.INVESTIGATION_TYPES if t["id"] == "indicator"), None)
+        indicator_type = next(
+            (t for t in investigation.INVESTIGATION_TYPES if t["id"] == "indicator"), None
+        )
 
         assert indicator_type is not None
         assert indicator_type["workflow"] is None
@@ -361,7 +365,13 @@ class TestRunAnalysis:
         inv_type = {"id": "indicator", "workflow": None}
 
         # Mock the analyzer
-        mock_result = {"input": "example.com", "type": "domain", "scorer": MagicMock(), "iocs": {}, "tool_results": {}}
+        mock_result = {
+            "input": "example.com",
+            "type": "domain",
+            "scorer": MagicMock(),
+            "iocs": {},
+            "tool_results": {},
+        }
         investigation.analyzer.analyze = MagicMock(return_value=mock_result)
 
         result = investigation._run_analysis(inv_type, "example.com")

@@ -18,6 +18,7 @@ from .reporter import Reporter
 @dataclass
 class WorkflowStep:
     """Represents a single step in a workflow"""
+
     name: str
     description: str
     tool: str  # Tool identifier
@@ -28,6 +29,7 @@ class WorkflowStep:
 @dataclass
 class StepResult:
     """Result from executing a workflow step"""
+
     step_name: str
     success: bool
     data: Dict[str, Any] = field(default_factory=dict)
@@ -48,11 +50,11 @@ class WorkflowContext:
 
         # Accumulated data
         self.iocs: Dict[str, List[str]] = {
-            'hashes': [],
-            'domains': [],
-            'ips': [],
-            'urls': [],
-            'emails': []
+            "hashes": [],
+            "domains": [],
+            "ips": [],
+            "urls": [],
+            "emails": [],
         }
         self.tool_results: Dict[str, Any] = {}
         self.step_results: List[StepResult] = []
@@ -125,7 +127,7 @@ class Workflow(ABC):
         if self.verbose:
             print(f"[{step_num}/{total}] {step.description}...", file=sys.stderr)
 
-    def execute(self, input_value: str, input_type: str = 'unknown') -> Dict[str, Any]:
+    def execute(self, input_value: str, input_type: str = "unknown") -> Dict[str, Any]:
         """
         Execute the complete workflow.
 
@@ -158,6 +160,7 @@ class Workflow(ABC):
             # Execute step
             try:
                 import time
+
                 start = time.time()
                 result = self._execute_step(step, context)
                 result.duration_ms = int((time.time() - start) * 1000)
@@ -171,33 +174,31 @@ class Workflow(ABC):
 
             except Exception as e:
                 self._log(f"  Error: {e}")
-                context.add_step_result(StepResult(
-                    step_name=step.name,
-                    success=False,
-                    error=str(e)
-                ))
+                context.add_step_result(
+                    StepResult(step_name=step.name, success=False, error=str(e))
+                )
 
         self._log(f"Workflow complete in {context.get_elapsed_time():.1f}s")
 
         return {
-            'workflow': self.name,
-            'input': input_value,
-            'type': input_type,
-            'duration_seconds': context.get_elapsed_time(),
-            'steps_completed': len([r for r in context.step_results if r.success]),
-            'steps_total': total_steps,
-            'iocs': context.iocs,
-            'tool_results': context.tool_results,
-            'scorer': context.scorer,
-            'step_results': [
+            "workflow": self.name,
+            "input": input_value,
+            "type": input_type,
+            "duration_seconds": context.get_elapsed_time(),
+            "steps_completed": len([r for r in context.step_results if r.success]),
+            "steps_total": total_steps,
+            "iocs": context.iocs,
+            "tool_results": context.tool_results,
+            "scorer": context.scorer,
+            "step_results": [
                 {
-                    'name': r.step_name,
-                    'success': r.success,
-                    'duration_ms': r.duration_ms,
-                    'error': r.error
+                    "name": r.step_name,
+                    "success": r.success,
+                    "duration_ms": r.duration_ms,
+                    "error": r.error,
                 }
                 for r in context.step_results
-            ]
+            ],
         }
 
 
@@ -225,11 +226,9 @@ class WorkflowRegistry:
         result = []
         for name, workflow_class in cls._workflows.items():
             instance = workflow_class(verbose=False)
-            result.append({
-                'name': name,
-                'description': instance.description,
-                'steps': len(instance.steps)
-            })
+            result.append(
+                {"name": name, "description": instance.description, "steps": len(instance.steps)}
+            )
         return result
 
 

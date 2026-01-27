@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.core.analyzer import Analyzer
 from secops_helper.core.detector import InputType

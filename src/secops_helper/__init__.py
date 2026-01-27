@@ -12,8 +12,8 @@ Subpackages:
 - common: Shared utilities
 """
 
-__version__ = '5.0.0'
-__author__ = 'Vligai'
+__version__ = "5.0.0"
+__author__ = "Vligai"
 
 # Expose key components at package level
 from .core import (
@@ -30,16 +30,16 @@ from .tools import get_tool_registry
 
 __all__ = [
     # Version info
-    '__version__',
-    '__author__',
+    "__version__",
+    "__author__",
     # Core components
-    'Analyzer',
-    'InputDetector',
-    'InputType',
-    'RiskScorer',
-    'Severity',
-    'Verdict',
-    'Reporter',
+    "Analyzer",
+    "InputDetector",
+    "InputType",
+    "RiskScorer",
+    "Severity",
+    "Verdict",
+    "Reporter",
     # Tool registry
-    'get_tool_registry',
+    "get_tool_registry",
 ]

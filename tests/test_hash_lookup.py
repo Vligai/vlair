@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.tools.hash_lookup import HashValidator, RateLimiter
 from secops_helper.common.cache_manager import CacheManager
@@ -32,13 +32,17 @@ class TestHashValidator:
 
     def test_validate_sha256(self):
         """Test SHA256 validation"""
-        is_valid, hash_type = HashValidator.validate("2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae")
+        is_valid, hash_type = HashValidator.validate(
+            "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+        )
         assert is_valid is True
         assert hash_type == "sha256"
 
     def test_validate_sha512(self):
         """Test SHA512 validation"""
-        hash_value = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" * 2  # 128 chars
+        hash_value = (
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" * 2
+        )  # 128 chars
         is_valid, hash_type = HashValidator.validate(hash_value[:128])
         assert is_valid is True
         assert hash_type == "sha512"
@@ -51,7 +55,9 @@ class TestHashValidator:
 
     def test_validate_invalid_characters(self):
         """Test invalid characters in hash"""
-        is_valid, hash_type = HashValidator.validate("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")  # 32 chars but invalid
+        is_valid, hash_type = HashValidator.validate(
+            "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+        )  # 32 chars but invalid
         assert is_valid is False
         assert hash_type is None
 

@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.core.history import AnalysisHistory
 
@@ -70,7 +70,13 @@ class TestHistoryRecord:
 
     def test_record_basic(self):
         """Test recording a basic analysis"""
-        self.history.record(input_value="test.eml", input_type="email", verdict="CLEAN", risk_score=10, command="analyze")
+        self.history.record(
+            input_value="test.eml",
+            input_type="email",
+            verdict="CLEAN",
+            risk_score=10,
+            command="analyze",
+        )
         recent = self.history.get_recent(1)
         assert len(recent) == 1
         assert recent[0]["input_value"] == "test.eml"
@@ -103,7 +109,11 @@ class TestHistoryRecord:
         """Test recording multiple analyses"""
         for i in range(5):
             self.history.record(
-                input_value=f"test_{i}", input_type="hash", verdict="SUSPICIOUS", risk_score=50 + i, command="check"
+                input_value=f"test_{i}",
+                input_type="hash",
+                verdict="SUSPICIOUS",
+                risk_score=50 + i,
+                command="check",
             )
         recent = self.history.get_recent(10)
         assert len(recent) == 5
@@ -194,10 +204,16 @@ class TestHistoryGetStats:
 
     def test_stats_verdict_breakdown(self):
         """Test verdict breakdown in stats"""
-        self.history.record(input_value="a", input_type="hash", verdict="MALICIOUS", command="check")
-        self.history.record(input_value="b", input_type="hash", verdict="MALICIOUS", command="check")
+        self.history.record(
+            input_value="a", input_type="hash", verdict="MALICIOUS", command="check"
+        )
+        self.history.record(
+            input_value="b", input_type="hash", verdict="MALICIOUS", command="check"
+        )
         self.history.record(input_value="c", input_type="hash", verdict="CLEAN", command="check")
-        self.history.record(input_value="d", input_type="hash", verdict="SUSPICIOUS", command="check")
+        self.history.record(
+            input_value="d", input_type="hash", verdict="SUSPICIOUS", command="check"
+        )
 
         stats = self.history.get_stats()
         assert stats["verdicts"]["MALICIOUS"] == 2
@@ -273,7 +289,10 @@ class TestHistoryErrorHandling:
         try:
             history = AnalysisHistory(db_path=db_path)
             history.record(
-                input_value="test'value\"with;special<chars>", input_type="url", verdict="SUSPICIOUS", command="check"
+                input_value="test'value\"with;special<chars>",
+                input_type="url",
+                verdict="SUSPICIOUS",
+                command="check",
             )
             recent = history.get_recent(1)
             assert recent[0]["input_value"] == "test'value\"with;special<chars>"

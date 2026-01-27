@@ -10,9 +10,14 @@ from unittest.mock import Mock, patch, MagicMock
 from collections import defaultdict
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.tools.pcap_analyzer import PCAPAnalyzer, format_output_json, format_output_csv, format_output_text
+from secops_helper.tools.pcap_analyzer import (
+    PCAPAnalyzer,
+    format_output_json,
+    format_output_csv,
+    format_output_text,
+)
 
 
 class TestPCAPAnalyzer:
@@ -130,7 +135,9 @@ class TestPCAPAnalyzer:
         mock_ip_layer = Mock()
         mock_ip_layer.src = "192.0.2.1"
         mock_ip_layer.dst = "8.8.8.8"
-        mock_packet.__getitem__.side_effect = lambda layer: mock_ip_layer if layer == mock_ip else Mock(sport=50000, dport=53)
+        mock_packet.__getitem__.side_effect = lambda layer: (
+            mock_ip_layer if layer == mock_ip else Mock(sport=50000, dport=53)
+        )
 
         analyzer._analyze_packet(mock_packet)
 
@@ -237,7 +244,9 @@ class TestPCAPAnalyzer:
         mock_dnsqr_layer.qname = b"malicious-site.tk."
 
         mock_packet.haslayer.side_effect = lambda layer: True
-        mock_packet.__getitem__.side_effect = lambda layer: (mock_dns_layer if layer == mock_dns else mock_dnsqr_layer)
+        mock_packet.__getitem__.side_effect = lambda layer: (
+            mock_dns_layer if layer == mock_dns else mock_dnsqr_layer
+        )
 
         analyzer._analyze_dns(mock_packet, "192.0.2.1", "8.8.8.8")
 
@@ -262,7 +271,9 @@ class TestPCAPAnalyzer:
         mock_dnsqr_layer.qname = b"asdfjklasdfjklqweriuqweriuzxcvzxcv.com."
 
         mock_packet.haslayer.side_effect = lambda layer: True
-        mock_packet.__getitem__.side_effect = lambda layer: (mock_dns_layer if layer == mock_dns else mock_dnsqr_layer)
+        mock_packet.__getitem__.side_effect = lambda layer: (
+            mock_dns_layer if layer == mock_dns else mock_dnsqr_layer
+        )
 
         analyzer._analyze_dns(mock_packet, "192.0.2.1", "8.8.8.8")
 

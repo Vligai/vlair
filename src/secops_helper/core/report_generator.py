@@ -17,6 +17,7 @@ from .scorer import RiskScorer, Severity, Verdict
 @dataclass
 class ReportData:
     """Structured data for report generation"""
+
     input_value: str
     input_type: str
     timestamp: str
@@ -42,10 +43,11 @@ class ReportGenerator:
     Reports are self-contained with no external dependencies.
     """
 
-    SUPPORTED_FORMATS = ['html', 'markdown', 'md']
+    SUPPORTED_FORMATS = ["html", "markdown", "md"]
 
-    def generate(self, result: Dict[str, Any], report_format: str = 'html',
-                 output_path: Optional[str] = None) -> str:
+    def generate(
+        self, result: Dict[str, Any], report_format: str = "html", output_path: Optional[str] = None
+    ) -> str:
         """
         Generate a report file from analysis results.
 
@@ -58,95 +60,96 @@ class ReportGenerator:
             Path to generated report file
         """
         if report_format not in self.SUPPORTED_FORMATS:
-            raise ValueError(f"Unsupported format: {report_format}. "
-                             f"Use: {', '.join(self.SUPPORTED_FORMATS)}")
+            raise ValueError(
+                f"Unsupported format: {report_format}. " f"Use: {', '.join(self.SUPPORTED_FORMATS)}"
+            )
 
         report_data = self._build_report_data(result)
 
-        if report_format == 'html':
+        if report_format == "html":
             content = self.format_html(report_data)
-            ext = '.html'
+            ext = ".html"
         else:
             content = self.format_markdown(report_data)
-            ext = '.md'
+            ext = ".md"
 
         if not output_path:
             output_path = self._generate_filename(report_data, ext)
 
-        Path(output_path).write_text(content, encoding='utf-8')
+        Path(output_path).write_text(content, encoding="utf-8")
         return output_path
 
     def _build_report_data(self, result: Dict[str, Any]) -> ReportData:
         """Convert raw result dict to structured ReportData."""
-        scorer = result.get('scorer')
+        scorer = result.get("scorer")
         if isinstance(scorer, RiskScorer):
             summary = scorer.get_summary()
             findings = scorer.get_findings()
             recommendations = scorer.get_recommendations()
         else:
-            summary = result.get('summary', {})
-            findings = result.get('findings', [])
-            recommendations = result.get('recommendations', [])
+            summary = result.get("summary", {})
+            findings = result.get("findings", [])
+            recommendations = result.get("recommendations", [])
 
         return ReportData(
-            input_value=result.get('input', 'Unknown'),
-            input_type=str(result.get('type', 'unknown')),
-            timestamp=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),
-            risk_score=summary.get('risk_score', 0),
-            verdict=summary.get('verdict', 'UNKNOWN'),
-            confidence=summary.get('confidence', 'low'),
+            input_value=result.get("input", "Unknown"),
+            input_type=str(result.get("type", "unknown")),
+            timestamp=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+            risk_score=summary.get("risk_score", 0),
+            verdict=summary.get("verdict", "UNKNOWN"),
+            confidence=summary.get("confidence", "low"),
             findings=findings,
-            finding_counts=summary.get('finding_counts', {}),
-            iocs=result.get('iocs', {}),
+            finding_counts=summary.get("finding_counts", {}),
+            iocs=result.get("iocs", {}),
             recommendations=recommendations,
-            tool_results=result.get('tool_results', {}),
-            tools_executed=list(result.get('tool_results', {}).keys()),
-            workflow_name=result.get('workflow'),
-            steps_completed=result.get('steps_completed'),
-            steps_total=result.get('steps_total'),
-            step_results=result.get('step_results'),
-            duration_seconds=result.get('duration_seconds')
+            tool_results=result.get("tool_results", {}),
+            tools_executed=list(result.get("tool_results", {}).keys()),
+            workflow_name=result.get("workflow"),
+            steps_completed=result.get("steps_completed"),
+            steps_total=result.get("steps_total"),
+            step_results=result.get("step_results"),
+            duration_seconds=result.get("duration_seconds"),
         )
 
     def _generate_filename(self, data: ReportData, ext: str) -> str:
         """Generate a descriptive filename for the report."""
-        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-        input_type = data.input_type.replace(' ', '_')
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        input_type = data.input_type.replace(" ", "_")
         return f"secops_report_{input_type}_{timestamp}{ext}"
 
     def _defang(self, value: str) -> str:
         """Defang IOCs for safe display in reports."""
-        value = value.replace('http://', 'hxxp://')
-        value = value.replace('https://', 'hxxps://')
-        value = value.replace('.', '[.]')
+        value = value.replace("http://", "hxxp://")
+        value = value.replace("https://", "hxxps://")
+        value = value.replace(".", "[.]")
         return value
 
     def _verdict_description(self, verdict: str) -> str:
         """Get a description for the verdict."""
         descriptions = {
-            'MALICIOUS': 'This artifact is assessed as malicious with high confidence.',
-            'SUSPICIOUS': 'This artifact exhibits suspicious behavior and warrants further investigation.',
-            'LOW_RISK': 'This artifact shows minor indicators but is likely benign.',
-            'CLEAN': 'No malicious indicators were detected.',
-            'UNKNOWN': 'Insufficient data to make a determination.'
+            "MALICIOUS": "This artifact is assessed as malicious with high confidence.",
+            "SUSPICIOUS": "This artifact exhibits suspicious behavior and warrants further investigation.",
+            "LOW_RISK": "This artifact shows minor indicators but is likely benign.",
+            "CLEAN": "No malicious indicators were detected.",
+            "UNKNOWN": "Insufficient data to make a determination.",
         }
-        return descriptions.get(verdict, 'Verdict could not be determined.')
+        return descriptions.get(verdict, "Verdict could not be determined.")
 
     def _generate_executive_summary(self, data: ReportData) -> str:
         """Generate a natural-language executive summary paragraph."""
         parts = []
 
         parts.append(f"Analysis of the provided {data.input_type} input")
-        if data.input_value and data.input_value != 'Unknown':
-            parts.append(f"(\"{data.input_value}\")")
+        if data.input_value and data.input_value != "Unknown":
+            parts.append(f'("{data.input_value}")')
 
         parts.append(f"resulted in a verdict of {data.verdict}")
         parts.append(f"with a risk score of {data.risk_score}/100.")
 
         total = len(data.findings)
         if total > 0:
-            critical = data.finding_counts.get('critical', 0)
-            high = data.finding_counts.get('high', 0)
+            critical = data.finding_counts.get("critical", 0)
+            high = data.finding_counts.get("high", 0)
             if critical > 0:
                 parts.append(f"{critical} critical finding{'s' if critical != 1 else ''}")
                 if high > 0:
@@ -167,21 +170,23 @@ class ReportGenerator:
 
         ioc_count = sum(len(v) for v in data.iocs.values() if isinstance(v, list))
         if ioc_count > 0:
-            parts.append(f"A total of {ioc_count} indicator{'s' if ioc_count != 1 else ''} of compromise")
+            parts.append(
+                f"A total of {ioc_count} indicator{'s' if ioc_count != 1 else ''} of compromise"
+            )
             parts.append(f"{'were' if ioc_count != 1 else 'was'} extracted.")
 
         if data.workflow_name:
             parts.append(f"This analysis was performed using the {data.workflow_name} workflow.")
 
-        return ' '.join(parts)
+        return " ".join(parts)
 
     def _score_class(self, score: int) -> str:
         """Get CSS class for score level."""
         if score >= 70:
-            return 'high'
+            return "high"
         elif score >= 40:
-            return 'medium'
-        return 'low'
+            return "medium"
+        return "low"
 
     # ─── HTML Generation ─────────────────────────────────────────────────
 
@@ -322,17 +327,17 @@ class ReportGenerator:
 
         lines = []
         for finding in findings:
-            severity = finding.get('severity', 'info')
-            message = finding.get('message', '')
-            source = finding.get('source', '')
+            severity = finding.get("severity", "info")
+            message = finding.get("message", "")
+            source = finding.get("source", "")
             lines.append(
                 f'<div class="finding finding-{html_escape(severity)}">'
                 f'<span class="badge badge-{html_escape(severity)}">{html_escape(severity)}</span>'
-                f'{html_escape(message)}'
+                f"{html_escape(message)}"
                 f'<span style="color:#999; font-size:12px; margin-left:10px;">({html_escape(source)})</span>'
-                f'</div>'
+                f"</div>"
             )
-        return '\n        '.join(lines)
+        return "\n        ".join(lines)
 
     def _html_ioc_table(self, iocs: Dict[str, List[str]]) -> str:
         """Build HTML for IOC table with defanged values."""
@@ -344,19 +349,17 @@ class ReportGenerator:
         for ioc_type, values in iocs.items():
             if not isinstance(values, list) or not values:
                 continue
-            type_label = ioc_type.replace('_', ' ').capitalize()
+            type_label = ioc_type.replace("_", " ").capitalize()
             for value in values:
                 defanged = self._defang(str(value))
                 rows.append(
-                    f'<tr><td>{html_escape(type_label)}</td>'
-                    f'<td>{html_escape(defanged)}</td></tr>'
+                    f"<tr><td>{html_escape(type_label)}</td>"
+                    f"<td>{html_escape(defanged)}</td></tr>"
                 )
 
         return (
             '<table class="ioc-table">'
-            '<tr><th>Type</th><th>Value (Defanged)</th></tr>'
-            + ''.join(rows)
-            + '</table>'
+            "<tr><th>Type</th><th>Value (Defanged)</th></tr>" + "".join(rows) + "</table>"
         )
 
     def _html_recommendations(self, recommendations: List[str]) -> str:
@@ -364,61 +367,66 @@ class ReportGenerator:
         if not recommendations:
             return '<p class="empty-note">No specific actions required.</p>'
 
-        items = ''.join(f'<li>{html_escape(r)}</li>' for r in recommendations)
-        return f'<ol>{items}</ol>'
+        items = "".join(f"<li>{html_escape(r)}</li>" for r in recommendations)
+        return f"<ol>{items}</ol>"
 
     def _html_timeline(self, data: ReportData) -> str:
         """Build HTML for analysis timeline."""
         if data.step_results:
             lines = []
             for step in data.step_results:
-                name = step.get('name', step.get('step_name', 'Unknown'))
-                success = step.get('success', True)
-                duration = step.get('duration_ms', 0)
-                css_class = 'timeline-success' if success else 'timeline-failed'
-                status = 'Success' if success else 'Failed'
-                error = step.get('error', '')
-                detail = f' - {html_escape(error)}' if error else ''
+                name = step.get("name", step.get("step_name", "Unknown"))
+                success = step.get("success", True)
+                duration = step.get("duration_ms", 0)
+                css_class = "timeline-success" if success else "timeline-failed"
+                status = "Success" if success else "Failed"
+                error = step.get("error", "")
+                detail = f" - {html_escape(error)}" if error else ""
                 lines.append(
                     f'<div class="timeline-item {css_class}">'
-                    f'<strong>{html_escape(name)}</strong> - {status} ({duration}ms){detail}'
-                    f'</div>'
+                    f"<strong>{html_escape(name)}</strong> - {status} ({duration}ms){detail}"
+                    f"</div>"
                 )
             if data.duration_seconds is not None:
-                lines.append(f'<p style="margin-top:10px; color:#666;">Total duration: {data.duration_seconds:.1f}s</p>')
-            return '\n        '.join(lines)
+                lines.append(
+                    f'<p style="margin-top:10px; color:#666;">Total duration: {data.duration_seconds:.1f}s</p>'
+                )
+            return "\n        ".join(lines)
 
         if data.tools_executed:
             lines = []
             for tool in data.tools_executed:
                 lines.append(
                     f'<div class="timeline-item timeline-neutral">'
-                    f'<strong>{html_escape(tool)}</strong> - Executed'
-                    f'</div>'
+                    f"<strong>{html_escape(tool)}</strong> - Executed"
+                    f"</div>"
                 )
-            return '\n        '.join(lines)
+            return "\n        ".join(lines)
 
         return '<p class="empty-note">No timeline data available.</p>'
 
     def _html_metadata(self, data: ReportData) -> str:
         """Build HTML metadata table."""
-        tools_list = ', '.join(data.tools_executed) if data.tools_executed else 'N/A'
-        workflow = data.workflow_name or 'N/A (direct analysis)'
-        duration = f'{data.duration_seconds:.1f}s' if data.duration_seconds else 'N/A'
-        steps = (f'{data.steps_completed}/{data.steps_total}'
-                 if data.steps_completed is not None else 'N/A')
+        tools_list = ", ".join(data.tools_executed) if data.tools_executed else "N/A"
+        workflow = data.workflow_name or "N/A (direct analysis)"
+        duration = f"{data.duration_seconds:.1f}s" if data.duration_seconds else "N/A"
+        steps = (
+            f"{data.steps_completed}/{data.steps_total}"
+            if data.steps_completed is not None
+            else "N/A"
+        )
 
         return (
             '<table class="ioc-table">'
-            '<tr><th>Field</th><th>Value</th></tr>'
-            f'<tr><td>Input</td><td>{html_escape(data.input_value)}</td></tr>'
-            f'<tr><td>Type</td><td>{html_escape(data.input_type)}</td></tr>'
-            f'<tr><td>Timestamp</td><td>{html_escape(data.timestamp)}</td></tr>'
-            f'<tr><td>Tools Executed</td><td>{html_escape(tools_list)}</td></tr>'
-            f'<tr><td>Workflow</td><td>{html_escape(workflow)}</td></tr>'
-            f'<tr><td>Steps</td><td>{html_escape(steps)}</td></tr>'
-            f'<tr><td>Duration</td><td>{html_escape(duration)}</td></tr>'
-            '</table>'
+            "<tr><th>Field</th><th>Value</th></tr>"
+            f"<tr><td>Input</td><td>{html_escape(data.input_value)}</td></tr>"
+            f"<tr><td>Type</td><td>{html_escape(data.input_type)}</td></tr>"
+            f"<tr><td>Timestamp</td><td>{html_escape(data.timestamp)}</td></tr>"
+            f"<tr><td>Tools Executed</td><td>{html_escape(tools_list)}</td></tr>"
+            f"<tr><td>Workflow</td><td>{html_escape(workflow)}</td></tr>"
+            f"<tr><td>Steps</td><td>{html_escape(steps)}</td></tr>"
+            f"<tr><td>Duration</td><td>{html_escape(duration)}</td></tr>"
+            "</table>"
         )
 
     # ─── Markdown Generation ─────────────────────────────────────────────
@@ -484,16 +492,16 @@ class ReportGenerator:
     def _md_findings_section(self, findings: List[Dict], finding_counts: Dict[str, int]) -> str:
         """Build Markdown findings section grouped by severity."""
         total = len(findings)
-        lines = [f'## Findings ({total})']
+        lines = [f"## Findings ({total})"]
 
         if not findings:
-            lines.append('\nNo findings to report.')
-            return '\n'.join(lines)
+            lines.append("\nNo findings to report.")
+            return "\n".join(lines)
 
-        severity_order = ['critical', 'high', 'medium', 'low', 'info']
+        severity_order = ["critical", "high", "medium", "low", "info"]
         grouped = {}
         for f in findings:
-            sev = f.get('severity', 'info')
+            sev = f.get("severity", "info")
             grouped.setdefault(sev, []).append(f)
 
         for sev in severity_order:
@@ -501,94 +509,94 @@ class ReportGenerator:
             if not items:
                 continue
             count = len(items)
-            lines.append(f'\n### {sev.capitalize()} ({count})\n')
+            lines.append(f"\n### {sev.capitalize()} ({count})\n")
             for item in items:
-                msg = item.get('message', '')
-                source = item.get('source', '')
-                lines.append(f'- **[{sev.upper()}]** {msg} *(source: {source})*')
+                msg = item.get("message", "")
+                source = item.get("source", "")
+                lines.append(f"- **[{sev.upper()}]** {msg} *(source: {source})*")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _md_ioc_table(self, iocs: Dict[str, List[str]]) -> str:
         """Build Markdown IOC table."""
-        lines = ['## Indicators of Compromise']
+        lines = ["## Indicators of Compromise"]
 
         has_iocs = any(v for v in iocs.values() if isinstance(v, list) and len(v) > 0)
         if not has_iocs:
-            lines.append('\nNo indicators of compromise extracted.')
-            return '\n'.join(lines)
+            lines.append("\nNo indicators of compromise extracted.")
+            return "\n".join(lines)
 
-        lines.append('')
-        lines.append('| Type | Value |')
-        lines.append('|------|-------|')
+        lines.append("")
+        lines.append("| Type | Value |")
+        lines.append("|------|-------|")
 
         for ioc_type, values in iocs.items():
             if not isinstance(values, list) or not values:
                 continue
-            type_label = ioc_type.replace('_', ' ').capitalize()
+            type_label = ioc_type.replace("_", " ").capitalize()
             for value in values:
                 defanged = self._defang(str(value))
-                lines.append(f'| {type_label} | `{defanged}` |')
+                lines.append(f"| {type_label} | `{defanged}` |")
 
-        lines.append('')
-        lines.append('> All IOCs are defanged for safe display.')
+        lines.append("")
+        lines.append("> All IOCs are defanged for safe display.")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _md_recommendations(self, recommendations: List[str]) -> str:
         """Build Markdown recommendations section."""
-        lines = ['## Recommended Actions']
+        lines = ["## Recommended Actions"]
 
         if not recommendations:
-            lines.append('\nNo specific actions required.')
-            return '\n'.join(lines)
+            lines.append("\nNo specific actions required.")
+            return "\n".join(lines)
 
-        lines.append('')
+        lines.append("")
         for i, rec in enumerate(recommendations, 1):
-            lines.append(f'{i}. {rec}')
+            lines.append(f"{i}. {rec}")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _md_timeline(self, data: ReportData) -> str:
         """Build Markdown timeline section."""
-        lines = ['## Analysis Timeline']
+        lines = ["## Analysis Timeline"]
 
         if data.step_results:
-            lines.append('')
-            lines.append('| Step | Status | Duration |')
-            lines.append('|------|--------|----------|')
+            lines.append("")
+            lines.append("| Step | Status | Duration |")
+            lines.append("|------|--------|----------|")
             for step in data.step_results:
-                name = step.get('name', step.get('step_name', 'Unknown'))
-                success = step.get('success', True)
-                duration = step.get('duration_ms', 0)
-                status = 'Success' if success else 'Failed'
-                lines.append(f'| {name} | {status} | {duration}ms |')
+                name = step.get("name", step.get("step_name", "Unknown"))
+                success = step.get("success", True)
+                duration = step.get("duration_ms", 0)
+                status = "Success" if success else "Failed"
+                lines.append(f"| {name} | {status} | {duration}ms |")
             if data.duration_seconds is not None:
-                lines.append(f'\n*Total duration: {data.duration_seconds:.1f}s*')
+                lines.append(f"\n*Total duration: {data.duration_seconds:.1f}s*")
         elif data.tools_executed:
-            lines.append('')
-            lines.append('| Tool | Status |')
-            lines.append('|------|--------|')
+            lines.append("")
+            lines.append("| Tool | Status |")
+            lines.append("|------|--------|")
             for tool in data.tools_executed:
-                lines.append(f'| {tool} | Executed |')
+                lines.append(f"| {tool} | Executed |")
         else:
-            lines.append('\nNo timeline data available.')
+            lines.append("\nNo timeline data available.")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _md_metadata(self, data: ReportData) -> str:
         """Build Markdown metadata section."""
-        tools_list = ', '.join(data.tools_executed) if data.tools_executed else 'N/A'
-        workflow = data.workflow_name or 'N/A (direct analysis)'
-        duration = f'{data.duration_seconds:.1f}s' if data.duration_seconds else 'N/A'
+        tools_list = ", ".join(data.tools_executed) if data.tools_executed else "N/A"
+        workflow = data.workflow_name or "N/A (direct analysis)"
+        duration = f"{data.duration_seconds:.1f}s" if data.duration_seconds else "N/A"
 
-        lines = ['## Metadata']
-        lines.append('')
-        lines.append(f'- **Tool Version:** SecOps Helper v4.0.0')
-        lines.append(f'- **Input:** `{data.input_value}`')
-        lines.append(f'- **Type:** {data.input_type}')
-        lines.append(f'- **Workflow:** {workflow}')
-        lines.append(f'- **Tools Executed:** {tools_list}')
-        lines.append(f'- **Duration:** {duration}')
+        lines = ["## Metadata"]
+        lines.append("")
+        lines.append(f"- **Tool Version:** SecOps Helper v4.0.0")
+        lines.append(f"- **Input:** `{data.input_value}`")
+        lines.append(f"- **Type:** {data.input_type}")
+        lines.append(f"- **Workflow:** {workflow}")
+        lines.append(f"- **Tools Executed:** {tools_list}")
+        lines.append(f"- **Duration:** {duration}")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)

@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from secops_helper.tools.log_analyzer import (
     ApacheLogParser,
@@ -28,9 +28,7 @@ class TestApacheLogParser:
     def test_parse_valid_log_line(self):
         """Test parsing valid Apache log line"""
         parser = ApacheLogParser()
-        line = (
-            '192.0.2.1 - - [18/Nov/2025:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "http://example.com" "Mozilla/5.0"'
-        )
+        line = '192.0.2.1 - - [18/Nov/2025:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "http://example.com" "Mozilla/5.0"'
 
         result = parser.parse_line(line)
 
@@ -327,7 +325,11 @@ class TestThreatDetector:
         """Test auth log analysis with normal message"""
         detector = ThreatDetector()
 
-        entry = {"message": "Session opened for user john", "host": "server1", "timestamp": datetime.now()}
+        entry = {
+            "message": "Session opened for user john",
+            "host": "server1",
+            "timestamp": datetime.now(),
+        }
 
         alerts = detector.analyze_auth_log(entry)
 
@@ -350,7 +352,9 @@ class TestLogAnalyzer:
         """Test Apache log format detection"""
         analyzer = LogAnalyzer()
 
-        lines = ['192.0.2.1 - - [18/Nov/2025:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"']
+        lines = [
+            '192.0.2.1 - - [18/Nov/2025:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"'
+        ]
 
         format_type = analyzer.detect_format(lines)
         assert format_type == "apache"
@@ -453,9 +457,24 @@ class TestLogAnalyzer:
         analyzer = LogAnalyzer()
 
         entries = [
-            {"source_ip": "192.0.2.1", "path": "/index.html", "status": 200, "user_agent": "Mozilla/5.0"},
-            {"source_ip": "192.0.2.1", "path": "/about.html", "status": 200, "user_agent": "Mozilla/5.0"},
-            {"source_ip": "198.51.100.25", "path": "/index.html", "status": 404, "user_agent": "curl/7.68.0"},
+            {
+                "source_ip": "192.0.2.1",
+                "path": "/index.html",
+                "status": 200,
+                "user_agent": "Mozilla/5.0",
+            },
+            {
+                "source_ip": "192.0.2.1",
+                "path": "/about.html",
+                "status": 200,
+                "user_agent": "Mozilla/5.0",
+            },
+            {
+                "source_ip": "198.51.100.25",
+                "path": "/index.html",
+                "status": 404,
+                "user_agent": "curl/7.68.0",
+            },
         ]
 
         stats = analyzer._generate_statistics(entries, "apache")
@@ -530,7 +549,10 @@ class TestFormatOutput:
                 "total_alerts": 5,
                 "analysis_date": "2025-11-18T10:00:00",
             },
-            "summary": {"alerts_by_type": {"sql_injection": 3, "xss": 2}, "alerts_by_severity": {"high": 3, "medium": 2}},
+            "summary": {
+                "alerts_by_type": {"sql_injection": 3, "xss": 2},
+                "alerts_by_severity": {"high": 3, "medium": 2},
+            },
             "statistics": {"total_requests": 100},
             "alerts": [],
         }
