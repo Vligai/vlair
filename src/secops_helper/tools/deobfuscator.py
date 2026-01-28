@@ -72,14 +72,42 @@ class Decoder:
             # Remove whitespace
             data = data.strip().replace("\n", "").replace("\r", "").replace(" ", "")
 
+            # Validate base64 format first
+            if len(data) < 4:
+                return None
+
+            # Check character set (base64 should only have these chars)
+            if not re.match(r"^[A-Za-z0-9+/]*={0,2}$", data):
+                return None
+
+            # Length should be multiple of 4
+            if len(data) % 4 != 0:
+                return None
+
             # Try standard base64
-            decoded = base64.b64decode(data)
-            return decoded.decode("utf-8", errors="ignore")
+            decoded = base64.b64decode(data, validate=True)
+
+            # Verify result is mostly printable text
+            try:
+                text = decoded.decode("utf-8")
+                # Check if result contains mostly printable characters
+                printable_count = sum(1 for c in text if c.isprintable() or c in "\n\r\t")
+                if len(text) > 0 and printable_count / len(text) < 0.7:
+                    return None
+                return text
+            except UnicodeDecodeError:
+                return None
+
         except Exception:
             try:
                 # Try URL-safe base64
                 decoded = base64.urlsafe_b64decode(data)
-                return decoded.decode("utf-8", errors="ignore")
+                text = decoded.decode("utf-8")
+                # Check if result contains mostly printable characters
+                printable_count = sum(1 for c in text if c.isprintable() or c in "\n\r\t")
+                if len(text) > 0 and printable_count / len(text) < 0.7:
+                    return None
+                return text
             except Exception:
                 return None
 
@@ -231,9 +259,30 @@ class Deobfuscator:
         """Auto-detect script language"""
         code_lower = code.lower()[:500]  # Check first 500 chars
 
-        # PowerShell indicators
-        ps_indicators = ["powershell", "-encodedcommand", "invoke-expression", "$_", "param("]
+        # Batch indicators - check first (more specific patterns)
+        # @echo off is very specific to batch
+        # %variable% syntax is batch-specific
+        if "@echo" in code_lower or re.search(r"%\w+%", code):
+            return "batch"
+
+        # PowerShell indicators - check before others
+        # PowerShell uses $ for variables and has specific cmdlets
+        ps_indicators = [
+            "powershell",
+            "-encodedcommand",
+            "invoke-expression",
+            "$_",
+            "param(",
+            "write-host",
+            "get-",
+            "set-",
+            "new-object",
+        ]
         if any(ind in code_lower for ind in ps_indicators):
+            return "powershell"
+
+        # Check for PowerShell variable syntax: $varname (but not in batch context)
+        if re.search(r"\$[a-zA-Z_]\w*\s*=", code):
             return "powershell"
 
         # JavaScript indicators
@@ -241,15 +290,10 @@ class Deobfuscator:
         if any(ind in code_lower for ind in js_indicators):
             return "javascript"
 
-        # VBScript indicators
-        vb_indicators = ["dim ", "set ", "wscript.", "createobject"]
+        # VBScript indicators - use more specific patterns to avoid false positives
+        vb_indicators = ["dim ", "wscript.", "createobject", "msgbox"]
         if any(ind in code_lower for ind in vb_indicators):
             return "vbscript"
-
-        # Batch indicators
-        batch_indicators = ["@echo", "set ", "goto ", "call "]
-        if any(ind in code_lower for ind in batch_indicators):
-            return "batch"
 
         return "unknown"
 

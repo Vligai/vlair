@@ -34,6 +34,37 @@ class InputDetector:
     Supports files, hashes, IPs, domains, URLs, and more.
     """
 
+    def detect_simple(self, input_value: str) -> Dict[str, Any]:
+        """
+        Simple detection returning backwards-compatible format.
+        Returns dict with 'type' and optional 'subtype'.
+        """
+        result = self.detect(input_value)
+
+        # Map specific hash types to generic "hash" with subtype
+        type_mapping = {
+            InputType.HASH_MD5: ("hash", "md5"),
+            InputType.HASH_SHA1: ("hash", "sha1"),
+            InputType.HASH_SHA256: ("hash", "sha256"),
+            InputType.IP: ("ip", None),
+            InputType.DOMAIN: ("domain", None),
+            InputType.URL: ("url", None),
+            InputType.EMAIL: ("email", None),
+            InputType.FILE: ("file", None),
+            InputType.UNKNOWN: ("unknown", None),
+        }
+
+        mapped = type_mapping.get(result["type"], (result["type"], None))
+        simple_result = {
+            "type": mapped[0],
+            "value": result["value"],
+            "confidence": result["confidence"],
+        }
+        if mapped[1]:
+            simple_result["subtype"] = mapped[1]
+
+        return simple_result
+
     # Hash patterns
     MD5_PATTERN = re.compile(r"^[a-fA-F0-9]{32}$")
     SHA1_PATTERN = re.compile(r"^[a-fA-F0-9]{40}$")
@@ -331,6 +362,20 @@ def main():
     print(f"Confidence: {result['confidence']}")
     print(f"Metadata: {result['metadata']}")
     print(f"Recommended tools: {detector.get_recommended_tools(result)}")
+
+
+class Detector:
+    """
+    Backwards-compatible detector class.
+    Wraps InputDetector with simplified interface expected by tests.
+    """
+
+    def __init__(self):
+        self._detector = InputDetector()
+
+    def detect(self, input_value: str) -> Dict[str, Any]:
+        """Detect input type with simplified output format."""
+        return self._detector.detect_simple(input_value)
 
 
 if __name__ == "__main__":

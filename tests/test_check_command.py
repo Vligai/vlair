@@ -153,7 +153,8 @@ class TestCheckHistoryRecording:
         from secops_helper.core.history import AnalysisHistory
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            history = AnalysisHistory(history_dir=tmpdir)
+            db_path = os.path.join(tmpdir, "test_history.db")
+            history = AnalysisHistory(db_path=db_path)
             assert history is not None
 
 

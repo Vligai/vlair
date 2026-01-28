@@ -38,10 +38,12 @@ class YaraRuleManager:
     """Manage YARA rule loading, compilation, and caching"""
 
     def __init__(self, verbose=False):
+        if not YARA_AVAILABLE:
+            raise ImportError("yara-python is not installed. Install with: pip install yara-python")
         self.verbose = verbose
         self.compiled_cache = {}
 
-    def load_rules_from_file(self, rule_path: str) -> Optional[yara.Rules]:
+    def load_rules_from_file(self, rule_path: str) -> Optional["yara.Rules"]:
         """Load and compile a single YARA rule file"""
         try:
             if self.verbose:
@@ -56,7 +58,7 @@ class YaraRuleManager:
             print(f"Error loading rule {rule_path}: {e}", file=sys.stderr)
             return None
 
-    def load_rules_from_directory(self, dir_path: str, recursive=True) -> Optional[yara.Rules]:
+    def load_rules_from_directory(self, dir_path: str, recursive=True) -> Optional["yara.Rules"]:
         """Load and compile all YARA rules from a directory"""
         rule_files = {}
         dir_path = Path(dir_path)
@@ -105,7 +107,7 @@ class YaraRuleManager:
         except Exception as e:
             return False, str(e)
 
-    def save_compiled_rules(self, rules: yara.Rules, output_path: str) -> bool:
+    def save_compiled_rules(self, rules: "yara.Rules", output_path: str) -> bool:
         """Save compiled rules to file"""
         try:
             rules.save(output_path)
@@ -114,7 +116,7 @@ class YaraRuleManager:
             print(f"Error saving compiled rules: {e}", file=sys.stderr)
             return False
 
-    def load_compiled_rules(self, compiled_path: str) -> Optional[yara.Rules]:
+    def load_compiled_rules(self, compiled_path: str) -> Optional["yara.Rules"]:
         """Load pre-compiled rules"""
         try:
             rules = yara.load(compiled_path)
@@ -131,7 +133,7 @@ class MatchAnalyzer:
 
     @staticmethod
     def extract_match_info(
-        match: yara.Match, file_path: str, file_hash: str, file_size: int
+        match: "yara.Match", file_path: str, file_hash: str, file_size: int
     ) -> Dict:
         """Extract detailed information from a YARA match"""
         match_info = {
@@ -163,7 +165,7 @@ class MatchAnalyzer:
         return match_info
 
     @staticmethod
-    def classify_severity(match: yara.Match) -> str:
+    def classify_severity(match: "yara.Match") -> str:
         """Classify match severity based on tags and metadata"""
         # Check metadata for severity
         if match.meta and "severity" in match.meta:
@@ -225,7 +227,7 @@ class MatchAnalyzer:
 class YaraScanner:
     """Main YARA scanning engine"""
 
-    def __init__(self, rules: yara.Rules, verbose=False, timeout=60):
+    def __init__(self, rules: "yara.Rules", verbose=False, timeout=60):
         self.rules = rules
         self.verbose = verbose
         self.timeout = timeout
