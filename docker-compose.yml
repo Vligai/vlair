@@ -1,13 +1,13 @@
 version: '3.8'
 
 services:
-  # Main SecOps Helper service
-  secops-helper:
+  # Main vlair service
+  vlair:
     build:
       context: .
       dockerfile: Dockerfile
-    image: secops-helper:latest
-    container_name: secops-helper
+    image: vlair:latest
+    container_name: vlair
     volumes:
       # Mount local data directory for input files
       - ./data:/data:ro
@@ -22,15 +22,15 @@ services:
     # Override default command - example: IOC extraction
     # command: ioc /data/report.txt --format json --output /output/iocs.json
     networks:
-      - secops-network
+      - vlair-network
 
   # Web Dashboard service
   web:
     build:
       context: .
       dockerfile: Dockerfile.web
-    image: secops-helper-web:latest
-    container_name: secops-web
+    image: vlair-web:latest
+    container_name: vlair-web
     ports:
       - "5000:5000"
     volumes:
@@ -46,7 +46,7 @@ services:
     depends_on:
       - redis
     networks:
-      - secops-network
+      - vlair-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health', timeout=2)"]
@@ -58,14 +58,14 @@ services:
   # Redis cache service (optional, for future caching enhancement)
   redis:
     image: redis:7-alpine
-    container_name: secops-redis
+    container_name: vlair-redis
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     networks:
-      - secops-network
+      - vlair-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -78,7 +78,7 @@ volumes:
     driver: local
 
 networks:
-  secops-network:
+  vlair-network:
     driver: bridge
 
 # Usage Examples:
@@ -93,23 +93,23 @@ networks:
 #
 # === CLI Tools ===
 # 3. Run IOC extraction:
-#    docker-compose run --rm secops-helper ioc /data/report.txt --format stix
+#    docker-compose run --rm vlair ioc /data/report.txt --format stix
 #
 # 4. Run hash lookup with API keys:
-#    docker-compose run --rm secops-helper hash --file /data/hashes.txt
+#    docker-compose run --rm vlair hash --file /data/hashes.txt
 #
 # 5. Run email analysis with VirusTotal:
-#    docker-compose run --rm secops-helper eml /data/suspicious.eml --vt --output /output/email_report.json
+#    docker-compose run --rm vlair eml /data/suspicious.eml --vt --output /output/email_report.json
 #
 # 6. Run log analysis:
-#    docker-compose run --rm secops-helper log /data/access.log --format csv --output /output/alerts.csv
+#    docker-compose run --rm vlair log /data/access.log --format csv --output /output/alerts.csv
 #
 # 7. Run PCAP analysis:
-#    docker-compose run --rm secops-helper pcap /data/capture.pcap --verbose
+#    docker-compose run --rm vlair pcap /data/capture.pcap --verbose
 #
 # === Maintenance ===
 # 8. Interactive shell in container:
-#    docker-compose run --rm --entrypoint /bin/bash secops-helper
+#    docker-compose run --rm --entrypoint /bin/bash vlair
 #
 # 9. View Redis cache stats:
 #    docker-compose exec redis redis-cli INFO stats

@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
 LABEL maintainer="Vligai"
-LABEL description="SecOps Helper - Security Operations Toolkit"
+LABEL description="vlair - Security Operations Toolkit"
 LABEL version="2.0.0"
 
 # Set working directory
@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Install SecOps Helper as package
+# Install vlair as package
 RUN pip install -e .
 
 # Create directories for data and output
@@ -39,11 +39,11 @@ ENV PYTHONDONTWRITEBYTECODE=1
 VOLUME ["/data", "/output"]
 
 # Default command shows help
-ENTRYPOINT ["secops-helper"]
+ENTRYPOINT ["vlair"]
 CMD ["--help"]
 
 # Examples of usage:
-# docker run --rm secops-helper --help
-# docker run --rm -v $(pwd)/data:/data secops-helper ioc /data/report.txt
-# docker run --rm -v $(pwd)/data:/data secops-helper hash --file /data/hashes.txt
-# docker run --rm --env-file .env -v $(pwd)/data:/data secops-helper eml /data/email.eml --vt
+# docker run --rm vlair --help
+# docker run --rm -v $(pwd)/data:/data vlair ioc /data/report.txt
+# docker run --rm -v $(pwd)/data:/data vlair hash --file /data/hashes.txt
+# docker run --rm --env-file .env -v $(pwd)/data:/data vlair eml /data/email.eml --vt

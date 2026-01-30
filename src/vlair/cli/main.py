@@ -372,30 +372,30 @@ class InteractiveMenu:
      $ vlair
 
    Direct Command:
-     $ vlair<tool> [arguments]
+     $ vlair <tool> [arguments]
 
    List All Tools:
-     $ vlairlist
+     $ vlair list
 
    Get Tool Info:
-     $ vlairinfo <tool>
+     $ vlair info <tool>
 
 2. Common Workflows:
 
    Analyze Suspicious Email:
-     $ vlaireml suspicious.eml --vt --output report.json
+     $ vlair eml suspicious.eml --vt --output report.json
 
    Extract IOCs from Threat Report:
-     $ vlairioc report.txt --format csv --output iocs.csv
+     $ vlair ioc report.txt --format csv --output iocs.csv
 
    Check Hash Reputation:
-     $ vlairhash <md5/sha1/sha256>
+     $ vlair hash <md5/sha1/sha256>
 
    Analyze Domain/IP:
-     $ vlairintel malicious.com
+     $ vlair intel malicious.com
 
    Scan for Malware:
-     $ vlairyara scan /path/to/files --rules ./yaraScanner/rules/
+     $ vlair yara scan /path/to/files --rules ./yaraScanner/rules/
 
 3. Configuration:
 
@@ -431,36 +431,36 @@ def print_usage():
 vlair - Security Operations Toolkit
 
 Quick Start:
-    vlairanalyze <input>      Auto-detect and analyze (RECOMMENDED)
+    vlair analyze <input>      Auto-detect and analyze (RECOMMENDED)
 
 The 'analyze' command automatically detects what you're analyzing and runs
 the appropriate tools. Just give it a file, hash, IP, domain, or URL.
 
 Usage:
-    vlairanalyze <input>      Smart analysis (auto-detect input type)
-    vlairworkflow <name> <input>  Run pre-built investigation workflow
-    vlairinvestigate          Guided interactive investigation mode
-    vlairstatus               Show API key and tool status
+    vlair analyze <input>      Smart analysis (auto-detect input type)
+    vlair workflow <name> <input>  Run pre-built investigation workflow
+    vlair investigate          Guided interactive investigation mode
+    vlair status               Show API key and tool status
     vlair                     Tool browser (interactive menu)
-    vlairlist                 List all available tools
-    vlairinfo <tool>          Show detailed tool information
-    vlairsearch <keyword>     Search for tools
+    vlair list                 List all available tools
+    vlair info <tool>          Show detailed tool information
+    vlair search <keyword>     Search for tools
     vlair<tool> [args]        Run a specific tool directly
     vlair--help               Show this help message
     vlair--version            Show version information
 
 Examples - Smart Analyze:
-    vlairanalyze suspicious.eml           # Analyze email file
-    vlairanalyze 44d88612fea8a8f36...     # Check hash reputation
-    vlairanalyze malicious.com            # Get domain intelligence
-    vlairanalyze capture.pcap             # Analyze network traffic
+    vlair analyze suspicious.eml           # Analyze email file
+    vlair analyze 44d88612fea8a8f36...     # Check hash reputation
+    vlair analyze malicious.com            # Get domain intelligence
+    vlair analyze capture.pcap             # Analyze network traffic
 
 Examples - Workflows:
-    vlairworkflow phishing-email suspicious.eml   # Full phishing investigation
-    vlairworkflow malware-triage sample.exe       # Malware analysis
-    vlairworkflow ioc-hunt indicators.txt         # Bulk IOC hunting
-    vlairworkflow network-forensics capture.pcap  # PCAP forensics
-    vlairworkflow log-investigation access.log    # Log analysis
+    vlair workflow phishing-email suspicious.eml   # Full phishing investigation
+    vlair workflow malware-triage sample.exe       # Malware analysis
+    vlair workflow ioc-hunt indicators.txt         # Bulk IOC hunting
+    vlair workflow network-forensics capture.pcap  # PCAP forensics
+    vlair workflow log-investigation access.log    # Log analysis
 
 Output Options:
     --json      Machine-readable JSON output
@@ -531,12 +531,12 @@ def main():
             status = "✓" if tool["available"] else "✗"
             print(f"  [{status}] {tool_id:12s} - {tool['name']}")
 
-        print("\nUse 'vlairinfo <tool>' for detailed information")
+        print("\nUse 'vlair info <tool>' for detailed information")
         print("Use 'vlair<tool> --help' for usage help\n")
 
     elif sys.argv[1] == "info":
         if len(sys.argv) < 3:
-            print("Usage: vlairinfo <tool>", file=sys.stderr)
+            print("Usage: vlair info <tool>", file=sys.stderr)
             sys.exit(1)
 
         tool_id = sys.argv[2]
@@ -544,14 +544,14 @@ def main():
 
         if not tool:
             print(f"Error: Unknown tool '{tool_id}'", file=sys.stderr)
-            print("Run 'vlairlist' to see available tools", file=sys.stderr)
+            print("Run 'vlair list' to see available tools", file=sys.stderr)
             sys.exit(1)
 
         menu.show_tool_info(tool_id)
 
     elif sys.argv[1] == "search":
         if len(sys.argv) < 3:
-            print("Usage: vlairsearch <keyword>", file=sys.stderr)
+            print("Usage: vlair search <keyword>", file=sys.stderr)
             sys.exit(1)
 
         keyword = sys.argv[2]
@@ -570,12 +570,12 @@ def main():
     elif sys.argv[1] == "analyze":
         # Smart analyze command - auto-detect and run appropriate tools
         if len(sys.argv) < 3:
-            print("Usage: vlairanalyze <input> [--verbose] [--json] [--quiet]", file=sys.stderr)
+            print("Usage: vlair analyze <input> [--verbose] [--json] [--quiet]", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
-            print("  vlairanalyze suspicious.eml     # Auto-detect email", file=sys.stderr)
-            print("  vlairanalyze 44d88612...        # Auto-detect hash", file=sys.stderr)
-            print("  vlairanalyze malicious.com      # Auto-detect domain", file=sys.stderr)
-            print("  vlairanalyze 192.168.1.1        # Auto-detect IP", file=sys.stderr)
+            print("  vlair analyze suspicious.eml     # Auto-detect email", file=sys.stderr)
+            print("  vlair analyze 44d88612...        # Auto-detect hash", file=sys.stderr)
+            print("  vlair analyze malicious.com      # Auto-detect domain", file=sys.stderr)
+            print("  vlair analyze 192.168.1.1        # Auto-detect IP", file=sys.stderr)
             sys.exit(1)
 
         try:
@@ -684,19 +684,19 @@ def main():
     elif sys.argv[1] == "check":
         # Quick indicator lookup - direct tool invocation without full analysis pipeline
         if len(sys.argv) < 3:
-            print("Usage: vlaircheck <type> <value> [--json] [--verbose]", file=sys.stderr)
-            print("       vlaircheck <file>          # Auto-detect IOC file", file=sys.stderr)
+            print("Usage: vlair check <type> <value> [--json] [--verbose]", file=sys.stderr)
+            print("       vlair check <file>          # Auto-detect IOC file", file=sys.stderr)
             print("\nTypes:", file=sys.stderr)
             print("  hash    <hash>     Look up a file hash (MD5/SHA1/SHA256)", file=sys.stderr)
             print("  domain  <domain>   Get domain intelligence", file=sys.stderr)
             print("  ip      <ip>       Get IP intelligence", file=sys.stderr)
             print("  url     <url>      Check URL reputation", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
-            print("  vlaircheck hash 44d88612fea8a8f36de82e1278abb02f", file=sys.stderr)
-            print("  vlaircheck domain malicious.com", file=sys.stderr)
-            print("  vlaircheck ip 1.2.3.4 --json", file=sys.stderr)
-            print("  vlaircheck url http://bad.com/payload", file=sys.stderr)
-            print("  vlaircheck iocs.txt", file=sys.stderr)
+            print("  vlair check hash 44d88612fea8a8f36de82e1278abb02f", file=sys.stderr)
+            print("  vlair check domain malicious.com", file=sys.stderr)
+            print("  vlair check ip 1.2.3.4 --json", file=sys.stderr)
+            print("  vlair check url http://bad.com/payload", file=sys.stderr)
+            print("  vlair check iocs.txt", file=sys.stderr)
             sys.exit(1)
 
         check_type = sys.argv[2]
@@ -712,7 +712,7 @@ def main():
             if check_type == "hash":
                 if len(sys.argv) < 4:
                     print("Error: Missing hash value", file=sys.stderr)
-                    print("Usage: vlaircheck hash <md5|sha1|sha256>", file=sys.stderr)
+                    print("Usage: vlair check hash <md5|sha1|sha256>", file=sys.stderr)
                     sys.exit(1)
                 hash_value = sys.argv[3]
                 from vlair.tools.hash_lookup import HashLookup
@@ -743,7 +743,7 @@ def main():
             elif check_type == "domain":
                 if len(sys.argv) < 4:
                     print("Error: Missing domain value", file=sys.stderr)
-                    print("Usage: vlaircheck domain <domain>", file=sys.stderr)
+                    print("Usage: vlair check domain <domain>", file=sys.stderr)
                     sys.exit(1)
                 domain_value = sys.argv[3]
                 from vlair.tools.domain_ip_intel import (
@@ -772,7 +772,7 @@ def main():
             elif check_type == "ip":
                 if len(sys.argv) < 4:
                     print("Error: Missing IP address", file=sys.stderr)
-                    print("Usage: vlaircheck ip <ip_address>", file=sys.stderr)
+                    print("Usage: vlair check ip <ip_address>", file=sys.stderr)
                     sys.exit(1)
                 ip_value = sys.argv[3]
                 from vlair.tools.domain_ip_intel import (
@@ -801,7 +801,7 @@ def main():
             elif check_type == "url":
                 if len(sys.argv) < 4:
                     print("Error: Missing URL", file=sys.stderr)
-                    print("Usage: vlaircheck url <url>", file=sys.stderr)
+                    print("Usage: vlair check url <url>", file=sys.stderr)
                     sys.exit(1)
                 url_value = sys.argv[3]
                 from vlair.tools.url_analyzer import URLAnalyzer
@@ -896,7 +896,7 @@ def main():
     elif sys.argv[1] == "workflow":
         # Pre-built investigation workflows
         if len(sys.argv) < 3:
-            print("Usage: vlairworkflow <name> <input> [--verbose] [--json]", file=sys.stderr)
+            print("Usage: vlair workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
             print("\nAvailable workflows:", file=sys.stderr)
             print(
                 "  phishing-email     Comprehensive phishing email investigation", file=sys.stderr
@@ -906,16 +906,16 @@ def main():
             print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
             print("  log-investigation  Security log investigation", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
-            print("  vlairworkflow phishing-email suspicious.eml", file=sys.stderr)
-            print("  vlairworkflow malware-triage sample.exe --verbose", file=sys.stderr)
-            print("  vlairworkflow ioc-hunt iocs.txt --json", file=sys.stderr)
+            print("  vlair workflow phishing-email suspicious.eml", file=sys.stderr)
+            print("  vlair workflow malware-triage sample.exe --verbose", file=sys.stderr)
+            print("  vlair workflow ioc-hunt iocs.txt --json", file=sys.stderr)
             sys.exit(1)
 
         workflow_name = sys.argv[2]
 
         if len(sys.argv) < 4:
             print(f"Error: Missing input for workflow '{workflow_name}'", file=sys.stderr)
-            print(f"Usage: vlairworkflow {workflow_name} <input>", file=sys.stderr)
+            print(f"Usage: vlair workflow {workflow_name} <input>", file=sys.stderr)
             sys.exit(1)
 
         input_value = sys.argv[3]
@@ -953,7 +953,7 @@ def main():
             workflow_class = WorkflowRegistry.get(workflow_name)
             if not workflow_class:
                 print(f"Error: Unknown workflow '{workflow_name}'", file=sys.stderr)
-                print("Run 'vlairworkflow' to see available workflows", file=sys.stderr)
+                print("Run 'vlair workflow' to see available workflows", file=sys.stderr)
                 sys.exit(1)
 
             # Execute workflow
@@ -1103,7 +1103,7 @@ def main():
                 print(f"  IOCs in database: {ioc_count}")
                 print(f"  Last updated: {last_update or 'Never'}")
             else:
-                print("  Database not initialized (run: vlairfeeds update)")
+                print("  Database not initialized (run: vlair feeds update)")
         except Exception:
             print("  Not available")
 
@@ -1143,8 +1143,8 @@ def main():
 
         # Features summary
         print("\nFeatures:")
-        print("  [+] Smart analyze command (vlairanalyze)")
-        print("  [+] Quick check command (vlaircheck)")
+        print("  [+] Smart analyze command (vlair analyze)")
+        print("  [+] Quick check command (vlair check)")
         print("  [+] Pre-built workflows (5)")
         print("  [+] Interactive investigation mode")
         print("  [+] Report generation (HTML/Markdown)")
