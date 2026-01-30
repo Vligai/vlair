@@ -302,7 +302,7 @@ class TestMarkdownGeneration:
         result = self._make_result()
         data = self.gen._build_report_data(result)
         md = self.gen.format_markdown(data)
-        assert "# SecOps Helper" in md
+        assert "# vlair" in md
 
     def test_markdown_has_verdict(self):
         result = self._make_result()
@@ -419,7 +419,7 @@ class TestFileGeneration:
             path = self.gen.generate(result, "markdown", output)
             assert Path(path).exists()
             content = Path(path).read_text(encoding="utf-8")
-            assert "# SecOps Helper" in content
+            assert "# vlair" in content
 
     def test_auto_generated_filename_html(self):
         result = self._make_result()
@@ -447,7 +447,7 @@ class TestFileGeneration:
             path = self.gen.generate(result, "md", output)
             assert Path(path).exists()
             content = Path(path).read_text(encoding="utf-8")
-            assert "# SecOps Helper" in content
+            assert "# vlair" in content
 
     def test_generate_returns_path(self):
         with tempfile.TemporaryDirectory() as tmpdir:
