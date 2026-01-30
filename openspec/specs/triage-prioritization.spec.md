@@ -3,7 +3,7 @@
 **Version:** 1.0.0
 **Status:** Draft
 **Priority:** High
-**Author:** SecOps Helper Team
+**Author:** vlair Team
 **Created:** 2026-01-28
 
 ## Overview
@@ -70,18 +70,18 @@ Pull alerts from multiple sources:
 
 ```bash
 # Configure alert sources
-secops triage sources add splunk --name prod-splunk \
+vlair triage sources add splunk --name prod-splunk \
   --host splunk.company.com \
   --token $SPLUNK_TOKEN \
   --index alerts
 
-secops triage sources add crowdstrike --name prod-cs \
+vlair triage sources add crowdstrike --name prod-cs \
   --client-id $CS_CLIENT \
   --client-secret $CS_SECRET
 
 # Manual alert import
-secops triage import alerts.json
-secops triage import --stdin < alerts.csv
+vlair triage import alerts.json
+vlair triage import --stdin < alerts.csv
 ```
 
 **Supported Sources:**
@@ -98,7 +98,7 @@ secops triage import --stdin < alerts.csv
 
 ```bash
 # View prioritized queue
-secops triage queue
+vlair triage queue
 
 # Output:
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -119,18 +119,18 @@ secops triage queue
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 # Focus on specific priority
-secops triage queue --priority critical
-secops triage queue --priority high
-secops triage queue --recommendation investigate
+vlair triage queue --priority critical
+vlair triage queue --priority high
+vlair triage queue --recommendation investigate
 
 # Interactive mode
-secops triage interactive
+vlair triage interactive
 ```
 
 ### FR-3: Alert Detail View
 
 ```bash
-secops triage show ALT-1042
+vlair triage show ALT-1042
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ALERT: ALT-1042                                          PRIORITY: CRITICAL  ║
@@ -178,7 +178,7 @@ secops triage show ALT-1042
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║ SUGGESTED ACTIONS                                                            ║
 ║ ─────────────────────────────────────────────────────────────────────────── ║
-║ 1. [Enter] Start investigation (secops investigate malware --alert ALT-1042) ║
+║ 1. [Enter] Start investigation (vlair investigate malware --alert ALT-1042) ║
 ║ 2. [i] Isolate host immediately                                             ║
 ║ 3. [e] Escalate to IR team                                                  ║
 ║ 4. [c] Close as false positive (explain why)                                ║
@@ -313,10 +313,10 @@ rules:
 
 ```bash
 # Manage auto-close rules
-secops triage rules list
-secops triage rules add --file new_rule.yaml
-secops triage rules test --alert ALT-1042  # Test if rules would match
-secops triage rules stats  # Show rule effectiveness
+vlair triage rules list
+vlair triage rules add --file new_rule.yaml
+vlair triage rules test --alert ALT-1042  # Test if rules would match
+vlair triage rules stats  # Show rule effectiveness
 ```
 
 ### FR-6: Alert Grouping
@@ -324,7 +324,7 @@ secops triage rules stats  # Show rule effectiveness
 Group related alerts into incidents:
 
 ```bash
-secops triage groups
+vlair triage groups
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                          ALERT GROUPS                                         ║
@@ -360,15 +360,15 @@ Learn from analyst decisions:
 
 ```bash
 # Close alert with feedback
-secops triage close ALT-1037 --reason "false_positive" \
+vlair triage close ALT-1037 --reason "false_positive" \
   --comment "Chrome update traffic, known good"
 
 # Confirm true positive
-secops triage confirm ALT-1042 --severity critical \
+vlair triage confirm ALT-1042 --severity critical \
   --comment "Confirmed Cobalt Strike, escalated to IR"
 
 # Override recommendation
-secops triage override ALT-1040 --new-priority low \
+vlair triage override ALT-1040 --new-priority low \
   --reason "Expected admin activity during maintenance"
 ```
 
@@ -380,7 +380,7 @@ secops triage override ALT-1040 --new-priority low \
 
 ```bash
 # View feedback statistics
-secops triage feedback-stats
+vlair triage feedback-stats
 
 Feedback Statistics (Last 30 days):
   Total alerts processed: 3,247
@@ -444,7 +444,7 @@ sources:
 ### FR-9: Metrics and Reporting
 
 ```bash
-secops triage metrics
+vlair triage metrics
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                    TRIAGE METRICS - Last 24 Hours                            ║
@@ -471,8 +471,8 @@ secops triage metrics
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 # Export metrics
-secops triage metrics --format csv --output triage_metrics.csv
-secops triage metrics --format json | jq .
+vlair triage metrics --format csv --output triage_metrics.csv
+vlair triage metrics --format json | jq .
 ```
 
 ### FR-10: Real-Time Mode
@@ -481,7 +481,7 @@ Continuous triage with notifications:
 
 ```bash
 # Start real-time triage daemon
-secops triage watch --notify slack --channel #soc-alerts
+vlair triage watch --notify slack --channel #soc-alerts
 
 # Output:
 [09:15:23] 🔴 CRITICAL: Cobalt Strike beacon (FINANCE-WS-042)
@@ -582,38 +582,38 @@ src/secops_helper/
 
 ```bash
 # Queue management
-secops triage queue [--priority critical|high|medium|low]
-secops triage show <alert-id>
-secops triage interactive
+vlair triage queue [--priority critical|high|medium|low]
+vlair triage show <alert-id>
+vlair triage interactive
 
 # Alert actions
-secops triage close <alert-id> --reason <reason> [--comment "..."]
-secops triage confirm <alert-id> --severity <level> [--comment "..."]
-secops triage escalate <alert-id> --to <team> [--comment "..."]
-secops triage investigate <alert-id>  # Launch investigation
+vlair triage close <alert-id> --reason <reason> [--comment "..."]
+vlair triage confirm <alert-id> --severity <level> [--comment "..."]
+vlair triage escalate <alert-id> --to <team> [--comment "..."]
+vlair triage investigate <alert-id>  # Launch investigation
 
 # Grouping
-secops triage groups
-secops triage group show <group-id>
-secops triage group merge <group-id-1> <group-id-2>
+vlair triage groups
+vlair triage group show <group-id>
+vlair triage group merge <group-id-1> <group-id-2>
 
 # Rules
-secops triage rules list
-secops triage rules add --file <rule.yaml>
-secops triage rules test --alert <alert-id>
-secops triage rules stats
+vlair triage rules list
+vlair triage rules add --file <rule.yaml>
+vlair triage rules test --alert <alert-id>
+vlair triage rules stats
 
 # Sources
-secops triage sources list
-secops triage sources add <type> --name <name> [options]
-secops triage sources test <name>
+vlair triage sources list
+vlair triage sources add <type> --name <name> [options]
+vlair triage sources test <name>
 
 # Real-time
-secops triage watch [--notify slack|email|teams]
+vlair triage watch [--notify slack|email|teams]
 
 # Metrics
-secops triage metrics [--period 24h|7d|30d] [--format console|json|csv]
-secops triage feedback-stats
+vlair triage metrics [--period 24h|7d|30d] [--format console|json|csv]
+vlair triage feedback-stats
 ```
 
 ## Non-Functional Requirements

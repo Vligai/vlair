@@ -411,10 +411,10 @@ python deobfuscator.py --decode-hex "48656c6c6f"
 
 ### Unified CLI Integration
 ```bash
-# Via secops-helper
-secops-helper deobfuscate malware.js
-secops-helper deobfuscate script.ps1 --extract-iocs
-secops-helper deobfuscate --decode-base64 "..."
+# Via vlair
+vlair deobfuscate malware.js
+vlair deobfuscate script.ps1 --extract-iocs
+vlair deobfuscate --decode-base64 "..."
 ```
 
 ### Examples

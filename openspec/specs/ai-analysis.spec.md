@@ -3,14 +3,14 @@
 **Version:** 1.0.0
 **Status:** Draft
 **Priority:** High
-**Author:** SecOps Helper Team
+**Author:** vlair Team
 **Created:** 2026-01-28
 
 ## Overview
 
 ### Problem Statement
 
-Current SecOps Helper aggregates data from multiple threat intelligence sources but leaves interpretation to the analyst. A typical hash lookup returns:
+Current vlair aggregates data from multiple threat intelligence sources but leaves interpretation to the analyst. A typical hash lookup returns:
 
 ```
 Hash: 44d88612fea8a8f36de82e1278abb02f
@@ -67,8 +67,8 @@ Add an AI analysis layer that:
 
 ### FR-1: AI-Enhanced Analysis Command
 ```bash
-secops analyze <input> --ai
-secops analyze <input> --ai --depth thorough
+vlair analyze <input> --ai
+vlair analyze <input> --ai --depth thorough
 ```
 
 The `--ai` flag enables AI interpretation of results. Without it, behavior is unchanged (raw data only).
@@ -123,7 +123,7 @@ Recommended Actions:
 When analyzing multiple IOCs (file, email, list), identify relationships:
 
 ```bash
-secops analyze phishing.eml --ai
+vlair analyze phishing.eml --ai
 
 Correlation Analysis:
   - Sender domain (fakepaypal.com) registered 2 days ago
@@ -141,8 +141,8 @@ Correlation Analysis:
 Generate formatted reports for ticketing systems:
 
 ```bash
-secops analyze suspicious.exe --ai --report markdown > findings.md
-secops analyze suspicious.exe --ai --report jira
+vlair analyze suspicious.exe --ai --report markdown > findings.md
+vlair analyze suspicious.exe --ai --report jira
 ```
 
 **Markdown Output:**
@@ -194,12 +194,12 @@ Allow users to provide organizational context for better recommendations:
 
 ```bash
 # Set organization profile
-secops config set org.industry healthcare
-secops config set org.size enterprise
-secops config set org.critical_assets "patient data, EMR systems"
+vlair config set org.industry healthcare
+vlair config set org.size enterprise
+vlair config set org.critical_assets "patient data, EMR systems"
 
 # Analysis now considers context
-secops analyze ransomware.exe --ai
+vlair analyze ransomware.exe --ai
 
 # Output includes:
 "CRITICAL SEVERITY for healthcare organizations - ransomware
@@ -213,13 +213,13 @@ Support local LLM inference for sensitive environments:
 
 ```bash
 # Use local Ollama instance
-secops config set ai.provider ollama
-secops config set ai.model llama3:70b
-secops config set ai.endpoint http://localhost:11434
+vlair config set ai.provider ollama
+vlair config set ai.model llama3:70b
+vlair config set ai.endpoint http://localhost:11434
 
 # Use local LM Studio
-secops config set ai.provider lmstudio
-secops config set ai.endpoint http://localhost:1234
+vlair config set ai.provider lmstudio
+vlair config set ai.endpoint http://localhost:1234
 ```
 
 ### FR-9: Privacy Controls
@@ -231,7 +231,7 @@ Never send raw file contents or sensitive data to cloud LLMs. Only send:
 
 ```bash
 # Show what would be sent to AI
-secops analyze file.exe --ai --dry-run
+vlair analyze file.exe --ai --dry-run
 
 # Output:
 "The following will be sent to AI provider (OpenAI):
@@ -248,7 +248,7 @@ secops analyze file.exe --ai --dry-run
 - Track token usage and costs
 
 ```bash
-secops ai-stats
+vlair ai-stats
 
 AI Usage Statistics:
   Today: 45 requests, ~12,500 tokens, ~$0.25
@@ -262,9 +262,9 @@ AI Usage Statistics:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        SecOps Helper                             │
+│                        vlair                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  CLI Layer (secops analyze --ai)                                │
+│  CLI Layer (vlair analyze --ai)                                │
 ├─────────────────────────────────────────────────────────────────┤
 │  Orchestration Layer                                            │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
@@ -467,58 +467,58 @@ src/secops_helper/
 
 ```bash
 # Enable AI analysis
-secops analyze suspicious.eml --ai
+vlair analyze suspicious.eml --ai
 
 # Quick mode (faster, less detailed)
-secops analyze hash123 --ai --depth quick
+vlair analyze hash123 --ai --depth quick
 
 # Thorough mode (slower, comprehensive)
-secops analyze malware.exe --ai --depth thorough
+vlair analyze malware.exe --ai --depth thorough
 
 # Specify output format
-secops analyze iocs.txt --ai --format json
-secops analyze iocs.txt --ai --format markdown
+vlair analyze iocs.txt --ai --format json
+vlair analyze iocs.txt --ai --format markdown
 
 # Generate report
-secops analyze incident_files/ --ai --report > incident_report.md
+vlair analyze incident_files/ --ai --report > incident_report.md
 ```
 
 ### Configuration
 
 ```bash
 # Set AI provider
-secops config set ai.provider openai          # Default
-secops config set ai.provider anthropic
-secops config set ai.provider ollama
-secops config set ai.provider azure
+vlair config set ai.provider openai          # Default
+vlair config set ai.provider anthropic
+vlair config set ai.provider ollama
+vlair config set ai.provider azure
 
 # Set API key (or use environment variable)
-secops config set ai.api_key sk-...
+vlair config set ai.api_key sk-...
 # Or: export OPENAI_API_KEY=sk-...
 
 # Set model
-secops config set ai.model gpt-4-turbo
-secops config set ai.model claude-3-opus
+vlair config set ai.model gpt-4-turbo
+vlair config set ai.model claude-3-opus
 
 # Local provider settings
-secops config set ai.endpoint http://localhost:11434
-secops config set ai.model llama3:70b
+vlair config set ai.endpoint http://localhost:11434
+vlair config set ai.model llama3:70b
 
 # Organization context
-secops config set org.industry healthcare
-secops config set org.size enterprise
-secops config set org.critical_assets "patient data, EMR, billing"
+vlair config set org.industry healthcare
+vlair config set org.size enterprise
+vlair config set org.critical_assets "patient data, EMR, billing"
 
 # Privacy settings
-secops config set ai.send_file_contents false  # Default: false
-secops config set ai.send_internal_ips false   # Default: false
+vlair config set ai.send_file_contents false  # Default: false
+vlair config set ai.send_internal_ips false   # Default: false
 ```
 
 ### Output Examples
 
 **Standard Output:**
 ```
-$ secops analyze 44d88612fea8a8f36de82e1278abb02f --ai
+$ vlair analyze 44d88612fea8a8f36de82e1278abb02f --ai
 
 Analyzing hash: 44d88612fea8a8f36de82e1278abb02f
 Querying threat intelligence sources... done

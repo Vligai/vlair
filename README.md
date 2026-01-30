@@ -1,6 +1,6 @@
 # vlair
 
-[![Tests](https://github.com/Vligai/secops-helper/actions/workflows/tests.yml/badge.svg)](https://github.com/Vligai/secops-helper/actions/workflows/tests.yml)
+[![Tests](https://github.com/Vligai/vlair/actions/workflows/tests.yml/badge.svg)](https://github.com/Vligai/vlair/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -12,8 +12,8 @@ vlair brings 12 specialized security tools under a single `vlair` command with s
 ## Installation
 
 ```bash
-git clone https://github.com/Vligai/secops-helper.git
-cd secops-helper
+git clone https://github.com/Vligai/vlair.git
+cd vlair
 pip install -e .
 ```
 
@@ -158,15 +158,15 @@ Exit codes for automation: 0 = Clean, 1 = Suspicious, 2 = Malicious, 3 = Error.
 ### Docker
 
 ```bash
-docker build -t secops-helper .
-docker run --rm --env-file .env -v $(pwd)/data:/data secops-helper analyze /data/suspicious.eml
+docker build -t vlair .
+docker run --rm --env-file .env -v $(pwd)/data:/data vlair analyze /data/suspicious.eml
 ```
 
 Or with Docker Compose (includes Redis cache):
 
 ```bash
 docker-compose up -d
-docker-compose run --rm secops-helper analyze /data/suspicious.eml
+docker-compose run --rm vlair analyze /data/suspicious.eml
 ```
 
 ### Web dashboard
@@ -176,15 +176,6 @@ A Flask-based web UI is available for browser-based analysis (experimental).
 ```bash
 pip install -r requirements-webapp.txt
 # Web dashboard is in development
-```
-
-### Legacy CLI
-
-The legacy unified CLI is also available:
-
-```bash
-secops-helper hash 44d88612fea8a8f36de82e1278abb02f
-secops-helper intel malicious.com
 ```
 
 ## Troubleshooting
@@ -197,7 +188,7 @@ secops-helper intel malicious.com
 
 **PCAP permission denied** -- May need elevated privileges for raw packet access.
 
-**Check tool/API status** -- Run `vlairstatus` to verify configuration.
+**Check tool/API status** -- Run `vlair status` to verify configuration.
 
 ## Contributing
 

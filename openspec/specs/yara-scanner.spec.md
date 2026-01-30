@@ -405,10 +405,10 @@ python scanner.py stats --rules ./rules/malware/
 
 ### Unified CLI Integration
 ```bash
-# Via secops-helper
-secops-helper yara scan suspicious.exe
-secops-helper yara validate rules/
-secops-helper yara update
+# Via vlair
+vlair yara scan suspicious.exe
+vlair yara validate rules/
+vlair yara update
 ```
 
 ### Examples

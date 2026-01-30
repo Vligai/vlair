@@ -1,10 +1,10 @@
-# CLAUDE.md - AI Assistant Guide for SecOps Helper
+# CLAUDE.md - AI Assistant Guide for vlair
 
-This document provides comprehensive guidance for AI assistants working with the SecOps Helper codebase.
+This document provides comprehensive guidance for AI assistants working with the vlair codebase.
 
 ## Project Overview
 
-**SecOps Helper** is a collection of security operations tools designed to streamline and automate everyday security analyst tasks. The project provides command-line utilities for threat analysis, incident response, and security investigations.
+**vlair** is a collection of security operations tools designed to streamline and automate everyday security analyst tasks. The project provides command-line utilities for threat analysis, incident response, and security investigations.
 
 **Target Users:** SOC Analysts, Incident Responders, Threat Intelligence Analysts, Security Researchers
 
@@ -32,18 +32,18 @@ The project is transitioning from a collection of tools to an operational platfo
 
 **1. Smart Analyze Command**
 ```bash
-secops analyze suspicious.eml    # Auto-detects email, runs full analysis
-secops analyze 44d88612...       # Auto-detects hash, checks reputation
-secops analyze malicious.com     # Auto-detects domain, gets intel
+vlairanalyze suspicious.eml    # Auto-detects email, runs full analysis
+vlairanalyze 44d88612...       # Auto-detects hash, checks reputation
+vlairanalyze malicious.com     # Auto-detects domain, gets intel
 ```
 
 **2. Pre-built Workflows** (✅ IMPLEMENTED)
 ```bash
-secops workflow phishing-email suspicious.eml   # 7-step phishing investigation
-secops workflow malware-triage sample.exe       # 7-step malware analysis
-secops workflow ioc-hunt iocs.txt               # 6-step bulk IOC hunting
-secops workflow network-forensics capture.pcap  # 7-step PCAP forensics
-secops workflow log-investigation access.log    # 7-step log analysis
+vlairworkflow phishing-email suspicious.eml   # 7-step phishing investigation
+vlairworkflow malware-triage sample.exe       # 7-step malware analysis
+vlairworkflow ioc-hunt iocs.txt               # 6-step bulk IOC hunting
+vlairworkflow network-forensics capture.pcap  # 7-step PCAP forensics
+vlairworkflow log-investigation access.log    # 7-step log analysis
 ```
 
 **3. Actionable Output**
@@ -54,7 +54,7 @@ secops workflow log-investigation access.log    # 7-step log analysis
 
 **4. Interactive Investigation Mode**
 ```bash
-secops investigate   # Guided Q&A for users who don't know what they have
+vlairinvestigate   # Guided Q&A for users who don't know what they have
 ```
 
 ### Implementation Priority
@@ -68,7 +68,7 @@ secops investigate   # Guided Q&A for users who don't know what they have
 The project has been reorganized into a modern Python package structure:
 
 ```
-secops-helper/
+vlair/
 ├── .env                    # API keys and configuration (gitignored)
 ├── .gitignore             # Git ignore rules
 ├── LICENSE                # MIT License
@@ -82,9 +82,9 @@ secops-helper/
 │   └── specs/             # Individual feature specs
 │
 ├── completions/           # Shell completions
-│   ├── secops.bash
-│   ├── secops.zsh
-│   └── secops.ps1
+│   ├── vlair.bash
+│   ├── vlair.zsh
+│   └── vlair.ps1
 │
 ├── tests/                 # Unit and integration tests
 │   ├── test_data/         # Sample files for testing
@@ -96,13 +96,13 @@ secops-helper/
 │   └── ...
 │
 └── src/                   # Main source code
-    └── secops_helper/     # Main package
+    └── vlair/     # Main package
         ├── __init__.py    # Package exports and version
         │
         ├── cli/           # Command-line interfaces
         │   ├── __init__.py
-        │   ├── main.py    # Primary CLI (secops command)
-        │   └── legacy.py  # Legacy CLI (secops-helper command)
+        │   ├── main.py    # Primary CLI (vlaircommand)
+        │   └── legacy.py  # Legacy CLI (vlair command)
         │
         ├── core/          # Orchestration engine
         │   ├── __init__.py
@@ -154,15 +154,15 @@ secops-helper/
 ```
 
 ### Key Changes in v5.0
-- All code moved to `src/secops_helper/` for proper package structure
-- Entry points defined in `pyproject.toml` (`secops` and `secops-helper` commands)
+- All code moved to `src/vlair/` for proper package structure
+- Entry points defined in `pyproject.toml` (`vlair` command)
 - Tool files renamed to snake_case (e.g., `hash_lookup.py` instead of `lookup.py`)
-- Imports changed from `from hashLookup.lookup import X` to `from secops_helper.tools.hash_lookup import X`
-- YARA rules moved to `src/secops_helper/data/yara_rules/`
+- Imports changed from `from hashLookup.lookup import X` to `from vlair.tools.hash_lookup import X`
+- YARA rules moved to `src/vlair/data/yara_rules/`
 
 ## Implementation Status
 
-All tools are now located in `src/secops_helper/tools/`:
+All tools are now located in `src/vlair/tools/`:
 
 ### ✅ Phase 1 (Completed)
 - **EML Parser** (`tools/eml_parser.py`)
@@ -263,21 +263,21 @@ After installation (`pip install -e .`), the tools are available via command-lin
 
 ```bash
 # Primary CLI (smart analysis)
-secops analyze suspicious.eml    # Auto-detects input type
-secops analyze 44d88612...       # Hash lookup
-secops analyze malicious.com     # Domain intel
+vlairanalyze suspicious.eml    # Auto-detects input type
+vlairanalyze 44d88612...       # Hash lookup
+vlairanalyze malicious.com     # Domain intel
 
 # Workflows
-secops workflow phishing-email suspicious.eml
-secops workflow malware-triage sample.exe
+vlairworkflow phishing-email suspicious.eml
+vlairworkflow malware-triage sample.exe
 
 # Individual tools
-secops hash 44d88612fea8a8f36de82e1278abb02f
-secops intel malicious.com
-secops ioc --file report.txt
+vlairhash 44d88612fea8a8f36de82e1278abb02f
+vlairintel malicious.com
+vlairioc --file report.txt
 
 # Legacy CLI (also available)
-secops-helper hash 44d88612fea8a8f36de82e1278abb02f
+vlair hash 44d88612fea8a8f36de82e1278abb02f
 ```
 
 ### Tool Categories
@@ -296,25 +296,25 @@ The central system organizes tools into 7 categories:
 
 ```bash
 # Smart analysis with auto-detection
-secops analyze suspicious.eml --verbose
-secops analyze 44d88612fea8a8f36de82e1278abb02f
-secops analyze malicious.com --json
+vlairanalyze suspicious.eml --verbose
+vlairanalyze 44d88612fea8a8f36de82e1278abb02f
+vlairanalyze malicious.com --json
 
 # Pre-built workflows
-secops workflow phishing-email suspicious.eml
-secops workflow malware-triage sample.exe
-secops workflow ioc-hunt iocs.txt
+vlairworkflow phishing-email suspicious.eml
+vlairworkflow malware-triage sample.exe
+vlairworkflow ioc-hunt iocs.txt
 
 # Individual tools
-secops hash 44d88612fea8a8f36de82e1278abb02f
-secops intel malicious.com
-secops yara scan /samples/ --rules rules/malware/
-secops cert https://example.com
-secops ioc --file threat_report.txt
+vlairhash 44d88612fea8a8f36de82e1278abb02f
+vlairintel malicious.com
+vlairyara scan /samples/ --rules rules/malware/
+vlaircert https://example.com
+vlairioc --file threat_report.txt
 
 # Help and information
-secops --help
-secops hash --help
+vlair--help
+vlairhash --help
 ```
 
 ### Installation
@@ -333,7 +333,7 @@ pip install -e ".[pcap]"    # PCAP analysis support
 pip install -r requirements.txt
 ```
 
-After installation, `secops` and `secops-helper` commands are available globally.
+After installation, the `vlair` command is available globally.
 
 ## Code Conventions
 
@@ -377,7 +377,7 @@ if __name__ == '__main__':
 - **Functions**: `snake_case` (e.g., `extract_from_text`, `parse_args`)
 - **Constants**: `UPPER_SNAKE_CASE` (e.g., `PATTERNS`, `API_BASE_URL`)
 - **Private methods**: `_leading_underscore` (e.g., `_is_private_ip`)
-- **Packages**: `snake_case` (e.g., `secops_helper`)
+- **Packages**: `snake_case` (e.g., `vlair`)
 
 ### Command-Line Interface Pattern
 
@@ -595,7 +595,7 @@ Examples (if applicable):
 
 **Recent example:**
 ```
-Implement Phase 2 SecOps Helper tools
+Implement Phase 2 vlair tools
 
 Implemented three comprehensive security operations tools:
 

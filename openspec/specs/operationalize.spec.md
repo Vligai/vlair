@@ -1,4 +1,4 @@
-# Operationalize SecOps Helper
+# Operationalize vlair
 
 **Version:** 1.0.0
 **Status:** COMPLETE
@@ -48,8 +48,8 @@
 
 ### Phase 5: Check Command, Status Dashboard & Completions - COMPLETE
 - [x] `core/history.py` - SQLite-based analysis history tracker
-- [x] `secops check` command - Quick indicator lookups (hash/domain/ip/url)
-- [x] Enhanced `secops status` dashboard (API keys, tool availability, cache, history, feeds)
+- [x] `vlair check` command - Quick indicator lookups (hash/domain/ip/url)
+- [x] Enhanced `vlair status` dashboard (API keys, tool availability, cache, history, feeds)
 - [x] Shell completion scripts (bash, zsh, PowerShell)
 - [x] Analysis history recording for both `analyze` and `check` commands
 - [x] Fixed `DomainIPIntelligence` import consistency across codebase
@@ -61,7 +61,7 @@
 
 ## Problem Statement
 
-SecOps Helper has 12 powerful tools but is too cumbersome for practical use:
+vlair has 12 powerful tools but is too cumbersome for practical use:
 - Users must know which tool to run and how to invoke it
 - Tools are disconnected - no workflows, no chaining
 - Output is raw JSON - not actionable insights
@@ -94,13 +94,13 @@ SecOps Helper has 12 powerful tools but is too cumbersome for practical use:
 
 ```bash
 # User doesn't need to know which tool to use
-secops analyze suspicious.eml           # Auto-detects email, runs full workflow
-secops analyze 44d88612fea8a8f36de82e1278abb02f   # Auto-detects hash
-secops analyze malicious.com            # Auto-detects domain
-secops analyze 192.168.1.1              # Auto-detects IP
-secops analyze capture.pcap             # Auto-detects PCAP
-secops analyze access.log               # Auto-detects log file
-secops analyze malware.js               # Auto-detects script, deobfuscates
+vlair analyze suspicious.eml           # Auto-detects email, runs full workflow
+vlair analyze 44d88612fea8a8f36de82e1278abb02f   # Auto-detects hash
+vlair analyze malicious.com            # Auto-detects domain
+vlair analyze 192.168.1.1              # Auto-detects IP
+vlair analyze capture.pcap             # Auto-detects PCAP
+vlair analyze access.log               # Auto-detects log file
+vlair analyze malware.js               # Auto-detects script, deobfuscates
 ```
 
 **Output:** A consolidated report with:
@@ -113,11 +113,11 @@ secops analyze malware.js               # Auto-detects script, deobfuscates
 ### 2. Workflows (Pre-built Investigation Patterns)
 
 ```bash
-secops workflow phishing-email suspicious.eml
-secops workflow malware-triage sample.exe
-secops workflow ioc-hunt iocs.txt
-secops workflow network-forensics capture.pcap
-secops workflow log-investigation access.log
+vlair workflow phishing-email suspicious.eml
+vlair workflow malware-triage sample.exe
+vlair workflow ioc-hunt iocs.txt
+vlair workflow network-forensics capture.pcap
+vlair workflow log-investigation access.log
 ```
 
 Each workflow:
@@ -152,25 +152,25 @@ Replace verbose commands with intuitive shortcuts:
 
 ```bash
 # Instead of: python hashLookup/lookup.py 44d88612fea8a8f36de82e1278abb02f --verbose --format json
-secops check hash 44d88612fea8a8f36de82e1278abb02f
+vlair check hash 44d88612fea8a8f36de82e1278abb02f
 
 # Instead of: python domainIpIntel/intel.py malicious.com --format json
-secops check domain malicious.com
+vlair check domain malicious.com
 
 # Instead of: python urlAnalyzer/analyzer.py "http://bad.com" --format json
-secops check url "http://bad.com"
+vlair check url "http://bad.com"
 
 # Batch checking
-secops check hashes.txt       # Auto-detects list of hashes
-secops check iocs.txt         # Auto-detects mixed IOC types
+vlair check hashes.txt       # Auto-detects list of hashes
+vlair check iocs.txt         # Auto-detects mixed IOC types
 ```
 
 ### 4. Report Generation
 
 ```bash
-secops analyze suspicious.eml --report          # Generate HTML report
-secops analyze suspicious.eml --report pdf      # Generate PDF report
-secops analyze suspicious.eml --report markdown # Generate Markdown report
+vlair analyze suspicious.eml --report          # Generate HTML report
+vlair analyze suspicious.eml --report pdf      # Generate PDF report
+vlair analyze suspicious.eml --report markdown # Generate Markdown report
 ```
 
 Report includes:
@@ -184,7 +184,7 @@ Report includes:
 ### 5. Interactive Investigation Mode
 
 ```bash
-secops investigate
+vlair investigate
 ```
 
 Guided Q&A:
@@ -230,7 +230,7 @@ Recommended Actions:
 ### 6. Quick Status Dashboard
 
 ```bash
-secops status
+vlair status
 ```
 
 Shows:
@@ -243,11 +243,11 @@ Shows:
 
 ```bash
 # Returns just the verdict and risk score for scripting
-secops analyze suspicious.eml --quiet
+vlair analyze suspicious.eml --quiet
 # Output: MALICIOUS 85
 
 # JSON output for pipeline integration
-secops analyze suspicious.eml --json
+vlair analyze suspicious.eml --json
 # Output: {"verdict": "MALICIOUS", "risk_score": 85, ...}
 
 # Exit codes for automation
@@ -331,7 +331,7 @@ def detect_input_type(input_str):
 
 ```
 ═══════════════════════════════════════════════════════════════
- SecOps Helper - Analysis Report
+ vlair - Analysis Report
 ═══════════════════════════════════════════════════════════════
 
 Input: suspicious.eml
@@ -471,7 +471,7 @@ def get_verdict(score):
 
 ## Open Questions
 
-1. Should `secops analyze` be the default when no subcommand given?
+1. Should `vlair analyze` be the default when no subcommand given?
 2. How verbose should default output be?
 3. Should we persist analysis history to SQLite?
 4. What report templates do SOC analysts actually need?

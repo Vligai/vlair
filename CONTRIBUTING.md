@@ -1,6 +1,6 @@
-# Contributing to SecOps Helper
+# Contributing to vlair
 
-Thank you for your interest in contributing to SecOps Helper! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to vlair! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -16,13 +16,13 @@ Thank you for your interest in contributing to SecOps Helper! This document prov
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR-USERNAME/secops-helper.git
-   cd secops-helper
+   git clone https://github.com/YOUR-USERNAME/vlair.git
+   cd vlair
    ```
 
 3. **Set up the upstream remote**:
    ```bash
-   git remote add upstream https://github.com/Vligai/secops-helper.git
+   git remote add upstream https://github.com/Vligai/vlair.git
    ```
 
 ## Development Setup
@@ -306,8 +306,8 @@ Our CI/CD pipeline runs automatically on every push and pull request.
 ### Status Badges
 
 Add these to your PR:
-- ![Tests](https://github.com/Vligai/secops-helper/workflows/Tests/badge.svg)
-- ![Coverage](https://codecov.io/gh/Vligai/secops-helper/branch/main/graph/badge.svg)
+- ![Tests](https://github.com/Vligai/vlair/workflows/Tests/badge.svg)
+- ![Coverage](https://codecov.io/gh/Vligai/vlair/branch/main/graph/badge.svg)
 
 ### Local CI Simulation
 
@@ -344,7 +344,7 @@ Maintainers will review:
 Understand the project layout before contributing:
 
 ```
-secops-helper/
+vlair/
 ├── emlAnalysis/          # Email analysis tools
 ├── iocExtractor/         # IOC extraction
 ├── hashLookup/           # Hash threat intelligence
@@ -375,4 +375,4 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ---
 
-**Thank you for contributing to SecOps Helper!** 🔒🛡️
+**Thank you for contributing to vlair!** 🔒🛡️

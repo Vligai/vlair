@@ -94,8 +94,8 @@ python analyzer.py --file-list domains.txt
 python analyzer.py https://example.com --format json --output cert.json
 
 # Unified CLI
-secops-helper cert https://example.com
-secops-helper cert --file cert.pem --check-chain
+vlair cert https://example.com
+vlair cert --file cert.pem --check-chain
 ```
 
 ## Dependencies

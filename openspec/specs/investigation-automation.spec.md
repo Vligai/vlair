@@ -3,7 +3,7 @@
 **Version:** 1.0.0
 **Status:** Draft
 **Priority:** High
-**Author:** SecOps Helper Team
+**Author:** vlair Team
 **Created:** 2026-01-28
 
 ## Overview
@@ -70,23 +70,23 @@ Support automated investigations for common security scenarios:
 
 ```bash
 # Phishing investigation
-secops investigate phishing --email-id MSG123 --source o365
-secops investigate phishing --file suspicious.eml
+vlair investigate phishing --email-id MSG123 --source o365
+vlair investigate phishing --file suspicious.eml
 
 # Malware investigation
-secops investigate malware --host WORKSTATION01 --alert-id ALT456
-secops investigate malware --hash abc123def456
+vlair investigate malware --host WORKSTATION01 --alert-id ALT456
+vlair investigate malware --hash abc123def456
 
 # Suspicious authentication
-secops investigate auth --user jsmith --timeframe 24h
-secops investigate auth --source-ip 1.2.3.4
+vlair investigate auth --user jsmith --timeframe 24h
+vlair investigate auth --source-ip 1.2.3.4
 
 # Data exfiltration
-secops investigate exfil --user jsmith --timeframe 7d
-secops investigate exfil --destination evil.com
+vlair investigate exfil --user jsmith --timeframe 7d
+vlair investigate exfil --destination evil.com
 
 # Generic IOC hunt
-secops investigate ioc --indicator evil.com --scope enterprise
+vlair investigate ioc --indicator evil.com --scope enterprise
 ```
 
 ### FR-2: Phishing Investigation Playbook
@@ -94,7 +94,7 @@ secops investigate ioc --indicator evil.com --scope enterprise
 Fully automated phishing investigation:
 
 ```bash
-secops investigate phishing --email-id AAMkAGI2... --source o365
+vlair investigate phishing --email-id AAMkAGI2... --source o365
 
 # Automatic steps executed:
 # 1. Retrieve email from O365/Gmail via API
@@ -164,19 +164,19 @@ Impact Assessment:
 
 Remediation Actions (ready to execute):
   [ ] Delete email from all 47 mailboxes
-      Command: secops remediate email-delete --message-id MSG123
+      Command: vlair remediate email-delete --message-id MSG123
 
   [ ] Block sender domain
-      Command: secops remediate block-domain paypa1.com
+      Command: vlair remediate block-domain paypa1.com
 
   [ ] Isolate compromised host
-      Command: secops remediate isolate-host JSMITH-PC
+      Command: vlair remediate isolate-host JSMITH-PC
 
   [ ] Reset credentials for affected users
-      Command: secops remediate reset-password jsmith mjohnson klee
+      Command: vlair remediate reset-password jsmith mjohnson klee
 
   [ ] Block malicious URLs at proxy
-      Command: secops remediate block-url hxxps://paypa1.com/verify
+      Command: vlair remediate block-url hxxps://paypa1.com/verify
 
 Investigation ID: INV-2026-01-28-0042
 Duration: 47 seconds
@@ -186,7 +186,7 @@ Duration: 47 seconds
 ### FR-3: Malware Investigation Playbook
 
 ```bash
-secops investigate malware --host WORKSTATION01 --alert-id ALT456
+vlair investigate malware --host WORKSTATION01 --alert-id ALT456
 
 # Automatic steps:
 # 1. Retrieve alert details from EDR/SIEM
@@ -206,7 +206,7 @@ secops investigate malware --host WORKSTATION01 --alert-id ALT456
 ### FR-4: Authentication Investigation Playbook
 
 ```bash
-secops investigate auth --user jsmith --timeframe 24h
+vlair investigate auth --user jsmith --timeframe 24h
 
 # Automatic steps:
 # 1. Query IAM: recent authentications for user
@@ -342,11 +342,11 @@ Track investigation progress and allow resume:
 
 ```bash
 # Start investigation (runs in background if long-running)
-secops investigate phishing --email-id MSG123 --background
+vlair investigate phishing --email-id MSG123 --background
 # Output: Investigation started: INV-2026-01-28-0042
 
 # Check status
-secops investigate status INV-2026-01-28-0042
+vlair investigate status INV-2026-01-28-0042
 # Output:
 # Status: IN_PROGRESS (65%)
 # Current step: Querying SIEM for related events
@@ -354,13 +354,13 @@ secops investigate status INV-2026-01-28-0042
 # Duration: 32 seconds
 
 # Get results when complete
-secops investigate results INV-2026-01-28-0042
+vlair investigate results INV-2026-01-28-0042
 
 # List recent investigations
-secops investigate list --last 24h
+vlair investigate list --last 24h
 
 # Resume failed investigation
-secops investigate resume INV-2026-01-28-0042
+vlair investigate resume INV-2026-01-28-0042
 ```
 
 ### FR-8: Remediation Actions
@@ -369,16 +369,16 @@ Pre-built remediation commands based on investigation findings:
 
 ```bash
 # Execute single remediation
-secops remediate isolate-host WORKSTATION01
+vlair remediate isolate-host WORKSTATION01
 
 # Execute all recommended remediations
-secops remediate --investigation INV-2026-01-28-0042 --all
+vlair remediate --investigation INV-2026-01-28-0042 --all
 
 # Execute with approval workflow
-secops remediate --investigation INV-2026-01-28-0042 --require-approval
+vlair remediate --investigation INV-2026-01-28-0042 --require-approval
 
 # Dry run (show what would happen)
-secops remediate --investigation INV-2026-01-28-0042 --dry-run
+vlair remediate --investigation INV-2026-01-28-0042 --dry-run
 ```
 
 **Available Remediation Actions:**
@@ -400,7 +400,7 @@ secops remediate --investigation INV-2026-01-28-0042 --dry-run
 Automated evidence preservation:
 
 ```bash
-secops investigate malware --host WORKSTATION01 --collect-evidence
+vlair investigate malware --host WORKSTATION01 --collect-evidence
 
 # Evidence collected:
 # - Memory dump (if configured)
@@ -513,7 +513,7 @@ steps:
 │                    Investigation Engine                          │
 ├─────────────────────────────────────────────────────────────────┤
 │  CLI Interface                                                  │
-│  secops investigate <type> [options]                            │
+│  vlair investigate <type> [options]                            │
 ├─────────────────────────────────────────────────────────────────┤
 │  Investigation Orchestrator                                     │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
@@ -618,28 +618,28 @@ class RemediationAction:
 
 ```bash
 # Phishing investigation
-secops investigate phishing --email-id <id> --source o365|gmail
-secops investigate phishing --file <path.eml>
-secops investigate phishing --url <suspicious-url>
+vlair investigate phishing --email-id <id> --source o365|gmail
+vlair investigate phishing --file <path.eml>
+vlair investigate phishing --url <suspicious-url>
 
 # Malware investigation
-secops investigate malware --host <hostname> --alert-id <id>
-secops investigate malware --hash <sha256>
-secops investigate malware --file <sample.exe>
+vlair investigate malware --host <hostname> --alert-id <id>
+vlair investigate malware --hash <sha256>
+vlair investigate malware --file <sample.exe>
 
 # Authentication investigation
-secops investigate auth --user <username> [--timeframe 24h]
-secops investigate auth --source-ip <ip> [--timeframe 24h]
+vlair investigate auth --user <username> [--timeframe 24h]
+vlair investigate auth --source-ip <ip> [--timeframe 24h]
 
 # Data exfiltration investigation
-secops investigate exfil --user <username> [--timeframe 7d]
-secops investigate exfil --destination <domain>
+vlair investigate exfil --user <username> [--timeframe 7d]
+vlair investigate exfil --destination <domain>
 
 # IOC hunt across enterprise
-secops investigate ioc --indicator <ioc> --scope enterprise
+vlair investigate ioc --indicator <ioc> --scope enterprise
 
 # Custom playbook
-secops investigate custom --playbook insider-threat.yaml --username jsmith
+vlair investigate custom --playbook insider-threat.yaml --username jsmith
 ```
 
 ### Options
@@ -658,41 +658,41 @@ secops investigate custom --playbook insider-threat.yaml --username jsmith
 
 ```bash
 # List investigations
-secops investigate list [--last 24h] [--status completed|failed|running]
+vlair investigate list [--last 24h] [--status completed|failed|running]
 
 # Get investigation status
-secops investigate status <investigation-id>
+vlair investigate status <investigation-id>
 
 # Get investigation results
-secops investigate results <investigation-id> [--format json|md]
+vlair investigate results <investigation-id> [--format json|md]
 
 # Resume failed investigation
-secops investigate resume <investigation-id>
+vlair investigate resume <investigation-id>
 
 # Cancel running investigation
-secops investigate cancel <investigation-id>
+vlair investigate cancel <investigation-id>
 ```
 
 ### Remediation Commands
 
 ```bash
 # List available remediations for investigation
-secops remediate list --investigation <id>
+vlair remediate list --investigation <id>
 
 # Execute specific remediation
-secops remediate <action> [params]
-secops remediate isolate-host WORKSTATION01
-secops remediate block-domain evil.com
-secops remediate reset-password jsmith
+vlair remediate <action> [params]
+vlair remediate isolate-host WORKSTATION01
+vlair remediate block-domain evil.com
+vlair remediate reset-password jsmith
 
 # Execute all recommended remediations
-secops remediate --investigation <id> --all
+vlair remediate --investigation <id> --all
 
 # Execute with approval
-secops remediate --investigation <id> --require-approval
+vlair remediate --investigation <id> --require-approval
 
 # Dry run
-secops remediate --investigation <id> --dry-run
+vlair remediate --investigation <id> --dry-run
 ```
 
 ## Non-Functional Requirements

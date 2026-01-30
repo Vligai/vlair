@@ -105,8 +105,8 @@ python carver.py --image memdump.raw --types exe,dll --hash-lookup
 python carver.py --image disk.dd --report html --output report.html
 
 # Unified CLI
-secops-helper carve --image disk.dd --output /carved/
-secops-helper carve --image memdump.raw --types exe,dll
+vlair carve --image disk.dd --output /carved/
+vlair carve --image memdump.raw --types exe,dll
 ```
 
 ## File Signatures Database

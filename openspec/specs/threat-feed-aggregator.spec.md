@@ -459,11 +459,11 @@ python aggregator.py config set-interval otx 3600  # 1 hour
 
 ### Unified CLI Integration
 ```bash
-# Via secops-helper
-secops-helper threat update
-secops-helper threat search "1.2.3.4"
-secops-helper threat export --format stix
-secops-helper threat stats
+# Via vlair
+vlair threat update
+vlair threat search "1.2.3.4"
+vlair threat export --format stix
+vlair threat stats
 ```
 
 ### Examples

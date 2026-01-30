@@ -1,15 +1,15 @@
-# SecOps Helper - Project Specification
+# vlair - Project Specification
 
 ## Project Overview
 
-**Project Name:** SecOps Helper
+**Project Name:** vlair
 **Version:** 1.0.0
 **Status:** Active Development
-**Repository:** https://github.com/Vligai/secops-helper
+**Repository:** https://github.com/Vligai/vlair
 
 ## Purpose
 
-SecOps Helper is a collection of security operations tools designed to streamline and automate everyday security analyst tasks. The project provides command-line utilities for threat analysis, incident response, and security investigations.
+vlair is a collection of security operations tools designed to streamline and automate everyday security analyst tasks. The project provides command-line utilities for threat analysis, incident response, and security investigations.
 
 ## Target Audience
 
@@ -32,7 +32,7 @@ SecOps Helper is a collection of security operations tools designed to streamlin
 ### Project Structure
 
 ```
-secops-helper/
+vlair/
 ├── openspec/              # Project specifications
 │   ├── project.openspec.md
 │   └── specs/             # Individual feature specs
@@ -111,7 +111,7 @@ ABUSEIPDB_KEY=your_abuseipdb_key
 
 ### Configuration Files
 
-Future: Support for `.secops-helper.conf` for global settings
+Future: Support for `.vlair.conf` for global settings
 
 ## Output Formats
 
