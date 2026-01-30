@@ -406,10 +406,10 @@ class InteractiveMenu:
 4. Get Help:
 
    General Help:
-     $ vlair--help
+     $ vlair --help
 
    Tool-Specific Help:
-     $ vlair<tool> --help
+     $ vlair <tool> --help
 
 5. Advanced Features:
 
@@ -445,9 +445,9 @@ Usage:
     vlair list                 List all available tools
     vlair info <tool>          Show detailed tool information
     vlair search <keyword>     Search for tools
-    vlair<tool> [args]        Run a specific tool directly
-    vlair--help               Show this help message
-    vlair--version            Show version information
+    vlair <tool> [args]        Run a specific tool directly
+    vlair --help               Show this help message
+    vlair --version            Show version information
 
 Examples - Smart Analyze:
     vlair analyze suspicious.eml           # Analyze email file
@@ -532,7 +532,7 @@ def main():
             print(f"  [{status}] {tool_id:12s} - {tool['name']}")
 
         print("\nUse 'vlair info <tool>' for detailed information")
-        print("Use 'vlair<tool> --help' for usage help\n")
+        print("Use 'vlair <tool> --help' for usage help\n")
 
     elif sys.argv[1] == "info":
         if len(sys.argv) < 3:
