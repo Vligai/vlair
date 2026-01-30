@@ -7,14 +7,14 @@ Security log analysis for incident investigation
 from pathlib import Path
 from typing import Dict, Any
 
-from secops_helper.core.workflow import (
+from vlair.core.workflow import (
     Workflow,
     WorkflowStep,
     StepResult,
     WorkflowContext,
     workflow,
 )
-from secops_helper.core.scorer import Severity
+from vlair.core.scorer import Severity
 
 
 @workflow
@@ -112,7 +112,7 @@ class LogInvestigationWorkflow(Workflow):
     def _parse_logs(self, context: WorkflowContext) -> StepResult:
         """Parse log file"""
         try:
-            from secops_helper.tools.log_analyzer import LogAnalyzer
+            from vlair.tools.log_analyzer import LogAnalyzer
 
             analyzer = LogAnalyzer(verbose=self.verbose)
             result = analyzer.analyze(context.input_value)
@@ -273,7 +273,7 @@ class LogInvestigationWorkflow(Workflow):
             )
 
         try:
-            from secops_helper.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
+            from vlair.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
 
             intel = DomainIPIntel(verbose=self.verbose)
 

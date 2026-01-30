@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.common.cache_manager import CacheManager, get_cache, hash_key
+from vlair.common.cache_manager import CacheManager, get_cache, hash_key
 
 
 class TestCacheManager:
@@ -21,7 +21,7 @@ class TestCacheManager:
 
     def test_init_memory_backend(self):
         """Test initialization with memory backend when Redis unavailable"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
             assert cache.backend == "memory"
             assert cache.redis_client is None
@@ -41,7 +41,7 @@ class TestCacheManager:
 
     def test_set_and_get_memory(self):
         """Test set and get with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             # Set a value
@@ -56,7 +56,7 @@ class TestCacheManager:
 
     def test_get_miss_memory(self):
         """Test get miss with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             value = cache.get("nonexistent_key", namespace="test")
@@ -65,7 +65,7 @@ class TestCacheManager:
 
     def test_delete_memory(self):
         """Test delete with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             # Set then delete
@@ -80,7 +80,7 @@ class TestCacheManager:
 
     def test_ttl_expiration_memory(self):
         """Test TTL expiration with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             # Set with 1 second TTL
@@ -99,7 +99,7 @@ class TestCacheManager:
 
     def test_clear_namespace_memory(self):
         """Test clear namespace with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             # Set multiple keys in different namespaces
@@ -120,7 +120,7 @@ class TestCacheManager:
 
     def test_clear_all_memory(self):
         """Test clear all with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             cache.set("key1", "value1", namespace="ns1")
@@ -132,7 +132,7 @@ class TestCacheManager:
 
     def test_get_stats_memory(self):
         """Test get stats with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             cache.set("key1", "value1", namespace="test")
@@ -148,7 +148,7 @@ class TestCacheManager:
 
     def test_get_namespaces_memory(self):
         """Test get namespaces with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             cache.set("key1", "value1", namespace="ns1")
@@ -160,7 +160,7 @@ class TestCacheManager:
 
     def test_health_check_memory(self):
         """Test health check with memory backend"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             health = cache.health_check()
@@ -170,7 +170,7 @@ class TestCacheManager:
 
     def test_default_namespace(self):
         """Test default namespace"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager()
 
             cache.set("key1", "value1")
@@ -179,7 +179,7 @@ class TestCacheManager:
 
     def test_custom_default_ttl(self):
         """Test custom default TTL"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
             cache = CacheManager(default_ttl=3600)
             assert cache.default_ttl == 3600
 
@@ -216,15 +216,15 @@ class TestGetCache:
 
     def test_get_cache_returns_instance(self):
         """Test get_cache returns CacheManager instance"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
-            with patch("secops_helper.common.cache_manager._cache_instance", None):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
+            with patch("vlair.common.cache_manager._cache_instance", None):
                 cache = get_cache()
                 assert isinstance(cache, CacheManager)
 
     def test_get_cache_singleton(self):
         """Test get_cache returns same instance"""
-        with patch("secops_helper.common.cache_manager.REDIS_AVAILABLE", False):
-            with patch("secops_helper.common.cache_manager._cache_instance", None):
+        with patch("vlair.common.cache_manager.REDIS_AVAILABLE", False):
+            with patch("vlair.common.cache_manager._cache_instance", None):
                 cache1 = get_cache()
                 cache2 = get_cache()
                 assert cache1 is cache2

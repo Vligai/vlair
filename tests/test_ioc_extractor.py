@@ -10,7 +10,7 @@ from pathlib import Path
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.tools.ioc_extractor import IOCExtractor
+from vlair.tools.ioc_extractor import IOCExtractor
 
 
 class TestIOCExtractor:

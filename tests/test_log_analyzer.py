@@ -11,7 +11,7 @@ from datetime import datetime
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.tools.log_analyzer import (
+from vlair.tools.log_analyzer import (
     ApacheLogParser,
     SyslogParser,
     ThreatDetector,

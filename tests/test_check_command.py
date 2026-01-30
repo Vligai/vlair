@@ -25,19 +25,19 @@ class TestCheckCommandRouting:
 
     def test_hash_lookup_module_importable(self):
         """Test that hash_lookup module is importable"""
-        from secops_helper.tools.hash_lookup import HashLookup
+        from vlair.tools.hash_lookup import HashLookup
 
         assert HashLookup is not None
 
     def test_domain_ip_intel_module_importable(self):
         """Test that domain_ip_intel module is importable"""
-        from secops_helper.tools.domain_ip_intel import DomainIPIntelligence
+        from vlair.tools.domain_ip_intel import DomainIPIntelligence
 
         assert DomainIPIntelligence is not None
 
     def test_url_analyzer_module_importable(self):
         """Test that url_analyzer module is importable"""
-        from secops_helper.tools.url_analyzer import URLAnalyzer
+        from vlair.tools.url_analyzer import URLAnalyzer
 
         assert URLAnalyzer is not None
 
@@ -45,7 +45,7 @@ class TestCheckCommandRouting:
 class TestCheckHashCommand:
     """Test the check hash subcommand"""
 
-    @patch("secops_helper.tools.hash_lookup.HashLookup")
+    @patch("vlair.tools.hash_lookup.HashLookup")
     def test_check_hash_lookup_instantiation(self, mock_lookup_class):
         """Test that HashLookup can be instantiated"""
         mock_instance = MagicMock()
@@ -58,14 +58,14 @@ class TestCheckHashCommand:
         }
         mock_lookup_class.return_value = mock_instance
 
-        from secops_helper.tools.hash_lookup import HashLookup
+        from vlair.tools.hash_lookup import HashLookup
 
         lookup = HashLookup(verbose=False)
         assert lookup is not None
 
     def test_hash_validator(self):
         """Test hash validation"""
-        from secops_helper.tools.hash_lookup import HashValidator
+        from vlair.tools.hash_lookup import HashValidator
 
         # Test MD5
         is_valid, hash_type = HashValidator.validate("44d88612fea8a8f36de82e1278abb02f")
@@ -94,7 +94,7 @@ class TestCheckDomainCommand:
 
     def test_domain_validator(self):
         """Test domain validation"""
-        from secops_helper.tools.domain_ip_intel import Validator
+        from vlair.tools.domain_ip_intel import Validator
 
         assert Validator.is_valid_domain("example.com") is True
         assert Validator.is_valid_domain("sub.example.com") is True
@@ -106,7 +106,7 @@ class TestCheckIPCommand:
 
     def test_ip_validator(self):
         """Test IP validation"""
-        from secops_helper.tools.domain_ip_intel import Validator
+        from vlair.tools.domain_ip_intel import Validator
 
         assert Validator.is_valid_ipv4("192.168.1.1") is True
         assert Validator.is_valid_ipv4("8.8.8.8") is True
@@ -115,7 +115,7 @@ class TestCheckIPCommand:
 
     def test_private_ip_detection(self):
         """Test private IP detection"""
-        from secops_helper.tools.domain_ip_intel import Validator
+        from vlair.tools.domain_ip_intel import Validator
 
         assert Validator.is_private_ip("192.168.1.1") is True
         assert Validator.is_private_ip("10.0.0.1") is True
@@ -127,7 +127,7 @@ class TestCheckURLCommand:
 
     def test_url_validator(self):
         """Test URL validation"""
-        from secops_helper.tools.url_analyzer import URLValidator
+        from vlair.tools.url_analyzer import URLValidator
 
         assert URLValidator.is_valid_url("http://example.com") is True
         assert URLValidator.is_valid_url("https://example.com/path") is True
@@ -139,7 +139,7 @@ class TestCheckFileInput:
 
     def test_analyzer_creation(self):
         """Test that Analyzer can be created"""
-        from secops_helper.core.analyzer import Analyzer
+        from vlair.core.analyzer import Analyzer
 
         analyzer = Analyzer(verbose=False)
         assert analyzer is not None
@@ -150,7 +150,7 @@ class TestCheckHistoryRecording:
 
     def test_history_creation(self):
         """Test that AnalysisHistory can be created"""
-        from secops_helper.core.history import AnalysisHistory
+        from vlair.core.history import AnalysisHistory
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = os.path.join(tmpdir, "test_history.db")
@@ -177,7 +177,7 @@ class TestDetector:
 
     def test_detect_hash(self):
         """Test detecting hash input"""
-        from secops_helper.core.detector import Detector
+        from vlair.core.detector import Detector
 
         detector = Detector()
 
@@ -193,7 +193,7 @@ class TestDetector:
 
     def test_detect_ip(self):
         """Test detecting IP input"""
-        from secops_helper.core.detector import Detector
+        from vlair.core.detector import Detector
 
         detector = Detector()
         result = detector.detect("8.8.8.8")
@@ -201,7 +201,7 @@ class TestDetector:
 
     def test_detect_domain(self):
         """Test detecting domain input"""
-        from secops_helper.core.detector import Detector
+        from vlair.core.detector import Detector
 
         detector = Detector()
         result = detector.detect("malicious.com")
@@ -209,7 +209,7 @@ class TestDetector:
 
     def test_detect_url(self):
         """Test detecting URL input"""
-        from secops_helper.core.detector import Detector
+        from vlair.core.detector import Detector
 
         detector = Detector()
         result = detector.detect("http://evil.com/payload")

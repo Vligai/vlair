@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.tools.url_analyzer import URLValidator, URLParser, SuspiciousPatternDetector
+from vlair.tools.url_analyzer import URLValidator, URLParser, SuspiciousPatternDetector
 
 
 class TestURLValidator:
@@ -158,10 +158,10 @@ class TestSuspiciousPatternDetector:
 class TestURLAnalyzerIntegration:
     """Integration tests for URL Analyzer (mocked APIs)"""
 
-    @patch("secops_helper.tools.url_analyzer.get_cache")
+    @patch("vlair.tools.url_analyzer.get_cache")
     def test_analyzer_creation(self, mock_cache):
         """Test creating analyzer instance"""
-        from secops_helper.tools.url_analyzer import URLAnalyzer
+        from vlair.tools.url_analyzer import URLAnalyzer
 
         mock_cache_instance = Mock()
         mock_cache_instance.get.return_value = None
@@ -170,11 +170,11 @@ class TestURLAnalyzerIntegration:
         analyzer = URLAnalyzer(verbose=False)
         assert analyzer is not None
 
-    @patch("secops_helper.tools.url_analyzer.get_cache")
+    @patch("vlair.tools.url_analyzer.get_cache")
     @patch("requests.get")
     def test_analyze_returns_result(self, mock_get, mock_cache):
         """Test that analyze returns a result dict"""
-        from secops_helper.tools.url_analyzer import URLAnalyzer
+        from vlair.tools.url_analyzer import URLAnalyzer
 
         mock_cache_instance = Mock()
         mock_cache_instance.get.return_value = None

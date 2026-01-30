@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SecOps Helper - Unified CLI for Security Operations Tools
+vlair - Unified CLI for Security Operations Tools
 
 A comprehensive toolkit for security analysts providing unified access to:
 - Email analysis (EML parser)
@@ -23,8 +23,8 @@ from pathlib import Path
 def create_parser():
     """Create the main argument parser"""
     parser = argparse.ArgumentParser(
-        prog="secops-helper",
-        description="SecOps Helper - Security Operations Toolkit",
+        prog="vlair",
+        description="vlair - Security Operations Toolkit",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Available Commands:
@@ -41,43 +41,43 @@ Available Commands:
 
 Examples:
   # Email analysis with VirusTotal
-  secops-helper eml suspicious_email.eml --vt --output report.json
+  vlair eml suspicious_email.eml --vt --output report.json
 
   # Extract IOCs from threat report
-  secops-helper ioc threat_report.txt --format csv --output iocs.csv
+  vlair ioc threat_report.txt --format csv --output iocs.csv
 
   # Batch hash lookup
-  secops-helper hash --file hashes.txt --verbose
+  vlair hash --file hashes.txt --verbose
 
   # Domain reputation check
-  secops-helper intel malicious.com --format json
+  vlair intel malicious.com --format json
 
   # Analyze Apache logs
-  secops-helper log /var/log/apache2/access.log --format txt
+  vlair log /var/log/apache2/access.log --format txt
 
   # PCAP analysis
-  secops-helper pcap capture.pcap --verbose --output analysis.json
+  vlair pcap capture.pcap --verbose --output analysis.json
 
   # URL threat analysis
-  secops-helper url "http://suspicious-site.com" --format txt
+  vlair url "http://suspicious-site.com" --format txt
 
   # YARA malware scanning
-  secops-helper yara scan /samples/ --rules ./yaraScanner/rules/ --recursive
+  vlair yara scan /samples/ --rules ./yaraScanner/rules/ --recursive
 
   # Certificate analysis
-  secops-helper cert https://example.com
+  vlair cert https://example.com
 
   # Deobfuscate malicious script
-  secops-helper deobfuscate malware.js --extract-iocs
+  vlair deobfuscate malware.js --extract-iocs
 
 For detailed help on each command:
-  secops-helper <command> --help
+  vlair <command> --help
 
-Documentation: https://github.com/Vligai/secops-helper
+Documentation: https://github.com/Vligai/vlair
         """,
     )
 
-    parser.add_argument("--version", action="version", version="SecOps Helper v2.0.0")
+    parser.add_argument("--version", action="version", version="vlair v2.0.0")
 
     subparsers = parser.add_subparsers(
         dest="command",
@@ -202,7 +202,7 @@ Documentation: https://github.com/Vligai/secops-helper
     yara_parser.add_argument(
         "yara_args",
         nargs=argparse.REMAINDER,
-        help='YARA scanner arguments (use "secops-helper yara --help" for details)',
+        help='YARA scanner arguments (use "vlair yara --help" for details)',
     )
 
     # Certificate Analyzer subcommand
@@ -254,7 +254,7 @@ Documentation: https://github.com/Vligai/secops-helper
 
 
 def main():
-    """Main entry point for SecOps Helper"""
+    """Main entry point for vlair"""
     parser = create_parser()
 
     # Show help if no arguments
@@ -267,7 +267,7 @@ def main():
 
     # Route to appropriate tool
     if args.command == "eml":
-        from secops_helper.tools.eml_parser import main as eml_main
+        from vlair.tools.eml_parser import main as eml_main
 
         # Reconstruct argv for the tool
         sys.argv = ["emlParser.py", args.eml]
@@ -281,7 +281,7 @@ def main():
         eml_main()
 
     elif args.command == "ioc":
-        from secops_helper.tools.ioc_extractor import main as ioc_main
+        from vlair.tools.ioc_extractor import main as ioc_main
 
         # Reconstruct argv for the tool
         sys.argv = ["extractor.py"]
@@ -305,7 +305,7 @@ def main():
         ioc_main()
 
     elif args.command == "hash":
-        from secops_helper.tools.hash_lookup import main as hash_main
+        from vlair.tools.hash_lookup import main as hash_main
 
         # Reconstruct argv for the tool
         sys.argv = ["lookup.py"]
@@ -327,7 +327,7 @@ def main():
         hash_main()
 
     elif args.command == "intel":
-        from secops_helper.tools.domain_ip_intel import main as intel_main
+        from vlair.tools.domain_ip_intel import main as intel_main
 
         # Reconstruct argv for the tool
         sys.argv = ["intel.py"]
@@ -345,7 +345,7 @@ def main():
         intel_main()
 
     elif args.command == "log":
-        from secops_helper.tools.log_analyzer import main as log_main
+        from vlair.tools.log_analyzer import main as log_main
 
         # Reconstruct argv for the tool
         sys.argv = ["analyzer.py", args.log_file]
@@ -361,7 +361,7 @@ def main():
         log_main()
 
     elif args.command == "pcap":
-        from secops_helper.tools.pcap_analyzer import main as pcap_main
+        from vlair.tools.pcap_analyzer import main as pcap_main
 
         # Reconstruct argv for the tool
         sys.argv = ["analyzer.py", args.pcap_file]
@@ -375,7 +375,7 @@ def main():
         pcap_main()
 
     elif args.command == "url":
-        from secops_helper.tools.url_analyzer import main as url_main
+        from vlair.tools.url_analyzer import main as url_main
 
         # Reconstruct argv for the tool
         sys.argv = ["analyzer.py"]
@@ -395,14 +395,14 @@ def main():
         url_main()
 
     elif args.command == "yara":
-        from secops_helper.tools.yara_scanner import main as yara_main
+        from vlair.tools.yara_scanner import main as yara_main
 
         # Pass all arguments directly to YARA scanner
         sys.argv = ["scanner.py"] + args.yara_args + remaining
         yara_main()
 
     elif args.command == "cert":
-        from secops_helper.tools.cert_analyzer import main as cert_main
+        from vlair.tools.cert_analyzer import main as cert_main
 
         # Reconstruct argv for the tool
         sys.argv = ["analyzer.py"]
@@ -428,7 +428,7 @@ def main():
         cert_main()
 
     elif args.command == "deobfuscate":
-        from secops_helper.tools.deobfuscator import main as deobf_main
+        from vlair.tools.deobfuscator import main as deobf_main
 
         # Reconstruct argv for the tool
         sys.argv = ["deobfuscator.py"]

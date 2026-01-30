@@ -469,7 +469,7 @@ def main():
     elif args.format == "stix":
         # Import STIX exporter
         try:
-            from secops_helper.common.stix_export import export_to_stix
+            from vlair.common.stix_export import export_to_stix
 
             output = export_to_stix(
                 ioc_data=results, output_type="simple", description=f"IOCs extracted from {source}"

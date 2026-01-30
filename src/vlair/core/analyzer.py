@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Analyzer - Main orchestration engine for SecOps Helper
+Analyzer - Main orchestration engine for vlair
 Auto-detects input type and runs appropriate analysis tools
-Part of SecOps Helper Operationalization (Phase 5)
+Part of vlair Operationalization (Phase 5)
 """
 
 import sys
@@ -18,7 +18,7 @@ from .reporter import Reporter
 
 class Analyzer:
     """
-    Main orchestrator for SecOps Helper analysis.
+    Main orchestrator for vlair analysis.
     Auto-detects input and runs appropriate tools.
     """
 
@@ -126,7 +126,7 @@ class Analyzer:
         if self.available_tools.get("hash_lookup"):
             try:
                 self._log("Running hash lookup...")
-                from secops_helper.tools.hash_lookup import HashLookup
+                from vlair.tools.hash_lookup import HashLookup
 
                 lookup = HashLookup(verbose=self.verbose)
                 result = lookup.lookup(hash_value)
@@ -148,7 +148,7 @@ class Analyzer:
         if self.available_tools.get("domain_intel"):
             try:
                 self._log("Running domain/IP intelligence...")
-                from secops_helper.tools.domain_ip_intel import (
+                from vlair.tools.domain_ip_intel import (
                     DomainIPIntelligence as DomainIPIntel,
                 )
 
@@ -172,7 +172,7 @@ class Analyzer:
         if self.available_tools.get("domain_intel"):
             try:
                 self._log("Running domain/IP intelligence...")
-                from secops_helper.tools.domain_ip_intel import (
+                from vlair.tools.domain_ip_intel import (
                     DomainIPIntelligence as DomainIPIntel,
                 )
 
@@ -196,7 +196,7 @@ class Analyzer:
         if self.available_tools.get("url_analyzer"):
             try:
                 self._log("Running URL analysis...")
-                from secops_helper.tools.url_analyzer import URLAnalyzer
+                from vlair.tools.url_analyzer import URLAnalyzer
 
                 analyzer = URLAnalyzer(verbose=self.verbose)
                 result = analyzer.analyze(url)
@@ -220,7 +220,7 @@ class Analyzer:
         if self.available_tools.get("eml_parser"):
             try:
                 self._log("Parsing email...")
-                from secops_helper.tools.eml_parser import EMLParser
+                from vlair.tools.eml_parser import EMLParser
 
                 parser = EMLParser(verbose=self.verbose)
                 result = parser.parse(file_path)
@@ -237,7 +237,7 @@ class Analyzer:
         if self.available_tools.get("ioc_extractor"):
             try:
                 self._log("Extracting IOCs...")
-                from secops_helper.tools.ioc_extractor import IOCExtractor
+                from vlair.tools.ioc_extractor import IOCExtractor
 
                 extractor = IOCExtractor(exclude_private_ips=True)
                 ioc_result = extractor.extract_from_file(file_path)
@@ -271,7 +271,7 @@ class Analyzer:
         if self.available_tools.get("pcap_analyzer"):
             try:
                 self._log("Analyzing PCAP...")
-                from secops_helper.tools.pcap_analyzer import PCAPAnalyzer
+                from vlair.tools.pcap_analyzer import PCAPAnalyzer
 
                 analyzer = PCAPAnalyzer(verbose=self.verbose)
                 result = analyzer.analyze(file_path)
@@ -303,7 +303,7 @@ class Analyzer:
         if self.available_tools.get("log_analyzer"):
             try:
                 self._log("Analyzing log file...")
-                from secops_helper.tools.log_analyzer import LogAnalyzer
+                from vlair.tools.log_analyzer import LogAnalyzer
 
                 analyzer = LogAnalyzer(verbose=self.verbose)
                 result = analyzer.analyze(file_path)
@@ -334,7 +334,7 @@ class Analyzer:
         if self.available_tools.get("deobfuscator"):
             try:
                 self._log("Deobfuscating script...")
-                from secops_helper.tools.deobfuscator import Deobfuscator
+                from vlair.tools.deobfuscator import Deobfuscator
 
                 deob = Deobfuscator(verbose=self.verbose)
                 result = deob.deobfuscate_file(file_path)
@@ -356,7 +356,7 @@ class Analyzer:
         # Also run IOC extraction on the file
         if self.available_tools.get("ioc_extractor"):
             try:
-                from secops_helper.tools.ioc_extractor import IOCExtractor
+                from vlair.tools.ioc_extractor import IOCExtractor
 
                 extractor = IOCExtractor(exclude_private_ips=True)
                 ioc_result = extractor.extract_from_file(file_path)
@@ -403,7 +403,7 @@ class Analyzer:
         if self.available_tools.get("yara_scanner"):
             try:
                 self._log("Running YARA scan...")
-                from secops_helper.tools.yara_scanner import YaraScanner
+                from vlair.tools.yara_scanner import YaraScanner
 
                 scanner = YaraScanner(verbose=self.verbose)
                 result = scanner.scan_file(file_path)
@@ -427,7 +427,7 @@ class Analyzer:
         if self.available_tools.get("ioc_extractor"):
             try:
                 self._log("Extracting IOCs from list...")
-                from secops_helper.tools.ioc_extractor import IOCExtractor
+                from vlair.tools.ioc_extractor import IOCExtractor
 
                 extractor = IOCExtractor(exclude_private_ips=True)
                 ioc_result = extractor.extract_from_file(file_path)
@@ -521,7 +521,7 @@ class Analyzer:
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="SecOps Helper - Smart Analysis",
+        description="vlair - Smart Analysis",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

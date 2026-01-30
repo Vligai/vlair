@@ -11,7 +11,7 @@ from pathlib import Path
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.core.scorer import RiskScorer, Severity, Verdict, Finding
+from vlair.core.scorer import RiskScorer, Severity, Verdict, Finding
 
 
 class TestSeverity:

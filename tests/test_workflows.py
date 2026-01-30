@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.core.workflow import (
+from vlair.core.workflow import (
     Workflow,
     WorkflowStep,
     StepResult,
@@ -22,7 +22,7 @@ from secops_helper.core.workflow import (
     WorkflowRegistry,
     workflow,
 )
-from secops_helper.core.scorer import Severity
+from vlair.core.scorer import Severity
 
 
 class TestWorkflowStep:
@@ -159,7 +159,7 @@ class TestPhishingEmailWorkflow:
 
     def test_workflow_properties(self):
         """Test workflow name and description"""
-        from secops_helper.workflows.phishing_email import PhishingEmailWorkflow
+        from vlair.workflows.phishing_email import PhishingEmailWorkflow
 
         wf = PhishingEmailWorkflow(verbose=False)
         assert wf.name == "phishing-email"
@@ -167,14 +167,14 @@ class TestPhishingEmailWorkflow:
 
     def test_workflow_has_steps(self):
         """Test that workflow has defined steps"""
-        from secops_helper.workflows.phishing_email import PhishingEmailWorkflow
+        from vlair.workflows.phishing_email import PhishingEmailWorkflow
 
         wf = PhishingEmailWorkflow(verbose=False)
         assert len(wf.steps) > 0
 
     def test_workflow_step_names(self):
         """Test expected step names exist"""
-        from secops_helper.workflows.phishing_email import PhishingEmailWorkflow
+        from vlair.workflows.phishing_email import PhishingEmailWorkflow
 
         wf = PhishingEmailWorkflow(verbose=False)
         step_names = [s.name for s in wf.steps]
@@ -185,7 +185,7 @@ class TestPhishingEmailWorkflow:
 
     def test_workflow_with_email_file(self):
         """Test workflow execution with email file"""
-        from secops_helper.workflows.phishing_email import PhishingEmailWorkflow
+        from vlair.workflows.phishing_email import PhishingEmailWorkflow
 
         # Create a test email file
         with tempfile.NamedTemporaryFile(suffix=".eml", delete=False) as f:
@@ -212,7 +212,7 @@ class TestMalwareTriageWorkflow:
 
     def test_workflow_properties(self):
         """Test workflow name and description"""
-        from secops_helper.workflows.malware_triage import MalwareTriageWorkflow
+        from vlair.workflows.malware_triage import MalwareTriageWorkflow
 
         wf = MalwareTriageWorkflow(verbose=False)
         assert wf.name == "malware-triage"
@@ -220,14 +220,14 @@ class TestMalwareTriageWorkflow:
 
     def test_workflow_has_steps(self):
         """Test that workflow has defined steps"""
-        from secops_helper.workflows.malware_triage import MalwareTriageWorkflow
+        from vlair.workflows.malware_triage import MalwareTriageWorkflow
 
         wf = MalwareTriageWorkflow(verbose=False)
         assert len(wf.steps) > 0
 
     def test_workflow_step_names(self):
         """Test expected step names exist"""
-        from secops_helper.workflows.malware_triage import MalwareTriageWorkflow
+        from vlair.workflows.malware_triage import MalwareTriageWorkflow
 
         wf = MalwareTriageWorkflow(verbose=False)
         step_names = [s.name for s in wf.steps]
@@ -238,7 +238,7 @@ class TestMalwareTriageWorkflow:
 
     def test_workflow_with_file(self):
         """Test workflow execution with a file"""
-        from secops_helper.workflows.malware_triage import MalwareTriageWorkflow
+        from vlair.workflows.malware_triage import MalwareTriageWorkflow
 
         # Create a test file
         with tempfile.NamedTemporaryFile(suffix=".exe", delete=False) as f:
@@ -261,14 +261,14 @@ class TestIOCHuntWorkflow:
 
     def test_workflow_properties(self):
         """Test workflow name and description"""
-        from secops_helper.workflows.ioc_hunt import IOCHuntWorkflow
+        from vlair.workflows.ioc_hunt import IOCHuntWorkflow
 
         wf = IOCHuntWorkflow(verbose=False)
         assert wf.name == "ioc-hunt"
 
     def test_workflow_with_ioc_file(self):
         """Test workflow execution with IOC list"""
-        from secops_helper.workflows.ioc_hunt import IOCHuntWorkflow
+        from vlair.workflows.ioc_hunt import IOCHuntWorkflow
 
         # Create a test IOC file
         with tempfile.NamedTemporaryFile(suffix=".txt", delete=False, mode="w") as f:
@@ -294,14 +294,14 @@ class TestNetworkForensicsWorkflow:
 
     def test_workflow_properties(self):
         """Test workflow name and description"""
-        from secops_helper.workflows.network_forensics import NetworkForensicsWorkflow
+        from vlair.workflows.network_forensics import NetworkForensicsWorkflow
 
         wf = NetworkForensicsWorkflow(verbose=False)
         assert wf.name == "network-forensics"
 
     def test_workflow_has_steps(self):
         """Test that workflow has defined steps"""
-        from secops_helper.workflows.network_forensics import NetworkForensicsWorkflow
+        from vlair.workflows.network_forensics import NetworkForensicsWorkflow
 
         wf = NetworkForensicsWorkflow(verbose=False)
         step_names = [s.name for s in wf.steps]
@@ -316,14 +316,14 @@ class TestLogInvestigationWorkflow:
 
     def test_workflow_properties(self):
         """Test workflow name and description"""
-        from secops_helper.workflows.log_investigation import LogInvestigationWorkflow
+        from vlair.workflows.log_investigation import LogInvestigationWorkflow
 
         wf = LogInvestigationWorkflow(verbose=False)
         assert wf.name == "log-investigation"
 
     def test_workflow_has_steps(self):
         """Test that workflow has defined steps"""
-        from secops_helper.workflows.log_investigation import LogInvestigationWorkflow
+        from vlair.workflows.log_investigation import LogInvestigationWorkflow
 
         wf = LogInvestigationWorkflow(verbose=False)
         step_names = [s.name for s in wf.steps]
@@ -334,7 +334,7 @@ class TestLogInvestigationWorkflow:
 
     def test_workflow_with_log_file(self):
         """Test workflow execution with log file"""
-        from secops_helper.workflows.log_investigation import LogInvestigationWorkflow
+        from vlair.workflows.log_investigation import LogInvestigationWorkflow
 
         # Create a test log file
         with tempfile.NamedTemporaryFile(suffix=".log", delete=False, mode="w") as f:
@@ -360,7 +360,7 @@ class TestWorkflowResultStructure:
 
     def test_result_has_required_fields(self):
         """Test result structure"""
-        from secops_helper.workflows.malware_triage import MalwareTriageWorkflow
+        from vlair.workflows.malware_triage import MalwareTriageWorkflow
 
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             f.write(b"test content")
@@ -385,7 +385,7 @@ class TestWorkflowResultStructure:
 
     def test_step_results_structure(self):
         """Test step results structure"""
-        from secops_helper.workflows.malware_triage import MalwareTriageWorkflow
+        from vlair.workflows.malware_triage import MalwareTriageWorkflow
 
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             f.write(b"test content")
@@ -408,7 +408,7 @@ class TestWorkflowDependencies:
 
     def test_steps_with_dependencies_wait(self):
         """Test that dependent steps wait for prerequisites"""
-        from secops_helper.workflows.phishing_email import PhishingEmailWorkflow
+        from vlair.workflows.phishing_email import PhishingEmailWorkflow
 
         wf = PhishingEmailWorkflow(verbose=False)
 
@@ -429,7 +429,7 @@ class TestWorkflowVerboseMode:
 
     def test_verbose_execution(self):
         """Test workflow in verbose mode"""
-        from secops_helper.workflows.malware_triage import MalwareTriageWorkflow
+        from vlair.workflows.malware_triage import MalwareTriageWorkflow
 
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             f.write(b"test")
@@ -449,7 +449,7 @@ class TestWorkflowErrorHandling:
 
     def test_nonexistent_file(self):
         """Test workflow with nonexistent file"""
-        from secops_helper.workflows.malware_triage import MalwareTriageWorkflow
+        from vlair.workflows.malware_triage import MalwareTriageWorkflow
 
         wf = MalwareTriageWorkflow(verbose=False)
         result = wf.execute("/nonexistent/path/file.exe", "file")

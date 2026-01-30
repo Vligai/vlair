@@ -7,14 +7,14 @@ PCAP analysis for security investigation
 from pathlib import Path
 from typing import Dict, Any
 
-from secops_helper.core.workflow import (
+from vlair.core.workflow import (
     Workflow,
     WorkflowStep,
     StepResult,
     WorkflowContext,
     workflow,
 )
-from secops_helper.core.scorer import Severity
+from vlair.core.scorer import Severity
 
 
 @workflow
@@ -112,7 +112,7 @@ class NetworkForensicsWorkflow(Workflow):
     def _parse_pcap(self, context: WorkflowContext) -> StepResult:
         """Parse PCAP file"""
         try:
-            from secops_helper.tools.pcap_analyzer import PCAPAnalyzer
+            from vlair.tools.pcap_analyzer import PCAPAnalyzer
 
             analyzer = PCAPAnalyzer(verbose=self.verbose)
             result = analyzer.analyze(context.input_value)
@@ -248,7 +248,7 @@ class NetworkForensicsWorkflow(Workflow):
             )
 
         try:
-            from secops_helper.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
+            from vlair.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
 
             intel = DomainIPIntel(verbose=self.verbose)
 
@@ -296,7 +296,7 @@ class NetworkForensicsWorkflow(Workflow):
     def _yara_scan(self, context: WorkflowContext) -> StepResult:
         """Scan PCAP payloads with YARA"""
         try:
-            from secops_helper.tools.yara_scanner import YaraScanner
+            from vlair.tools.yara_scanner import YaraScanner
 
             scanner = YaraScanner(verbose=self.verbose)
             result = scanner.scan_file(context.input_value)

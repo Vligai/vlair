@@ -369,33 +369,33 @@ class InteractiveMenu:
 1. Basic Usage:
 
    Interactive Mode:
-     $ secops
+     $ vlair
 
    Direct Command:
-     $ secops <tool> [arguments]
+     $ vlair<tool> [arguments]
 
    List All Tools:
-     $ secops list
+     $ vlairlist
 
    Get Tool Info:
-     $ secops info <tool>
+     $ vlairinfo <tool>
 
 2. Common Workflows:
 
    Analyze Suspicious Email:
-     $ secops eml suspicious.eml --vt --output report.json
+     $ vlaireml suspicious.eml --vt --output report.json
 
    Extract IOCs from Threat Report:
-     $ secops ioc report.txt --format csv --output iocs.csv
+     $ vlairioc report.txt --format csv --output iocs.csv
 
    Check Hash Reputation:
-     $ secops hash <md5/sha1/sha256>
+     $ vlairhash <md5/sha1/sha256>
 
    Analyze Domain/IP:
-     $ secops intel malicious.com
+     $ vlairintel malicious.com
 
    Scan for Malware:
-     $ secops yara scan /path/to/files --rules ./yaraScanner/rules/
+     $ vlairyara scan /path/to/files --rules ./yaraScanner/rules/
 
 3. Configuration:
 
@@ -406,10 +406,10 @@ class InteractiveMenu:
 4. Get Help:
 
    General Help:
-     $ secops --help
+     $ vlair--help
 
    Tool-Specific Help:
-     $ secops <tool> --help
+     $ vlair<tool> --help
 
 5. Advanced Features:
 
@@ -428,39 +428,39 @@ def print_usage():
     """Print usage information"""
     print(
         """
-SecOps Helper - Security Operations Toolkit
+vlair - Security Operations Toolkit
 
 Quick Start:
-    secops analyze <input>      Auto-detect and analyze (RECOMMENDED)
+    vlairanalyze <input>      Auto-detect and analyze (RECOMMENDED)
 
 The 'analyze' command automatically detects what you're analyzing and runs
 the appropriate tools. Just give it a file, hash, IP, domain, or URL.
 
 Usage:
-    secops analyze <input>      Smart analysis (auto-detect input type)
-    secops workflow <name> <input>  Run pre-built investigation workflow
-    secops investigate          Guided interactive investigation mode
-    secops status               Show API key and tool status
-    secops                      Tool browser (interactive menu)
-    secops list                 List all available tools
-    secops info <tool>          Show detailed tool information
-    secops search <keyword>     Search for tools
-    secops <tool> [args]        Run a specific tool directly
-    secops --help               Show this help message
-    secops --version            Show version information
+    vlairanalyze <input>      Smart analysis (auto-detect input type)
+    vlairworkflow <name> <input>  Run pre-built investigation workflow
+    vlairinvestigate          Guided interactive investigation mode
+    vlairstatus               Show API key and tool status
+    vlair                     Tool browser (interactive menu)
+    vlairlist                 List all available tools
+    vlairinfo <tool>          Show detailed tool information
+    vlairsearch <keyword>     Search for tools
+    vlair<tool> [args]        Run a specific tool directly
+    vlair--help               Show this help message
+    vlair--version            Show version information
 
 Examples - Smart Analyze:
-    secops analyze suspicious.eml           # Analyze email file
-    secops analyze 44d88612fea8a8f36...     # Check hash reputation
-    secops analyze malicious.com            # Get domain intelligence
-    secops analyze capture.pcap             # Analyze network traffic
+    vlairanalyze suspicious.eml           # Analyze email file
+    vlairanalyze 44d88612fea8a8f36...     # Check hash reputation
+    vlairanalyze malicious.com            # Get domain intelligence
+    vlairanalyze capture.pcap             # Analyze network traffic
 
 Examples - Workflows:
-    secops workflow phishing-email suspicious.eml   # Full phishing investigation
-    secops workflow malware-triage sample.exe       # Malware analysis
-    secops workflow ioc-hunt indicators.txt         # Bulk IOC hunting
-    secops workflow network-forensics capture.pcap  # PCAP forensics
-    secops workflow log-investigation access.log    # Log analysis
+    vlairworkflow phishing-email suspicious.eml   # Full phishing investigation
+    vlairworkflow malware-triage sample.exe       # Malware analysis
+    vlairworkflow ioc-hunt indicators.txt         # Bulk IOC hunting
+    vlairworkflow network-forensics capture.pcap  # PCAP forensics
+    vlairworkflow log-investigation access.log    # Log analysis
 
 Output Options:
     --json      Machine-readable JSON output
@@ -512,7 +512,7 @@ def main():
         sys.exit(0)
 
     elif sys.argv[1] in ["--version", "-v"]:
-        print("SecOps Helper v4.0.0")
+        print("vlair v4.0.0")
         print("Phase 5: Operationalization - Smart analyze command")
         sys.exit(0)
 
@@ -531,12 +531,12 @@ def main():
             status = "✓" if tool["available"] else "✗"
             print(f"  [{status}] {tool_id:12s} - {tool['name']}")
 
-        print("\nUse 'secops info <tool>' for detailed information")
-        print("Use 'secops <tool> --help' for usage help\n")
+        print("\nUse 'vlairinfo <tool>' for detailed information")
+        print("Use 'vlair<tool> --help' for usage help\n")
 
     elif sys.argv[1] == "info":
         if len(sys.argv) < 3:
-            print("Usage: secops info <tool>", file=sys.stderr)
+            print("Usage: vlairinfo <tool>", file=sys.stderr)
             sys.exit(1)
 
         tool_id = sys.argv[2]
@@ -544,14 +544,14 @@ def main():
 
         if not tool:
             print(f"Error: Unknown tool '{tool_id}'", file=sys.stderr)
-            print("Run 'secops list' to see available tools", file=sys.stderr)
+            print("Run 'vlairlist' to see available tools", file=sys.stderr)
             sys.exit(1)
 
         menu.show_tool_info(tool_id)
 
     elif sys.argv[1] == "search":
         if len(sys.argv) < 3:
-            print("Usage: secops search <keyword>", file=sys.stderr)
+            print("Usage: vlairsearch <keyword>", file=sys.stderr)
             sys.exit(1)
 
         keyword = sys.argv[2]
@@ -570,12 +570,12 @@ def main():
     elif sys.argv[1] == "analyze":
         # Smart analyze command - auto-detect and run appropriate tools
         if len(sys.argv) < 3:
-            print("Usage: secops analyze <input> [--verbose] [--json] [--quiet]", file=sys.stderr)
+            print("Usage: vlairanalyze <input> [--verbose] [--json] [--quiet]", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
-            print("  secops analyze suspicious.eml     # Auto-detect email", file=sys.stderr)
-            print("  secops analyze 44d88612...        # Auto-detect hash", file=sys.stderr)
-            print("  secops analyze malicious.com      # Auto-detect domain", file=sys.stderr)
-            print("  secops analyze 192.168.1.1        # Auto-detect IP", file=sys.stderr)
+            print("  vlairanalyze suspicious.eml     # Auto-detect email", file=sys.stderr)
+            print("  vlairanalyze 44d88612...        # Auto-detect hash", file=sys.stderr)
+            print("  vlairanalyze malicious.com      # Auto-detect domain", file=sys.stderr)
+            print("  vlairanalyze 192.168.1.1        # Auto-detect IP", file=sys.stderr)
             sys.exit(1)
 
         try:
@@ -684,19 +684,19 @@ def main():
     elif sys.argv[1] == "check":
         # Quick indicator lookup - direct tool invocation without full analysis pipeline
         if len(sys.argv) < 3:
-            print("Usage: secops check <type> <value> [--json] [--verbose]", file=sys.stderr)
-            print("       secops check <file>          # Auto-detect IOC file", file=sys.stderr)
+            print("Usage: vlaircheck <type> <value> [--json] [--verbose]", file=sys.stderr)
+            print("       vlaircheck <file>          # Auto-detect IOC file", file=sys.stderr)
             print("\nTypes:", file=sys.stderr)
             print("  hash    <hash>     Look up a file hash (MD5/SHA1/SHA256)", file=sys.stderr)
             print("  domain  <domain>   Get domain intelligence", file=sys.stderr)
             print("  ip      <ip>       Get IP intelligence", file=sys.stderr)
             print("  url     <url>      Check URL reputation", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
-            print("  secops check hash 44d88612fea8a8f36de82e1278abb02f", file=sys.stderr)
-            print("  secops check domain malicious.com", file=sys.stderr)
-            print("  secops check ip 1.2.3.4 --json", file=sys.stderr)
-            print("  secops check url http://bad.com/payload", file=sys.stderr)
-            print("  secops check iocs.txt", file=sys.stderr)
+            print("  vlaircheck hash 44d88612fea8a8f36de82e1278abb02f", file=sys.stderr)
+            print("  vlaircheck domain malicious.com", file=sys.stderr)
+            print("  vlaircheck ip 1.2.3.4 --json", file=sys.stderr)
+            print("  vlaircheck url http://bad.com/payload", file=sys.stderr)
+            print("  vlaircheck iocs.txt", file=sys.stderr)
             sys.exit(1)
 
         check_type = sys.argv[2]
@@ -712,7 +712,7 @@ def main():
             if check_type == "hash":
                 if len(sys.argv) < 4:
                     print("Error: Missing hash value", file=sys.stderr)
-                    print("Usage: secops check hash <md5|sha1|sha256>", file=sys.stderr)
+                    print("Usage: vlaircheck hash <md5|sha1|sha256>", file=sys.stderr)
                     sys.exit(1)
                 hash_value = sys.argv[3]
                 from vlair.tools.hash_lookup import HashLookup
@@ -743,7 +743,7 @@ def main():
             elif check_type == "domain":
                 if len(sys.argv) < 4:
                     print("Error: Missing domain value", file=sys.stderr)
-                    print("Usage: secops check domain <domain>", file=sys.stderr)
+                    print("Usage: vlaircheck domain <domain>", file=sys.stderr)
                     sys.exit(1)
                 domain_value = sys.argv[3]
                 from vlair.tools.domain_ip_intel import (
@@ -772,7 +772,7 @@ def main():
             elif check_type == "ip":
                 if len(sys.argv) < 4:
                     print("Error: Missing IP address", file=sys.stderr)
-                    print("Usage: secops check ip <ip_address>", file=sys.stderr)
+                    print("Usage: vlaircheck ip <ip_address>", file=sys.stderr)
                     sys.exit(1)
                 ip_value = sys.argv[3]
                 from vlair.tools.domain_ip_intel import (
@@ -801,7 +801,7 @@ def main():
             elif check_type == "url":
                 if len(sys.argv) < 4:
                     print("Error: Missing URL", file=sys.stderr)
-                    print("Usage: secops check url <url>", file=sys.stderr)
+                    print("Usage: vlaircheck url <url>", file=sys.stderr)
                     sys.exit(1)
                 url_value = sys.argv[3]
                 from vlair.tools.url_analyzer import URLAnalyzer
@@ -896,7 +896,7 @@ def main():
     elif sys.argv[1] == "workflow":
         # Pre-built investigation workflows
         if len(sys.argv) < 3:
-            print("Usage: secops workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
+            print("Usage: vlairworkflow <name> <input> [--verbose] [--json]", file=sys.stderr)
             print("\nAvailable workflows:", file=sys.stderr)
             print(
                 "  phishing-email     Comprehensive phishing email investigation", file=sys.stderr
@@ -906,16 +906,16 @@ def main():
             print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
             print("  log-investigation  Security log investigation", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
-            print("  secops workflow phishing-email suspicious.eml", file=sys.stderr)
-            print("  secops workflow malware-triage sample.exe --verbose", file=sys.stderr)
-            print("  secops workflow ioc-hunt iocs.txt --json", file=sys.stderr)
+            print("  vlairworkflow phishing-email suspicious.eml", file=sys.stderr)
+            print("  vlairworkflow malware-triage sample.exe --verbose", file=sys.stderr)
+            print("  vlairworkflow ioc-hunt iocs.txt --json", file=sys.stderr)
             sys.exit(1)
 
         workflow_name = sys.argv[2]
 
         if len(sys.argv) < 4:
             print(f"Error: Missing input for workflow '{workflow_name}'", file=sys.stderr)
-            print(f"Usage: secops workflow {workflow_name} <input>", file=sys.stderr)
+            print(f"Usage: vlairworkflow {workflow_name} <input>", file=sys.stderr)
             sys.exit(1)
 
         input_value = sys.argv[3]
@@ -953,7 +953,7 @@ def main():
             workflow_class = WorkflowRegistry.get(workflow_name)
             if not workflow_class:
                 print(f"Error: Unknown workflow '{workflow_name}'", file=sys.stderr)
-                print("Run 'secops workflow' to see available workflows", file=sys.stderr)
+                print("Run 'vlairworkflow' to see available workflows", file=sys.stderr)
                 sys.exit(1)
 
             # Execute workflow
@@ -1026,7 +1026,7 @@ def main():
 
     elif sys.argv[1] == "status":
         # Quick status dashboard
-        print("\nSecOps Helper Status Dashboard")
+        print("\nvlair Status Dashboard")
         print("=" * 50)
 
         # Check API keys
@@ -1103,7 +1103,7 @@ def main():
                 print(f"  IOCs in database: {ioc_count}")
                 print(f"  Last updated: {last_update or 'Never'}")
             else:
-                print("  Database not initialized (run: secops feeds update)")
+                print("  Database not initialized (run: vlairfeeds update)")
         except Exception:
             print("  Not available")
 
@@ -1143,8 +1143,8 @@ def main():
 
         # Features summary
         print("\nFeatures:")
-        print("  [+] Smart analyze command (secops analyze)")
-        print("  [+] Quick check command (secops check)")
+        print("  [+] Smart analyze command (vlairanalyze)")
+        print("  [+] Quick check command (vlaircheck)")
         print("  [+] Pre-built workflows (5)")
         print("  [+] Interactive investigation mode")
         print("  [+] Report generation (HTML/Markdown)")

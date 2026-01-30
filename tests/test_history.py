@@ -13,7 +13,7 @@ from pathlib import Path
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.core.history import AnalysisHistory
+from vlair.core.history import AnalysisHistory
 
 
 class TestHistoryInit:

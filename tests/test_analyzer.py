@@ -14,9 +14,9 @@ from unittest.mock import patch, MagicMock
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.core.analyzer import Analyzer
-from secops_helper.core.detector import InputType
-from secops_helper.core.scorer import Severity
+from vlair.core.analyzer import Analyzer
+from vlair.core.detector import InputType
+from vlair.core.scorer import Severity
 
 
 class TestAnalyzerInit:
@@ -333,7 +333,7 @@ class TestMockedToolExecution:
 
         # If hash_lookup is available, test with mock
         if analyzer.available_tools.get("hash_lookup"):
-            with patch("secops_helper.tools.hash_lookup.HashLookup") as MockHashLookup:
+            with patch("vlair.tools.hash_lookup.HashLookup") as MockHashLookup:
                 mock_instance = MagicMock()
                 mock_instance.lookup.return_value = {
                     "hash": "44d88612fea8a8f36de82e1278abb02f",
@@ -352,7 +352,7 @@ class TestAnalyzeCommandLineInterface:
 
     def test_parse_args_basic(self):
         """Test basic argument parsing"""
-        from secops_helper.core.analyzer import parse_args
+        from vlair.core.analyzer import parse_args
 
         # Mock sys.argv
         with patch("sys.argv", ["analyzer.py", "test_input"]):
@@ -364,7 +364,7 @@ class TestAnalyzeCommandLineInterface:
 
     def test_parse_args_verbose(self):
         """Test verbose flag parsing"""
-        from secops_helper.core.analyzer import parse_args
+        from vlair.core.analyzer import parse_args
 
         with patch("sys.argv", ["analyzer.py", "test_input", "--verbose"]):
             args = parse_args()
@@ -372,7 +372,7 @@ class TestAnalyzeCommandLineInterface:
 
     def test_parse_args_json(self):
         """Test JSON flag parsing"""
-        from secops_helper.core.analyzer import parse_args
+        from vlair.core.analyzer import parse_args
 
         with patch("sys.argv", ["analyzer.py", "test_input", "--json"]):
             args = parse_args()
@@ -380,7 +380,7 @@ class TestAnalyzeCommandLineInterface:
 
     def test_parse_args_quiet(self):
         """Test quiet flag parsing"""
-        from secops_helper.core.analyzer import parse_args
+        from vlair.core.analyzer import parse_args
 
         with patch("sys.argv", ["analyzer.py", "test_input", "--quiet"]):
             args = parse_args()
@@ -388,7 +388,7 @@ class TestAnalyzeCommandLineInterface:
 
     def test_parse_args_short_flags(self):
         """Test short flag parsing"""
-        from secops_helper.core.analyzer import parse_args
+        from vlair.core.analyzer import parse_args
 
         with patch("sys.argv", ["analyzer.py", "test_input", "-v", "-j"]):
             args = parse_args()

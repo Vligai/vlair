@@ -11,8 +11,8 @@ from unittest.mock import Mock, patch
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.tools.hash_lookup import HashValidator, RateLimiter
-from secops_helper.common.cache_manager import CacheManager
+from vlair.tools.hash_lookup import HashValidator, RateLimiter
+from vlair.common.cache_manager import CacheManager
 
 
 class TestHashValidator:
@@ -128,12 +128,12 @@ class TestRateLimiter:
 class TestHashLookupIntegration:
     """Integration tests for hash lookup (mocked APIs)"""
 
-    @patch("secops_helper.tools.hash_lookup.VirusTotalAPI")
-    @patch("secops_helper.tools.hash_lookup.MalwareBazaarAPI")
-    @patch("secops_helper.tools.hash_lookup.get_cache")
+    @patch("vlair.tools.hash_lookup.VirusTotalAPI")
+    @patch("vlair.tools.hash_lookup.MalwareBazaarAPI")
+    @patch("vlair.tools.hash_lookup.get_cache")
     def test_lookup_with_mocked_apis(self, mock_get_cache, mock_mb, mock_vt, tmp_path):
         """Test hash lookup with mocked APIs"""
-        from secops_helper.tools.hash_lookup import HashLookup
+        from vlair.tools.hash_lookup import HashLookup
 
         # Mock cache
         mock_cache_instance = Mock()

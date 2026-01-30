@@ -15,8 +15,8 @@ from io import StringIO
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.core.interactive import InteractiveInvestigation, ProgressBar
-from secops_helper.core.reporter import Colors
+from vlair.core.interactive import InteractiveInvestigation, ProgressBar
+from vlair.core.reporter import Colors
 
 
 class TestProgressBar:

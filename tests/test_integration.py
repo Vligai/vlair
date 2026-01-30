@@ -12,9 +12,9 @@ from unittest.mock import Mock, patch
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.tools.ioc_extractor import IOCExtractor
-from secops_helper.tools.hash_lookup import HashValidator
-from secops_helper.tools.domain_ip_intel import Validator, DomainIPIntelligence
+from vlair.tools.ioc_extractor import IOCExtractor
+from vlair.tools.hash_lookup import HashValidator
+from vlair.tools.domain_ip_intel import Validator, DomainIPIntelligence
 
 
 class TestIOCWorkflow:
@@ -158,9 +158,9 @@ class TestIOCWorkflow:
 class TestThreatAnalysisWorkflow:
     """Test threat analysis workflows"""
 
-    @patch("secops_helper.tools.domain_ip_intel.VirusTotalAPI")
-    @patch("secops_helper.tools.domain_ip_intel.AbuseIPDBAPI")
-    @patch("secops_helper.tools.domain_ip_intel.DNSLookup.resolve_ptr")
+    @patch("vlair.tools.domain_ip_intel.VirusTotalAPI")
+    @patch("vlair.tools.domain_ip_intel.AbuseIPDBAPI")
+    @patch("vlair.tools.domain_ip_intel.DNSLookup.resolve_ptr")
     def test_ip_reputation_analysis(self, mock_resolve_ptr, mock_abuseipdb, mock_vt):
         """Test complete IP reputation analysis workflow"""
         # Mock DNS
@@ -197,8 +197,8 @@ class TestThreatAnalysisWorkflow:
         if result.get("threat_intelligence"):
             assert result["reputation"]["score"] >= 0
 
-    @patch("secops_helper.tools.domain_ip_intel.VirusTotalAPI")
-    @patch("secops_helper.tools.domain_ip_intel.DNSLookup.get_dns_info")
+    @patch("vlair.tools.domain_ip_intel.VirusTotalAPI")
+    @patch("vlair.tools.domain_ip_intel.DNSLookup.get_dns_info")
     def test_domain_reputation_analysis(self, mock_dns, mock_vt):
         """Test complete domain reputation analysis workflow"""
         # Mock DNS

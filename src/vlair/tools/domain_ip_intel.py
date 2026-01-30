@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 import re
 
 # Import unified cache manager
-from secops_helper.common.cache_manager import get_cache
+from vlair.common.cache_manager import get_cache
 
 load_dotenv()
 

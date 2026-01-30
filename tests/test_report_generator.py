@@ -12,8 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from secops_helper.core.report_generator import ReportGenerator, ReportData
-from secops_helper.core.scorer import RiskScorer, Severity, Verdict
+from vlair.core.report_generator import ReportGenerator, ReportData
+from vlair.core.scorer import RiskScorer, Severity, Verdict
 
 
 class TestReportGeneratorInit:

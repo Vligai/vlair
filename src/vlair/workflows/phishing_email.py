@@ -7,14 +7,14 @@ Comprehensive analysis of suspicious emails
 from pathlib import Path
 from typing import Dict, Any
 
-from secops_helper.core.workflow import (
+from vlair.core.workflow import (
     Workflow,
     WorkflowStep,
     StepResult,
     WorkflowContext,
     workflow,
 )
-from secops_helper.core.scorer import Severity
+from vlair.core.scorer import Severity
 
 
 @workflow
@@ -114,7 +114,7 @@ class PhishingEmailWorkflow(Workflow):
     def _parse_email(self, context: WorkflowContext) -> StepResult:
         """Parse email and validate authentication"""
         try:
-            from secops_helper.tools.eml_parser import EMLParser
+            from vlair.tools.eml_parser import EMLParser
 
             parser = EMLParser(verbose=self.verbose)
             result = parser.parse(context.input_value)
@@ -176,7 +176,7 @@ class PhishingEmailWorkflow(Workflow):
     def _extract_iocs(self, context: WorkflowContext) -> StepResult:
         """Extract IOCs from email content"""
         try:
-            from secops_helper.tools.ioc_extractor import IOCExtractor
+            from vlair.tools.ioc_extractor import IOCExtractor
 
             extractor = IOCExtractor(exclude_private_ips=True)
             result = extractor.extract_from_file(context.input_value)
@@ -220,7 +220,7 @@ class PhishingEmailWorkflow(Workflow):
             )
 
         try:
-            from secops_helper.tools.hash_lookup import HashLookup
+            from vlair.tools.hash_lookup import HashLookup
 
             lookup = HashLookup(verbose=self.verbose)
             results = []
@@ -264,7 +264,7 @@ class PhishingEmailWorkflow(Workflow):
             )
 
         try:
-            from secops_helper.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
+            from vlair.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
 
             intel = DomainIPIntel(verbose=self.verbose)
             results = []
@@ -311,7 +311,7 @@ class PhishingEmailWorkflow(Workflow):
             )
 
         try:
-            from secops_helper.tools.url_analyzer import URLAnalyzer
+            from vlair.tools.url_analyzer import URLAnalyzer
 
             analyzer = URLAnalyzer(verbose=self.verbose)
             results = []
@@ -364,7 +364,7 @@ class PhishingEmailWorkflow(Workflow):
             )
 
         try:
-            from secops_helper.tools.cert_analyzer import CertAnalyzer
+            from vlair.tools.cert_analyzer import CertAnalyzer
 
             analyzer = CertAnalyzer(verbose=self.verbose)
             results = []

@@ -7,14 +7,14 @@ Bulk IOC investigation from a list
 from pathlib import Path
 from typing import Dict, Any, List
 
-from secops_helper.core.workflow import (
+from vlair.core.workflow import (
     Workflow,
     WorkflowStep,
     StepResult,
     WorkflowContext,
     workflow,
 )
-from secops_helper.core.scorer import Severity
+from vlair.core.scorer import Severity
 
 
 @workflow
@@ -103,7 +103,7 @@ class IOCHuntWorkflow(Workflow):
     def _parse_iocs(self, context: WorkflowContext) -> StepResult:
         """Parse IOC list file"""
         try:
-            from secops_helper.tools.ioc_extractor import IOCExtractor
+            from vlair.tools.ioc_extractor import IOCExtractor
 
             extractor = IOCExtractor(exclude_private_ips=True, refang=True)
             result = extractor.extract_from_file(context.input_value)
@@ -141,7 +141,7 @@ class IOCHuntWorkflow(Workflow):
             return StepResult(step_name="check_hashes", success=True, data={"checked": 0})
 
         try:
-            from secops_helper.tools.hash_lookup import HashLookup
+            from vlair.tools.hash_lookup import HashLookup
 
             lookup = HashLookup(verbose=self.verbose)
 
@@ -185,7 +185,7 @@ class IOCHuntWorkflow(Workflow):
             return StepResult(step_name="check_domains", success=True, data={"checked": 0})
 
         try:
-            from secops_helper.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
+            from vlair.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
 
             intel = DomainIPIntel(verbose=self.verbose)
 
@@ -227,7 +227,7 @@ class IOCHuntWorkflow(Workflow):
             return StepResult(step_name="check_ips", success=True, data={"checked": 0})
 
         try:
-            from secops_helper.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
+            from vlair.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
 
             intel = DomainIPIntel(verbose=self.verbose)
 
@@ -268,7 +268,7 @@ class IOCHuntWorkflow(Workflow):
             return StepResult(step_name="check_urls", success=True, data={"checked": 0})
 
         try:
-            from secops_helper.tools.url_analyzer import URLAnalyzer
+            from vlair.tools.url_analyzer import URLAnalyzer
 
             analyzer = URLAnalyzer(verbose=self.verbose)
 
