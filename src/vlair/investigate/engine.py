@@ -118,7 +118,7 @@ class InvestigationEngine:
             if self.verbose:
                 print(
                     f"Investigation {investigation_id} already {state.status.value}",
-                    file=sys.stderr
+                    file=sys.stderr,
                 )
             return state
 
@@ -285,7 +285,7 @@ class InvestigationEngine:
                 if action.status != RemediationStatus.APPROVED:
                     return {
                         "success": False,
-                        "error": f"Action not approved (status: {action.status.value})"
+                        "error": f"Action not approved (status: {action.status.value})",
                     }
 
                 # Execute based on action type
@@ -331,13 +331,17 @@ class InvestigationEngine:
         elif action.action_type == "isolate_host":
             connector = self.connectors.get("edr")
             if connector:
-                success = connector.isolate_host(action.target, action.description or "Investigation")
+                success = connector.isolate_host(
+                    action.target, action.description or "Investigation"
+                )
                 return {"success": success, "message": f"Isolated host: {action.target}"}
 
         elif action.action_type == "disable_user":
             connector = self.connectors.get("identity")
             if connector:
-                success = connector.disable_user(action.target, action.description or "Investigation")
+                success = connector.disable_user(
+                    action.target, action.description or "Investigation"
+                )
                 return {"success": success, "message": f"Disabled user: {action.target}"}
 
         elif action.action_type == "revoke_sessions":

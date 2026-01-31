@@ -20,6 +20,7 @@ def _json_serializer(obj):
         return obj.isoformat()
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
+
 from .models import (
     InvestigationState,
     InvestigationStatus,
@@ -55,7 +56,8 @@ class InvestigationStateManager:
             cursor = conn.cursor()
 
             # Main investigations table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS investigations (
                     id TEXT PRIMARY KEY,
                     type TEXT NOT NULL,
@@ -70,10 +72,12 @@ class InvestigationStateManager:
                     completed_at TEXT,
                     error TEXT
                 )
-            """)
+            """
+            )
 
             # Investigation steps table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS investigation_steps (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     investigation_id TEXT NOT NULL,
@@ -87,10 +91,12 @@ class InvestigationStateManager:
                     step_order INTEGER NOT NULL,
                     FOREIGN KEY (investigation_id) REFERENCES investigations(id)
                 )
-            """)
+            """
+            )
 
             # Remediation actions table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS remediation_actions (
                     id TEXT PRIMARY KEY,
                     investigation_id TEXT NOT NULL,
@@ -107,25 +113,34 @@ class InvestigationStateManager:
                     result TEXT,
                     FOREIGN KEY (investigation_id) REFERENCES investigations(id)
                 )
-            """)
+            """
+            )
 
             # Create indexes for common queries
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_investigations_status
                 ON investigations(status)
-            """)
-            cursor.execute("""
+            """
+            )
+            cursor.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_investigations_created
                 ON investigations(created_at)
-            """)
-            cursor.execute("""
+            """
+            )
+            cursor.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_steps_investigation
                 ON investigation_steps(investigation_id)
-            """)
-            cursor.execute("""
+            """
+            )
+            cursor.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_remediation_investigation
                 ON remediation_actions(investigation_id)
-            """)
+            """
+            )
 
             conn.commit()
             conn.close()
@@ -154,78 +169,85 @@ class InvestigationStateManager:
             iocs_json = json.dumps(state.iocs, default=_json_serializer)
 
             # Upsert investigation record
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR REPLACE INTO investigations
                 (id, type, status, inputs, findings, iocs, risk_score, verdict,
                  created_at, updated_at, completed_at, error)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                state.id,
-                state.type,
-                state.status.value,
-                inputs_json,
-                findings_json,
-                iocs_json,
-                state.risk_score,
-                state.verdict,
-                state.created_at.isoformat(),
-                state.updated_at.isoformat(),
-                state.completed_at.isoformat() if state.completed_at else None,
-                state.error,
-            ))
+            """,
+                (
+                    state.id,
+                    state.type,
+                    state.status.value,
+                    inputs_json,
+                    findings_json,
+                    iocs_json,
+                    state.risk_score,
+                    state.verdict,
+                    state.created_at.isoformat(),
+                    state.updated_at.isoformat(),
+                    state.completed_at.isoformat() if state.completed_at else None,
+                    state.error,
+                ),
+            )
 
             # Delete existing steps and remediation actions (for update)
             cursor.execute(
-                "DELETE FROM investigation_steps WHERE investigation_id = ?",
-                (state.id,)
+                "DELETE FROM investigation_steps WHERE investigation_id = ?", (state.id,)
             )
             cursor.execute(
-                "DELETE FROM remediation_actions WHERE investigation_id = ?",
-                (state.id,)
+                "DELETE FROM remediation_actions WHERE investigation_id = ?", (state.id,)
             )
 
             # Insert steps
             for i, step in enumerate(state.steps):
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO investigation_steps
                     (investigation_id, name, status, started_at, completed_at,
                      duration_seconds, output, error, step_order)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    state.id,
-                    step.name,
-                    step.status.value,
-                    step.started_at.isoformat() if step.started_at else None,
-                    step.completed_at.isoformat() if step.completed_at else None,
-                    step.duration_seconds,
-                    json.dumps(step.output, default=_json_serializer) if step.output else None,
-                    step.error,
-                    i,
-                ))
+                """,
+                    (
+                        state.id,
+                        step.name,
+                        step.status.value,
+                        step.started_at.isoformat() if step.started_at else None,
+                        step.completed_at.isoformat() if step.completed_at else None,
+                        step.duration_seconds,
+                        json.dumps(step.output, default=_json_serializer) if step.output else None,
+                        step.error,
+                        i,
+                    ),
+                )
 
             # Insert remediation actions
             for action in state.remediation_actions:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO remediation_actions
                     (id, investigation_id, name, action_type, target, command,
                      status, requires_approval, priority, description,
                      executed_at, executed_by, result)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    action.id,
-                    state.id,
-                    action.name,
-                    action.action_type,
-                    action.target,
-                    action.command,
-                    action.status.value,
-                    1 if action.requires_approval else 0,
-                    action.priority,
-                    action.description,
-                    action.executed_at.isoformat() if action.executed_at else None,
-                    action.executed_by,
-                    action.result,
-                ))
+                """,
+                    (
+                        action.id,
+                        state.id,
+                        action.name,
+                        action.action_type,
+                        action.target,
+                        action.command,
+                        action.status.value,
+                        1 if action.requires_approval else 0,
+                        action.priority,
+                        action.description,
+                        action.executed_at.isoformat() if action.executed_at else None,
+                        action.executed_by,
+                        action.result,
+                    ),
+                )
 
             conn.commit()
             conn.close()
@@ -250,10 +272,7 @@ class InvestigationStateManager:
             cursor = conn.cursor()
 
             # Load investigation
-            cursor.execute(
-                "SELECT * FROM investigations WHERE id = ?",
-                (investigation_id,)
-            )
+            cursor.execute("SELECT * FROM investigations WHERE id = ?", (investigation_id,))
             row = cursor.fetchone()
 
             if not row:
@@ -277,47 +296,53 @@ class InvestigationStateManager:
             }
 
             # Load steps
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM investigation_steps
                 WHERE investigation_id = ?
                 ORDER BY step_order
-            """, (investigation_id,))
+            """,
+                (investigation_id,),
+            )
 
             steps = []
             for step_row in cursor.fetchall():
-                steps.append({
-                    "name": step_row["name"],
-                    "status": step_row["status"],
-                    "started_at": step_row["started_at"],
-                    "completed_at": step_row["completed_at"],
-                    "duration_seconds": step_row["duration_seconds"],
-                    "output": json.loads(step_row["output"]) if step_row["output"] else None,
-                    "error": step_row["error"],
-                })
+                steps.append(
+                    {
+                        "name": step_row["name"],
+                        "status": step_row["status"],
+                        "started_at": step_row["started_at"],
+                        "completed_at": step_row["completed_at"],
+                        "duration_seconds": step_row["duration_seconds"],
+                        "output": json.loads(step_row["output"]) if step_row["output"] else None,
+                        "error": step_row["error"],
+                    }
+                )
             data["steps"] = steps
 
             # Load remediation actions
             cursor.execute(
-                "SELECT * FROM remediation_actions WHERE investigation_id = ?",
-                (investigation_id,)
+                "SELECT * FROM remediation_actions WHERE investigation_id = ?", (investigation_id,)
             )
 
             actions = []
             for action_row in cursor.fetchall():
-                actions.append({
-                    "id": action_row["id"],
-                    "name": action_row["name"],
-                    "action_type": action_row["action_type"],
-                    "target": action_row["target"],
-                    "command": action_row["command"],
-                    "status": action_row["status"],
-                    "requires_approval": bool(action_row["requires_approval"]),
-                    "priority": action_row["priority"],
-                    "description": action_row["description"],
-                    "executed_at": action_row["executed_at"],
-                    "executed_by": action_row["executed_by"],
-                    "result": action_row["result"],
-                })
+                actions.append(
+                    {
+                        "id": action_row["id"],
+                        "name": action_row["name"],
+                        "action_type": action_row["action_type"],
+                        "target": action_row["target"],
+                        "command": action_row["command"],
+                        "status": action_row["status"],
+                        "requires_approval": bool(action_row["requires_approval"]),
+                        "priority": action_row["priority"],
+                        "description": action_row["description"],
+                        "executed_at": action_row["executed_at"],
+                        "executed_by": action_row["executed_by"],
+                        "result": action_row["result"],
+                    }
+                )
             data["remediation_actions"] = actions
 
             conn.close()
@@ -398,17 +423,12 @@ class InvestigationStateManager:
 
             # Delete in correct order for foreign keys
             cursor.execute(
-                "DELETE FROM remediation_actions WHERE investigation_id = ?",
-                (investigation_id,)
+                "DELETE FROM remediation_actions WHERE investigation_id = ?", (investigation_id,)
             )
             cursor.execute(
-                "DELETE FROM investigation_steps WHERE investigation_id = ?",
-                (investigation_id,)
+                "DELETE FROM investigation_steps WHERE investigation_id = ?", (investigation_id,)
             )
-            cursor.execute(
-                "DELETE FROM investigations WHERE id = ?",
-                (investigation_id,)
-            )
+            cursor.execute("DELETE FROM investigations WHERE id = ?", (investigation_id,))
 
             conn.commit()
             conn.close()
@@ -433,47 +453,56 @@ class InvestigationStateManager:
             total = cursor.fetchone()[0]
 
             # Status breakdown
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT status, COUNT(*) as count
                 FROM investigations
                 GROUP BY status
-            """)
+            """
+            )
             status_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
             # Type breakdown
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT type, COUNT(*) as count
                 FROM investigations
                 GROUP BY type
                 ORDER BY count DESC
-            """)
+            """
+            )
             type_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
             # Verdict breakdown
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT verdict, COUNT(*) as count
                 FROM investigations
                 WHERE status = 'completed'
                 GROUP BY verdict
-            """)
+            """
+            )
             verdict_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
             # Last investigation
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, created_at FROM investigations
                 ORDER BY created_at DESC LIMIT 1
-            """)
+            """
+            )
             last_row = cursor.fetchone()
-            last_investigation = {
-                "id": last_row[0],
-                "created_at": last_row[1]
-            } if last_row else None
+            last_investigation = (
+                {"id": last_row[0], "created_at": last_row[1]} if last_row else None
+            )
 
             # Average risk score for completed investigations
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT AVG(risk_score) FROM investigations
                 WHERE status = 'completed' AND risk_score > 0
-            """)
+            """
+            )
             avg_risk = cursor.fetchone()[0]
 
             conn.close()
@@ -515,10 +544,7 @@ class InvestigationStateManager:
             cursor = conn.cursor()
 
             # Get IDs of old investigations
-            cursor.execute(
-                "SELECT id FROM investigations WHERE created_at < ?",
-                (cutoff_str,)
-            )
+            cursor.execute("SELECT id FROM investigations WHERE created_at < ?", (cutoff_str,))
             old_ids = [row[0] for row in cursor.fetchall()]
 
             if not old_ids:
@@ -529,16 +555,13 @@ class InvestigationStateManager:
             placeholders = ",".join("?" * len(old_ids))
             cursor.execute(
                 f"DELETE FROM remediation_actions WHERE investigation_id IN ({placeholders})",
-                old_ids
+                old_ids,
             )
             cursor.execute(
                 f"DELETE FROM investigation_steps WHERE investigation_id IN ({placeholders})",
-                old_ids
+                old_ids,
             )
-            cursor.execute(
-                f"DELETE FROM investigations WHERE id IN ({placeholders})",
-                old_ids
-            )
+            cursor.execute(f"DELETE FROM investigations WHERE id IN ({placeholders})", old_ids)
 
             conn.commit()
             conn.close()

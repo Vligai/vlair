@@ -360,11 +360,13 @@ class TestInvestigationStateManager:
         manager = InvestigationStateManager(db_path=temp_db)
 
         # Create investigations with different statuses
-        for i, status in enumerate([
-            InvestigationStatus.COMPLETED,
-            InvestigationStatus.COMPLETED,
-            InvestigationStatus.FAILED,
-        ]):
+        for i, status in enumerate(
+            [
+                InvestigationStatus.COMPLETED,
+                InvestigationStatus.COMPLETED,
+                InvestigationStatus.FAILED,
+            ]
+        ):
             state = InvestigationState(
                 id=f"INV-STATS-{i:03d}",
                 type="phishing",

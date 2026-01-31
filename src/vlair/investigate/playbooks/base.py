@@ -24,6 +24,7 @@ from ..models import (
 @dataclass
 class PlaybookStep:
     """Definition of a single playbook step"""
+
     name: str
     description: str
     required: bool = True
@@ -152,20 +153,14 @@ class BasePlaybook(ABC):
                 if dep not in completed_steps:
                     can_execute = False
                     if self.verbose:
-                        print(
-                            f"  [WAIT] {step.name} - waiting for: {dep}",
-                            file=sys.stderr
-                        )
+                        print(f"  [WAIT] {step.name} - waiting for: {dep}", file=sys.stderr)
                     break
                 # Check if dependency failed
                 dep_result = completed_steps[dep]
                 if dep_result.status == StepStatus.FAILED:
                     can_execute = False
                     if self.verbose:
-                        print(
-                            f"  [SKIP] {step.name} - dependency {dep} failed",
-                            file=sys.stderr
-                        )
+                        print(f"  [SKIP] {step.name} - dependency {dep} failed", file=sys.stderr)
                     break
 
             if not can_execute:
@@ -197,7 +192,7 @@ class BasePlaybook(ABC):
                     status_icon = "[OK  ]" if result.status == StepStatus.COMPLETED else "[FAIL]"
                     print(
                         f"  {status_icon} {step.name} ({result.duration_seconds:.1f}s)",
-                        file=sys.stderr
+                        file=sys.stderr,
                     )
 
             except Exception as e:
@@ -225,7 +220,8 @@ class BasePlaybook(ABC):
         # Determine final status if not already set
         if state.status == InvestigationStatus.RUNNING:
             failed_required = [
-                r for r in state.steps
+                r
+                for r in state.steps
                 if r.status == StepStatus.FAILED
                 and any(s.name == r.name and s.required for s in self.steps)
             ]

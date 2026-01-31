@@ -17,6 +17,7 @@ import uuid
 
 class InvestigationStatus(Enum):
     """Status of an investigation"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -26,6 +27,7 @@ class InvestigationStatus(Enum):
 
 class StepStatus(Enum):
     """Status of an investigation step"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -35,6 +37,7 @@ class StepStatus(Enum):
 
 class RemediationStatus(Enum):
     """Status of a remediation action"""
+
     PENDING = "pending"
     APPROVED = "approved"
     EXECUTED = "executed"
@@ -44,6 +47,7 @@ class RemediationStatus(Enum):
 @dataclass
 class StepResult:
     """Result of executing a single investigation step"""
+
     name: str
     status: StepStatus
     started_at: Optional[datetime] = None
@@ -70,8 +74,12 @@ class StepResult:
         return cls(
             name=data["name"],
             status=StepStatus(data["status"]),
-            started_at=datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None,
-            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
+            started_at=(
+                datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None
+            ),
+            completed_at=(
+                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
+            ),
             duration_seconds=data.get("duration_seconds"),
             output=data.get("output"),
             error=data.get("error"),
@@ -81,6 +89,7 @@ class StepResult:
 @dataclass
 class RemediationAction:
     """A remediation action to be taken"""
+
     id: str
     name: str
     action_type: str  # e.g., "block_sender", "isolate_host", "disable_user"
@@ -124,7 +133,9 @@ class RemediationAction:
             requires_approval=data.get("requires_approval", True),
             priority=data.get("priority", 0),
             description=data.get("description"),
-            executed_at=datetime.fromisoformat(data["executed_at"]) if data.get("executed_at") else None,
+            executed_at=(
+                datetime.fromisoformat(data["executed_at"]) if data.get("executed_at") else None
+            ),
             executed_by=data.get("executed_by"),
             result=data.get("result"),
         )
@@ -133,19 +144,22 @@ class RemediationAction:
 @dataclass
 class InvestigationState:
     """Complete state of an investigation"""
+
     id: str
     type: str  # e.g., "phishing", "malware", "incident"
     status: InvestigationStatus
     inputs: Dict[str, Any] = field(default_factory=dict)
     steps: List[StepResult] = field(default_factory=list)
     findings: List[Dict[str, Any]] = field(default_factory=list)
-    iocs: Dict[str, List[str]] = field(default_factory=lambda: {
-        "hashes": [],
-        "domains": [],
-        "ips": [],
-        "urls": [],
-        "emails": [],
-    })
+    iocs: Dict[str, List[str]] = field(
+        default_factory=lambda: {
+            "hashes": [],
+            "domains": [],
+            "ips": [],
+            "urls": [],
+            "emails": [],
+        }
+    )
     risk_score: int = 0
     verdict: str = "UNKNOWN"
     remediation_actions: List[RemediationAction] = field(default_factory=list)
@@ -168,13 +182,15 @@ class InvestigationState:
 
     def add_finding(self, severity: str, message: str, source: str, details: Optional[Dict] = None):
         """Add a finding"""
-        self.findings.append({
-            "severity": severity,
-            "message": message,
-            "source": source,
-            "details": details or {},
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        self.findings.append(
+            {
+                "severity": severity,
+                "message": message,
+                "source": source,
+                "details": details or {},
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
         self.updated_at = datetime.now(timezone.utc)
 
     def add_iocs(self, ioc_type: str, values: List[str]):
@@ -233,12 +249,24 @@ class InvestigationState:
             status=InvestigationStatus(data["status"]),
             inputs=data.get("inputs", {}),
             findings=data.get("findings", []),
-            iocs=data.get("iocs", {"hashes": [], "domains": [], "ips": [], "urls": [], "emails": []}),
+            iocs=data.get(
+                "iocs", {"hashes": [], "domains": [], "ips": [], "urls": [], "emails": []}
+            ),
             risk_score=data.get("risk_score", 0),
             verdict=data.get("verdict", "UNKNOWN"),
-            created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else datetime.now(timezone.utc),
-            updated_at=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else datetime.now(timezone.utc),
-            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
+            created_at=(
+                datetime.fromisoformat(data["created_at"])
+                if data.get("created_at")
+                else datetime.now(timezone.utc)
+            ),
+            updated_at=(
+                datetime.fromisoformat(data["updated_at"])
+                if data.get("updated_at")
+                else datetime.now(timezone.utc)
+            ),
+            completed_at=(
+                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
+            ),
             error=data.get("error"),
         )
 

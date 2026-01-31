@@ -188,6 +188,7 @@ class PhishingPlaybook(BasePlaybook):
                 body_text = body.get("body_text", "")
                 if body_text:
                     import re
+
                     found_urls = re.findall(r'https?://[^\s<>"\']+', body_text)
                     urls.extend(found_urls)
 
@@ -248,7 +249,9 @@ class PhishingPlaybook(BasePlaybook):
         failures = []
         if "fail" in spf_result.lower():
             failures.append("SPF")
-            state.add_finding("high", "SPF validation failed - sender may be spoofed", "validate_auth")
+            state.add_finding(
+                "high", "SPF validation failed - sender may be spoofed", "validate_auth"
+            )
         if "fail" in dkim_result.lower():
             failures.append("DKIM")
             state.add_finding("medium", "DKIM validation failed", "validate_auth")
@@ -353,13 +356,13 @@ class PhishingPlaybook(BasePlaybook):
                 state.add_finding(
                     "critical",
                     f"Sender domain {sender_domain} is malicious (risk: {risk_score})",
-                    "check_sender"
+                    "check_sender",
                 )
             elif verdict == "SUSPICIOUS" or risk_score >= 40:
                 state.add_finding(
                     "high",
                     f"Sender domain {sender_domain} is suspicious (risk: {risk_score})",
-                    "check_sender"
+                    "check_sender",
                 )
 
             return StepResult(
@@ -415,11 +418,13 @@ class PhishingPlaybook(BasePlaybook):
 
                 if sha256 and sha256 != "N/A":
                     hash_result = lookup.lookup(sha256)
-                    results.append({
-                        "filename": att.get("filename"),
-                        "sha256": sha256,
-                        "result": hash_result,
-                    })
+                    results.append(
+                        {
+                            "filename": att.get("filename"),
+                            "sha256": sha256,
+                            "result": hash_result,
+                        }
+                    )
 
                     # Add finding if malicious
                     if hash_result.get("verdict") == "MALICIOUS":
@@ -427,7 +432,7 @@ class PhishingPlaybook(BasePlaybook):
                             "critical",
                             f"Attachment '{att.get('filename')}' is malicious",
                             "analyze_attachments",
-                            {"hash": sha256}
+                            {"hash": sha256},
                         )
                         state.add_iocs("hashes", [sha256])
 
@@ -479,12 +484,14 @@ class PhishingPlaybook(BasePlaybook):
             for url in urls[:10]:  # Limit to 10 URLs
                 try:
                     result = analyzer.analyze(url)
-                    results.append({
-                        "url": url,
-                        "verdict": result.get("verdict", "UNKNOWN"),
-                        "risk_score": result.get("risk_score", 0),
-                        "threats": result.get("threats", []),
-                    })
+                    results.append(
+                        {
+                            "url": url,
+                            "verdict": result.get("verdict", "UNKNOWN"),
+                            "risk_score": result.get("risk_score", 0),
+                            "threats": result.get("threats", []),
+                        }
+                    )
 
                     verdict = result.get("verdict", "UNKNOWN")
                     risk_score = result.get("risk_score", 0)
@@ -495,14 +502,14 @@ class PhishingPlaybook(BasePlaybook):
                             "critical",
                             f"Malicious URL detected: {url}",
                             "analyze_urls",
-                            {"risk_score": risk_score}
+                            {"risk_score": risk_score},
                         )
                     elif verdict == "SUSPICIOUS" or risk_score >= 40:
                         state.add_finding(
                             "high",
                             f"Suspicious URL detected: {url}",
                             "analyze_urls",
-                            {"risk_score": risk_score}
+                            {"risk_score": risk_score},
                         )
 
                 except Exception as e:
@@ -616,7 +623,7 @@ class PhishingPlaybook(BasePlaybook):
                     "high",
                     f"{len(users_who_clicked)} user(s) clicked malicious URL(s)",
                     "find_clicks",
-                    {"users": list(users_who_clicked)}
+                    {"users": list(users_who_clicked)},
                 )
 
             return StepResult(

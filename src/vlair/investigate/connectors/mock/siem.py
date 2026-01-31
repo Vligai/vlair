@@ -70,42 +70,48 @@ class MockSIEMConnector(SIEMConnector):
             self._url_clicks.append(click_event)
 
             # General event for the click
-            self._events.append({
-                "event_id": click_event.event_id,
-                "timestamp": click_event.timestamp.isoformat(),
-                "event_type": "proxy_access",
-                "user": user,
-                "hostname": hostname,
-                "source_ip": ip,
-                "url": click_event.url,
-                "action": "allowed",
-                "category": "phishing",
-            })
+            self._events.append(
+                {
+                    "event_id": click_event.event_id,
+                    "timestamp": click_event.timestamp.isoformat(),
+                    "event_type": "proxy_access",
+                    "user": user,
+                    "hostname": hostname,
+                    "source_ip": ip,
+                    "url": click_event.url,
+                    "action": "allowed",
+                    "category": "phishing",
+                }
+            )
 
         # User who received but didn't click
-        self._events.append({
-            "event_id": str(uuid.uuid4()),
-            "timestamp": (now - timedelta(hours=2)).isoformat(),
-            "event_type": "email_received",
-            "user": "user3@company.com",
-            "hostname": "WORKSTATION-03",
-            "source_ip": "192.168.1.103",
-            "action": "delivered",
-            "subject": "Urgent: Your Account Has Been Compromised!",
-        })
+        self._events.append(
+            {
+                "event_id": str(uuid.uuid4()),
+                "timestamp": (now - timedelta(hours=2)).isoformat(),
+                "event_type": "email_received",
+                "user": "user3@company.com",
+                "hostname": "WORKSTATION-03",
+                "source_ip": "192.168.1.103",
+                "action": "delivered",
+                "subject": "Urgent: Your Account Has Been Compromised!",
+            }
+        )
 
         # Suspicious credential entry after phishing click
-        self._events.append({
-            "event_id": str(uuid.uuid4()),
-            "timestamp": (now - timedelta(minutes=55)).isoformat(),
-            "event_type": "credential_submission",
-            "user": "user1@company.com",
-            "hostname": "WORKSTATION-01",
-            "source_ip": "192.168.1.101",
-            "target_url": "http://micros0ft-secure-login.com/verify",
-            "action": "submitted",
-            "risk_indicator": "credentials_harvested",
-        })
+        self._events.append(
+            {
+                "event_id": str(uuid.uuid4()),
+                "timestamp": (now - timedelta(minutes=55)).isoformat(),
+                "event_type": "credential_submission",
+                "user": "user1@company.com",
+                "hostname": "WORKSTATION-01",
+                "source_ip": "192.168.1.101",
+                "target_url": "http://micros0ft-secure-login.com/verify",
+                "action": "submitted",
+                "risk_indicator": "credentials_harvested",
+            }
+        )
 
     def _setup_clean_scenario(self):
         """Set up clean/normal activity scenario."""
@@ -113,44 +119,50 @@ class MockSIEMConnector(SIEMConnector):
 
         # Normal web browsing events
         for i in range(10):
-            self._events.append({
-                "event_id": str(uuid.uuid4()),
-                "timestamp": (now - timedelta(hours=i)).isoformat(),
-                "event_type": "proxy_access",
-                "user": f"user{i % 3 + 1}@company.com",
-                "url": f"https://legitimate-site-{i}.com",
-                "action": "allowed",
-                "category": "business",
-            })
+            self._events.append(
+                {
+                    "event_id": str(uuid.uuid4()),
+                    "timestamp": (now - timedelta(hours=i)).isoformat(),
+                    "event_type": "proxy_access",
+                    "user": f"user{i % 3 + 1}@company.com",
+                    "url": f"https://legitimate-site-{i}.com",
+                    "action": "allowed",
+                    "category": "business",
+                }
+            )
 
     def _setup_breach_scenario(self):
         """Set up post-breach scenario with suspicious activity."""
         now = datetime.now(timezone.utc)
 
         # Data exfiltration indicators
-        self._events.append({
-            "event_id": str(uuid.uuid4()),
-            "timestamp": (now - timedelta(hours=1)).isoformat(),
-            "event_type": "file_upload",
-            "user": "compromised_user@company.com",
-            "hostname": "WORKSTATION-COMPROMISED",
-            "destination": "suspicious-cloud-storage.com",
-            "file_size_mb": 250,
-            "action": "uploaded",
-            "risk_indicator": "data_exfiltration",
-        })
+        self._events.append(
+            {
+                "event_id": str(uuid.uuid4()),
+                "timestamp": (now - timedelta(hours=1)).isoformat(),
+                "event_type": "file_upload",
+                "user": "compromised_user@company.com",
+                "hostname": "WORKSTATION-COMPROMISED",
+                "destination": "suspicious-cloud-storage.com",
+                "file_size_mb": 250,
+                "action": "uploaded",
+                "risk_indicator": "data_exfiltration",
+            }
+        )
 
         # Lateral movement
-        self._events.append({
-            "event_id": str(uuid.uuid4()),
-            "timestamp": (now - timedelta(hours=2)).isoformat(),
-            "event_type": "remote_login",
-            "user": "compromised_user@company.com",
-            "source_hostname": "WORKSTATION-COMPROMISED",
-            "target_hostname": "FILE-SERVER-01",
-            "action": "success",
-            "risk_indicator": "lateral_movement",
-        })
+        self._events.append(
+            {
+                "event_id": str(uuid.uuid4()),
+                "timestamp": (now - timedelta(hours=2)).isoformat(),
+                "event_type": "remote_login",
+                "user": "compromised_user@company.com",
+                "source_hostname": "WORKSTATION-COMPROMISED",
+                "target_hostname": "FILE-SERVER-01",
+                "action": "success",
+                "risk_indicator": "lateral_movement",
+            }
+        )
 
     def search(
         self,

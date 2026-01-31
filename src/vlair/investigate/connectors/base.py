@@ -21,9 +21,11 @@ from typing import Dict, List, Optional, Any
 # Data Transfer Objects (DTOs)
 # =============================================================================
 
+
 @dataclass
 class Email:
     """Represents an email message"""
+
     message_id: str
     subject: str
     sender: str
@@ -66,6 +68,7 @@ class Email:
 @dataclass
 class Host:
     """Represents a host/endpoint"""
+
     hostname: str
     ip_address: Optional[str] = None
     mac_address: Optional[str] = None
@@ -99,6 +102,7 @@ class Host:
 @dataclass
 class Process:
     """Represents a process on a host"""
+
     pid: int
     name: str
     command_line: Optional[str] = None
@@ -128,6 +132,7 @@ class Process:
 @dataclass
 class User:
     """Represents a user account"""
+
     user_id: str
     username: str
     email: Optional[str] = None
@@ -161,6 +166,7 @@ class User:
 @dataclass
 class AuthenticationEvent:
     """Represents an authentication event"""
+
     event_id: str
     timestamp: datetime
     user: str
@@ -194,6 +200,7 @@ class AuthenticationEvent:
 @dataclass
 class URLClickEvent:
     """Represents a URL click event from SIEM/proxy logs"""
+
     event_id: str
     timestamp: datetime
     user: str
@@ -227,6 +234,7 @@ class URLClickEvent:
 # =============================================================================
 # Abstract Connector Interfaces
 # =============================================================================
+
 
 class EmailConnector(ABC):
     """Abstract interface for email system connectors (Exchange, Gmail, etc.)"""

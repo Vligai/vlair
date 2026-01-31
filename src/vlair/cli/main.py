@@ -1020,11 +1020,16 @@ def main():
         if len(sys.argv) < 3:
             print("Usage: vlair investigate <command> [args]", file=sys.stderr)
             print("\nCommands:", file=sys.stderr)
-            print("  phishing --file <eml>    Run phishing investigation on email file", file=sys.stderr)
+            print(
+                "  phishing --file <eml>    Run phishing investigation on email file",
+                file=sys.stderr,
+            )
             print("  status <id>              Check investigation status", file=sys.stderr)
             print("  list [--last 24h]        List recent investigations", file=sys.stderr)
             print("  results <id>             Get investigation results", file=sys.stderr)
-            print("  interactive              Start interactive investigation mode", file=sys.stderr)
+            print(
+                "  interactive              Start interactive investigation mode", file=sys.stderr
+            )
             print("\nExamples:", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --verbose", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --mock", file=sys.stderr)
@@ -1067,7 +1072,10 @@ def main():
 
             if not file_path:
                 print("Error: --file <eml_path> is required", file=sys.stderr)
-                print("Usage: vlair investigate phishing --file <eml_path> [--verbose] [--mock] [--json]", file=sys.stderr)
+                print(
+                    "Usage: vlair investigate phishing --file <eml_path> [--verbose] [--mock] [--json]",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
 
             if not os.path.exists(file_path):
@@ -1084,7 +1092,11 @@ def main():
                 # Set up connectors
                 connectors = {}
                 if use_mock:
-                    from vlair.investigate.connectors.mock import MockEmailConnector, MockSIEMConnector
+                    from vlair.investigate.connectors.mock import (
+                        MockEmailConnector,
+                        MockSIEMConnector,
+                    )
+
                     connectors["email"] = MockEmailConnector(scenario="phishing")
                     connectors["siem"] = MockSIEMConnector(scenario="phishing")
 
@@ -1148,12 +1160,14 @@ def main():
             except ImportError as e:
                 print(f"Error: Could not load investigation module: {e}", file=sys.stderr)
                 import traceback
+
                 traceback.print_exc()
                 sys.exit(1)
             except Exception as e:
                 print(f"Error during investigation: {e}", file=sys.stderr)
                 if verbose:
                     import traceback
+
                     traceback.print_exc()
                 sys.exit(1)
 
@@ -1237,7 +1251,9 @@ def main():
         elif investigate_cmd == "results":
             # Get investigation results
             if len(sys.argv) < 4:
-                print("Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr)
+                print(
+                    "Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr
+                )
                 sys.exit(1)
 
             investigation_id = sys.argv[3]
@@ -1271,8 +1287,14 @@ def main():
 
                     print(f"\nSteps ({len(state.steps)}):")
                     for step in state.steps:
-                        status_icon = "[+]" if step.status.value == "completed" else "[-]" if step.status.value == "failed" else "[.]"
-                        duration = f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
+                        status_icon = (
+                            "[+]"
+                            if step.status.value == "completed"
+                            else "[-]" if step.status.value == "failed" else "[.]"
+                        )
+                        duration = (
+                            f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
+                        )
                         print(f"  {status_icon} {step.name} {duration}")
                         if step.error:
                             print(f"      Error: {step.error}")

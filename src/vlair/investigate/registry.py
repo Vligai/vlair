@@ -34,10 +34,12 @@ class PlaybookRegistry:
         result = []
         for name, playbook_class in cls._playbooks.items():
             instance = playbook_class(verbose=False)
-            result.append({
-                "name": name,
-                "description": instance.description,
-                "type": instance.investigation_type,
-                "steps": len(instance.steps),
-            })
+            result.append(
+                {
+                    "name": name,
+                    "description": instance.description,
+                    "type": instance.investigation_type,
+                    "steps": len(instance.steps),
+                }
+            )
         return result
