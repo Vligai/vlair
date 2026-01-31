@@ -13,6 +13,13 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone, timedelta
 
+
+def _json_serializer(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
 from .models import (
     InvestigationState,
     InvestigationStatus,
@@ -142,9 +149,9 @@ class InvestigationStateManager:
             cursor = conn.cursor()
 
             # Serialize JSON fields
-            inputs_json = json.dumps(state.inputs)
-            findings_json = json.dumps(state.findings)
-            iocs_json = json.dumps(state.iocs)
+            inputs_json = json.dumps(state.inputs, default=_json_serializer)
+            findings_json = json.dumps(state.findings, default=_json_serializer)
+            iocs_json = json.dumps(state.iocs, default=_json_serializer)
 
             # Upsert investigation record
             cursor.execute("""
@@ -191,7 +198,7 @@ class InvestigationStateManager:
                     step.started_at.isoformat() if step.started_at else None,
                     step.completed_at.isoformat() if step.completed_at else None,
                     step.duration_seconds,
-                    json.dumps(step.output) if step.output else None,
+                    json.dumps(step.output, default=_json_serializer) if step.output else None,
                     step.error,
                     i,
                 ))

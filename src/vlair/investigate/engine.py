@@ -16,39 +16,7 @@ from .models import (
     RemediationStatus,
 )
 from .state import InvestigationStateManager
-from .playbooks.base import BasePlaybook
-
-
-class PlaybookRegistry:
-    """Registry for available investigation playbooks"""
-
-    _playbooks: Dict[str, Type[BasePlaybook]] = {}
-
-    @classmethod
-    def register(cls, playbook_class: Type[BasePlaybook]):
-        """Register a playbook class."""
-        # Create temporary instance to get name
-        instance = playbook_class(verbose=False)
-        cls._playbooks[instance.name] = playbook_class
-
-    @classmethod
-    def get(cls, name: str) -> Optional[Type[BasePlaybook]]:
-        """Get a playbook class by name."""
-        return cls._playbooks.get(name)
-
-    @classmethod
-    def list_all(cls) -> List[Dict[str, str]]:
-        """List all registered playbooks."""
-        result = []
-        for name, playbook_class in cls._playbooks.items():
-            instance = playbook_class(verbose=False)
-            result.append({
-                "name": name,
-                "description": instance.description,
-                "type": instance.investigation_type,
-                "steps": len(instance.steps),
-            })
-        return result
+from .registry import PlaybookRegistry
 
 
 class InvestigationEngine:

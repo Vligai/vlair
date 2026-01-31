@@ -1075,9 +1075,8 @@ def main():
                 sys.exit(1)
 
             try:
-                from vlair.investigate import InvestigationEngine
+                from vlair.investigate import InvestigationEngine, PlaybookRegistry
                 from vlair.investigate.playbooks.phishing import PhishingPlaybook
-                from vlair.investigate.engine import PlaybookRegistry
 
                 # Ensure playbook is registered
                 PlaybookRegistry.register(PhishingPlaybook)

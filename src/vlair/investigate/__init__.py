@@ -15,6 +15,7 @@ from .models import (
     InvestigationState,
 )
 from .state import InvestigationStateManager
+from .registry import PlaybookRegistry
 from .engine import InvestigationEngine
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     "RemediationAction",
     "InvestigationState",
     "InvestigationStateManager",
+    "PlaybookRegistry",
     "InvestigationEngine",
 ]

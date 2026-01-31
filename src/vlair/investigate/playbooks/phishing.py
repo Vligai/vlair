@@ -21,7 +21,7 @@ from ..models import (
     RemediationAction,
     RemediationStatus,
 )
-from ..engine import PlaybookRegistry
+from ..registry import PlaybookRegistry
 
 
 class PhishingPlaybook(BasePlaybook):
@@ -171,7 +171,7 @@ class PhishingPlaybook(BasePlaybook):
                 extract_ips_and_servers,
                 extract_auth_results,
                 extract_attachments,
-                extract_urls,
+                extract_body,
             )
 
             parsed = parse_eml(file_path)
@@ -179,7 +179,17 @@ class PhishingPlaybook(BasePlaybook):
             ips = extract_ips_and_servers(parsed)
             auth = extract_auth_results(parsed)
             attachments = extract_attachments(parsed)
-            urls = extract_urls(parsed)
+
+            # Extract URLs from body content
+            body_content = extract_body(parsed)
+            urls = []
+            for body in body_content:
+                # Body text may contain URLs - extract them
+                body_text = body.get("body_text", "")
+                if body_text:
+                    import re
+                    found_urls = re.findall(r'https?://[^\s<>"\']+', body_text)
+                    urls.extend(found_urls)
 
             # Store parsed data
             output = {
