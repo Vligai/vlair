@@ -439,7 +439,7 @@ the appropriate tools. Just give it a file, hash, IP, domain, or URL.
 Usage:
     vlair analyze <input>      Smart analysis (auto-detect input type)
     vlair workflow <name> <input>  Run pre-built investigation workflow
-    vlair investigate          Guided interactive investigation mode
+    vlair investigate <cmd>    Automated investigation commands
     vlair status               Show API key and tool status
     vlair                     Tool browser (interactive menu)
     vlair list                 List all available tools
@@ -461,6 +461,13 @@ Examples - Workflows:
     vlair workflow ioc-hunt indicators.txt         # Bulk IOC hunting
     vlair workflow network-forensics capture.pcap  # PCAP forensics
     vlair workflow log-investigation access.log    # Log analysis
+
+Examples - Automated Investigation:
+    vlair investigate phishing --file suspicious.eml --verbose
+    vlair investigate phishing --file suspicious.eml --mock
+    vlair investigate status INV-2026-01-31-ABCD1234
+    vlair investigate list --last 24h
+    vlair investigate results INV-2026-01-31-ABCD1234 --json
 
 Output Options:
     --json      Machine-readable JSON output
@@ -1009,19 +1016,321 @@ def main():
             sys.exit(1)
 
     elif sys.argv[1] == "investigate":
-        # Interactive investigation mode
-        try:
-            from vlair.core.interactive import InteractiveInvestigation
-
-            investigation = InteractiveInvestigation()
-            investigation.run()
-            sys.exit(0)
-
-        except ImportError as e:
-            print(f"Error: Could not load interactive module: {e}", file=sys.stderr)
+        # Investigation automation commands
+        if len(sys.argv) < 3:
+            print("Usage: vlair investigate <command> [args]", file=sys.stderr)
+            print("\nCommands:", file=sys.stderr)
+            print(
+                "  phishing --file <eml>    Run phishing investigation on email file",
+                file=sys.stderr,
+            )
+            print("  status <id>              Check investigation status", file=sys.stderr)
+            print("  list [--last 24h]        List recent investigations", file=sys.stderr)
+            print("  results <id>             Get investigation results", file=sys.stderr)
+            print(
+                "  interactive              Start interactive investigation mode", file=sys.stderr
+            )
+            print("\nExamples:", file=sys.stderr)
+            print("  vlair investigate phishing --file suspicious.eml --verbose", file=sys.stderr)
+            print("  vlair investigate phishing --file suspicious.eml --mock", file=sys.stderr)
+            print("  vlair investigate status INV-2026-01-31-ABCD1234", file=sys.stderr)
+            print("  vlair investigate list --last 24h", file=sys.stderr)
+            print("  vlair investigate results INV-2026-01-31-ABCD1234 --json", file=sys.stderr)
             sys.exit(1)
-        except Exception as e:
-            print(f"Error during investigation: {e}", file=sys.stderr)
+
+        investigate_cmd = sys.argv[2]
+
+        if investigate_cmd == "interactive":
+            # Legacy interactive investigation mode
+            try:
+                from vlair.core.interactive import InteractiveInvestigation
+
+                investigation = InteractiveInvestigation()
+                investigation.run()
+                sys.exit(0)
+
+            except ImportError as e:
+                print(f"Error: Could not load interactive module: {e}", file=sys.stderr)
+                sys.exit(1)
+            except Exception as e:
+                print(f"Error during investigation: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        elif investigate_cmd == "phishing":
+            # Automated phishing investigation
+            verbose = "--verbose" in sys.argv or "-v" in sys.argv[3:]
+            json_output = "--json" in sys.argv or "-j" in sys.argv
+            use_mock = "--mock" in sys.argv
+
+            # Parse --file argument
+            file_path = None
+            args_list = sys.argv[3:]
+            for i, arg in enumerate(args_list):
+                if arg == "--file" and i + 1 < len(args_list):
+                    file_path = args_list[i + 1]
+                    break
+
+            if not file_path:
+                print("Error: --file <eml_path> is required", file=sys.stderr)
+                print(
+                    "Usage: vlair investigate phishing --file <eml_path> [--verbose] [--mock] [--json]",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
+            if not os.path.exists(file_path):
+                print(f"Error: File not found: {file_path}", file=sys.stderr)
+                sys.exit(1)
+
+            try:
+                from vlair.investigate import InvestigationEngine, PlaybookRegistry
+                from vlair.investigate.playbooks.phishing import PhishingPlaybook
+
+                # Ensure playbook is registered
+                PlaybookRegistry.register(PhishingPlaybook)
+
+                # Set up connectors
+                connectors = {}
+                if use_mock:
+                    from vlair.investigate.connectors.mock import (
+                        MockEmailConnector,
+                        MockSIEMConnector,
+                    )
+
+                    connectors["email"] = MockEmailConnector(scenario="phishing")
+                    connectors["siem"] = MockSIEMConnector(scenario="phishing")
+
+                # Create and run investigation
+                engine = InvestigationEngine(connectors=connectors, verbose=verbose)
+                state = engine.start_investigation(
+                    playbook_name="phishing",
+                    inputs={"file_path": file_path},
+                    auto_run=True,
+                )
+
+                # Output results
+                if json_output:
+                    print(json.dumps(state.to_dict(), indent=2, default=str))
+                else:
+                    print(f"\n{'='*60}")
+                    print(f"  Investigation Complete: {state.id}")
+                    print(f"{'='*60}")
+                    print(f"\nStatus:     {state.status.value.upper()}")
+                    print(f"Risk Score: {state.risk_score}/100")
+                    print(f"Verdict:    {state.verdict}")
+
+                    # Show steps summary
+                    completed = len([s for s in state.steps if s.status.value == "completed"])
+                    total = len(state.steps)
+                    print(f"Steps:      {completed}/{total} completed")
+
+                    # Show findings
+                    if state.findings:
+                        print(f"\nFindings ({len(state.findings)}):")
+                        for finding in state.findings[:10]:
+                            severity = finding.get("severity", "?").upper()
+                            message = finding.get("message", "")
+                            print(f"  [{severity:8s}] {message}")
+
+                    # Show IOCs
+                    total_iocs = sum(len(v) for v in state.iocs.values())
+                    if total_iocs > 0:
+                        print(f"\nIOCs Extracted ({total_iocs}):")
+                        for ioc_type, values in state.iocs.items():
+                            if values:
+                                print(f"  {ioc_type}: {len(values)}")
+
+                    # Show remediation actions
+                    if state.remediation_actions:
+                        print(f"\nRemediation Actions ({len(state.remediation_actions)}):")
+                        for action in state.remediation_actions:
+                            print(f"  - {action.name}")
+
+                    print(f"\nInvestigation ID: {state.id}")
+                    print("Use 'vlair investigate results <id> --json' for full details")
+
+                # Exit with code based on verdict
+                if state.verdict == "MALICIOUS":
+                    sys.exit(2)
+                elif state.verdict == "SUSPICIOUS":
+                    sys.exit(1)
+                else:
+                    sys.exit(0)
+
+            except ImportError as e:
+                print(f"Error: Could not load investigation module: {e}", file=sys.stderr)
+                import traceback
+
+                traceback.print_exc()
+                sys.exit(1)
+            except Exception as e:
+                print(f"Error during investigation: {e}", file=sys.stderr)
+                if verbose:
+                    import traceback
+
+                    traceback.print_exc()
+                sys.exit(1)
+
+        elif investigate_cmd == "status":
+            # Check investigation status
+            if len(sys.argv) < 4:
+                print("Usage: vlair investigate status <investigation-id>", file=sys.stderr)
+                sys.exit(1)
+
+            investigation_id = sys.argv[3]
+
+            try:
+                from vlair.investigate import InvestigationEngine
+
+                engine = InvestigationEngine()
+                state = engine.get_investigation(investigation_id)
+
+                if not state:
+                    print(f"Investigation not found: {investigation_id}", file=sys.stderr)
+                    sys.exit(1)
+
+                print(f"\nInvestigation: {state.id}")
+                print(f"Type:          {state.type}")
+                print(f"Status:        {state.status.value.upper()}")
+                print(f"Risk Score:    {state.risk_score}/100")
+                print(f"Verdict:       {state.verdict}")
+                print(f"Created:       {state.created_at}")
+                if state.completed_at:
+                    print(f"Completed:     {state.completed_at}")
+                if state.error:
+                    print(f"Error:         {state.error}")
+
+            except Exception as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        elif investigate_cmd == "list":
+            # List investigations
+            limit = 20
+            since_hours = None
+
+            # Parse arguments
+            args_list = sys.argv[3:]
+            for i, arg in enumerate(args_list):
+                if arg == "--last" and i + 1 < len(args_list):
+                    time_str = args_list[i + 1]
+                    if time_str.endswith("h"):
+                        since_hours = int(time_str[:-1])
+                    elif time_str.endswith("d"):
+                        since_hours = int(time_str[:-1]) * 24
+                if arg == "--limit" and i + 1 < len(args_list):
+                    limit = int(args_list[i + 1])
+
+            try:
+                from vlair.investigate import InvestigationEngine
+
+                engine = InvestigationEngine()
+                investigations = engine.list_investigations(limit=limit, since_hours=since_hours)
+
+                if not investigations:
+                    print("No investigations found")
+                    sys.exit(0)
+
+                print(f"\nRecent Investigations ({len(investigations)}):")
+                print("-" * 80)
+                print(f"{'ID':<30} {'Type':<12} {'Status':<12} {'Verdict':<12} {'Score':<6}")
+                print("-" * 80)
+
+                for inv in investigations:
+                    inv_id = inv.get("id", "?")[:28]
+                    inv_type = inv.get("type", "?")[:10]
+                    status = inv.get("status", "?")[:10]
+                    verdict = inv.get("verdict", "?")[:10]
+                    score = str(inv.get("risk_score", "?"))
+                    print(f"{inv_id:<30} {inv_type:<12} {status:<12} {verdict:<12} {score:<6}")
+
+            except Exception as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        elif investigate_cmd == "results":
+            # Get investigation results
+            if len(sys.argv) < 4:
+                print(
+                    "Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr
+                )
+                sys.exit(1)
+
+            investigation_id = sys.argv[3]
+            json_output = "--json" in sys.argv
+
+            try:
+                from vlair.investigate import InvestigationEngine
+
+                engine = InvestigationEngine()
+                state = engine.get_investigation(investigation_id)
+
+                if not state:
+                    print(f"Investigation not found: {investigation_id}", file=sys.stderr)
+                    sys.exit(1)
+
+                if json_output:
+                    print(json.dumps(state.to_dict(), indent=2, default=str))
+                else:
+                    print(f"\n{'='*70}")
+                    print(f"  Investigation Results: {state.id}")
+                    print(f"{'='*70}")
+
+                    print(f"\nOverview:")
+                    print(f"  Type:       {state.type}")
+                    print(f"  Status:     {state.status.value.upper()}")
+                    print(f"  Risk Score: {state.risk_score}/100")
+                    print(f"  Verdict:    {state.verdict}")
+
+                    if state.get_duration_seconds():
+                        print(f"  Duration:   {state.get_duration_seconds():.1f}s")
+
+                    print(f"\nSteps ({len(state.steps)}):")
+                    for step in state.steps:
+                        status_icon = (
+                            "[+]"
+                            if step.status.value == "completed"
+                            else "[-]" if step.status.value == "failed" else "[.]"
+                        )
+                        duration = (
+                            f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
+                        )
+                        print(f"  {status_icon} {step.name} {duration}")
+                        if step.error:
+                            print(f"      Error: {step.error}")
+
+                    if state.findings:
+                        print(f"\nFindings ({len(state.findings)}):")
+                        for finding in state.findings:
+                            severity = finding.get("severity", "?").upper()
+                            message = finding.get("message", "")
+                            print(f"  [{severity:8s}] {message}")
+
+                    total_iocs = sum(len(v) for v in state.iocs.values())
+                    if total_iocs > 0:
+                        print(f"\nIOCs ({total_iocs}):")
+                        for ioc_type, values in state.iocs.items():
+                            if values:
+                                print(f"  {ioc_type}:")
+                                for v in values[:5]:
+                                    print(f"    - {v}")
+                                if len(values) > 5:
+                                    print(f"    ... and {len(values) - 5} more")
+
+                    if state.remediation_actions:
+                        print(f"\nRemediation Actions ({len(state.remediation_actions)}):")
+                        for action in state.remediation_actions:
+                            status = action.status.value.upper()
+                            print(f"  [{status:8s}] {action.name}")
+                            print(f"             Target: {action.target}")
+
+            except Exception as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        else:
+            print(f"Unknown investigate command: {investigate_cmd}", file=sys.stderr)
+            print("Use 'vlair investigate' for help", file=sys.stderr)
             sys.exit(1)
 
     elif sys.argv[1] == "status":
