@@ -93,6 +93,7 @@ vlair/
 │   ├── test_reporter.py
 │   ├── test_analyzer.py
 │   ├── test_workflows.py
+│   ├── test_investigate.py  # Investigation automation tests
 │   └── ...
 │
 └── src/                   # Main source code
@@ -137,6 +138,21 @@ vlair/
         │   ├── ioc_hunt.py
         │   ├── network_forensics.py
         │   └── log_investigation.py
+        │
+        ├── investigate/   # Investigation automation engine
+        │   ├── __init__.py
+        │   ├── models.py       # Investigation dataclasses
+        │   ├── state.py        # SQLite state persistence
+        │   ├── engine.py       # Main orchestrator
+        │   ├── registry.py     # Playbook registry
+        │   ├── connectors/     # Enterprise system connectors
+        │   │   ├── __init__.py
+        │   │   ├── base.py     # Abstract connector interfaces
+        │   │   └── mock/       # Mock connectors for testing
+        │   └── playbooks/      # Investigation playbooks
+        │       ├── __init__.py
+        │       ├── base.py     # BasePlaybook ABC
+        │       └── phishing.py # Phishing investigation
         │
         ├── common/        # Shared utilities
         │   ├── __init__.py
@@ -257,6 +273,36 @@ All tools are now located in `src/vlair/tools/`:
   - Organized output by file type
   - Chunked processing for large files
 
+### ✅ Investigation Automation (Phase 1 Foundation)
+- **Investigation Engine** (`investigate/engine.py`)
+  - Orchestrates multi-step security investigations
+  - Integrates with existing vlair tools
+  - SQLite state persistence at `~/.vlair/investigations.db`
+  - Playbook-based investigation patterns
+
+- **Phishing Investigation Playbook** (`investigate/playbooks/phishing.py`)
+  - 10-step automated phishing investigation:
+    1. Parse email (EML Parser)
+    2. Validate authentication (SPF/DKIM/DMARC)
+    3. Extract IOCs (IOC Extractor)
+    4. Check sender domain (Domain/IP Intel)
+    5. Analyze attachments (Hash Lookup)
+    6. Analyze URLs (URL Analyzer)
+    7. Find recipients (via connector)
+    8. Find URL clicks (via SIEM connector)
+    9. Calculate verdict and risk score
+    10. Prepare remediation actions
+
+- **Connector Framework** (`investigate/connectors/`)
+  - Abstract interfaces for enterprise systems (Email, SIEM, EDR, Identity)
+  - Mock connectors for local development/testing
+  - DTOs: Email, Host, Process, User, AuthenticationEvent, URLClickEvent
+
+- **Investigation State Management** (`investigate/state.py`)
+  - SQLite persistence following `history.py` pattern
+  - Investigation lifecycle tracking (PENDING → RUNNING → COMPLETED/FAILED)
+  - Step results and remediation actions storage
+
 ## CLI Usage
 
 After installation (`pip install -e .`), the tools are available via command-line:
@@ -271,6 +317,12 @@ vlair analyze malicious.com     # Domain intel
 vlair workflow phishing-email suspicious.eml
 vlair workflow malware-triage sample.exe
 
+# Investigation Automation
+vlair investigate phishing --file suspicious.eml --mock    # Run phishing investigation
+vlair investigate status INV-2026-01-31-XXXX               # Check investigation status
+vlair investigate list --limit 10                          # List recent investigations
+vlair investigate results INV-2026-01-31-XXXX --json       # Get full results
+
 # Individual tools
 vlair hash 44d88612fea8a8f36de82e1278abb02f
 vlair intel malicious.com
@@ -282,7 +334,7 @@ vlair hash 44d88612fea8a8f36de82e1278abb02f
 
 ### Tool Categories
 
-The central system organizes tools into 7 categories:
+The central system organizes tools into 8 categories:
 
 1. **Email Analysis**: EML Parser
 2. **Threat Intelligence**: IOC Extractor, Hash Lookup, Domain/IP Intel, URL Analyzer, Threat Feed Aggregator
@@ -291,6 +343,7 @@ The central system organizes tools into 7 categories:
 5. **SSL/TLS Analysis**: Certificate Analyzer
 6. **Malware Analysis**: YARA Scanner, Script Deobfuscator
 7. **Forensics**: File Carver
+8. **Investigation Automation**: Investigation Engine, Phishing Playbook
 
 ### Usage Examples
 
@@ -304,6 +357,13 @@ vlair analyze malicious.com --json
 vlair workflow phishing-email suspicious.eml
 vlair workflow malware-triage sample.exe
 vlair workflow ioc-hunt iocs.txt
+
+# Investigation Automation
+vlair investigate phishing --file suspicious.eml --mock --verbose  # With mock connectors
+vlair investigate phishing --file suspicious.eml                   # Production mode
+vlair investigate status INV-2026-01-31-XXXX                       # Check status
+vlair investigate list --last 24h                                  # Recent investigations
+vlair investigate results INV-2026-01-31-XXXX --json               # Full JSON results
 
 # Individual tools
 vlair hash 44d88612fea8a8f36de82e1278abb02f
@@ -500,6 +560,23 @@ class CacheManager:
 ```
 
 ## Development Workflow
+
+### Code Linting and Formatting
+
+**IMPORTANT:** All Python code must be formatted with `black` before committing.
+
+```bash
+# Check formatting (dry run)
+python -m black --check --exclude='venv/|env/|.venv/|.tox/|.git/|__pycache__/' src/ tests/
+
+# Auto-format all code
+python -m black --exclude='venv/|env/|.venv/|.tox/|.git/|__pycache__/' src/ tests/
+
+# Format specific files
+python -m black src/vlair/investigate/ src/vlair/cli/main.py
+```
+
+The CI pipeline runs `black --check` automatically. If formatting fails, run black locally to fix.
 
 ### Adding a New Tool
 
@@ -1038,9 +1115,9 @@ See `openspec/specs/operationalize.spec.md` for full details.
 
 ---
 
-**Last Updated:** 2026-01-26
+**Last Updated:** 2026-02-01
 **Maintained By:** Vligai
-**Version:** 5.0.0 (Reorganized package structure)
+**Version:** 5.1.0 (Investigation Automation - Phase 1 Foundation)
 
 This document should be updated whenever:
 - New tools are added
