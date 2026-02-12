@@ -12,7 +12,6 @@ from unittest.mock import MagicMock, patch, mock_open
 
 import pytest
 
-
 # ============================================================================
 # Hash Lookup - main(), format functions, API classes
 # ============================================================================
@@ -82,9 +81,7 @@ class TestVirusTotalAPI:
 
         api = VirusTotalAPI("test_key")
 
-        with patch(
-            "vlair.tools.hash_lookup.requests.get", side_effect=Exception("timeout")
-        ):
+        with patch("vlair.tools.hash_lookup.requests.get", side_effect=Exception("timeout")):
             result = api.lookup_hash("abc123")
 
         assert result["verdict"] == "error"
@@ -164,9 +161,7 @@ class TestMalwareBazaarAPI:
 
         api = MalwareBazaarAPI()
 
-        with patch(
-            "vlair.tools.hash_lookup.requests.post", side_effect=Exception("error")
-        ):
+        with patch("vlair.tools.hash_lookup.requests.post", side_effect=Exception("error")):
             result = api.lookup_hash("abc123")
 
         assert result["verdict"] == "error"
@@ -306,9 +301,10 @@ class TestHashLookupMain:
         ]
         mock_lookup.cache = None
 
-        with patch(
-            "sys.argv", ["lookup.py", "d41d8cd98f00b204e9800998ecf8427e"]
-        ), patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup):
+        with (
+            patch("sys.argv", ["lookup.py", "d41d8cd98f00b204e9800998ecf8427e"]),
+            patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup),
+        ):
             main()
 
     def test_main_with_file(self, tmp_path):
@@ -323,9 +319,10 @@ class TestHashLookupMain:
         ]
         mock_lookup.cache = None
 
-        with patch(
-            "sys.argv", ["lookup.py", "--file", str(hash_file)]
-        ), patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup):
+        with (
+            patch("sys.argv", ["lookup.py", "--file", str(hash_file)]),
+            patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup),
+        ):
             main()
 
     def test_main_file_not_found(self):
@@ -352,15 +349,18 @@ class TestHashLookupMain:
         ]
         mock_lookup.cache = None
 
-        with patch(
-            "sys.argv",
-            [
-                "lookup.py",
-                "d41d8cd98f00b204e9800998ecf8427e",
-                "--format",
-                "csv",
-            ],
-        ), patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup):
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "lookup.py",
+                    "d41d8cd98f00b204e9800998ecf8427e",
+                    "--format",
+                    "csv",
+                ],
+            ),
+            patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup),
+        ):
             main()
 
     def test_main_with_output_file(self, tmp_path):
@@ -374,15 +374,18 @@ class TestHashLookupMain:
         ]
         mock_lookup.cache = None
 
-        with patch(
-            "sys.argv",
-            [
-                "lookup.py",
-                "d41d8cd98f00b204e9800998ecf8427e",
-                "--output",
-                str(output_file),
-            ],
-        ), patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup):
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "lookup.py",
+                    "d41d8cd98f00b204e9800998ecf8427e",
+                    "--output",
+                    str(output_file),
+                ],
+            ),
+            patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup),
+        ):
             main()
 
         assert output_file.exists()
@@ -397,16 +400,19 @@ class TestHashLookupMain:
         ]
         mock_lookup.cache = None
 
-        with patch(
-            "sys.argv",
-            [
-                "lookup.py",
-                "abc",
-                "def",
-                "--filter",
-                "malicious",
-            ],
-        ), patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup):
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "lookup.py",
+                    "abc",
+                    "def",
+                    "--filter",
+                    "malicious",
+                ],
+            ),
+            patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup),
+        ):
             main()
 
     def test_main_verbose_with_cache(self):
@@ -420,16 +426,17 @@ class TestHashLookupMain:
         }
 
         mock_lookup = MagicMock()
-        mock_lookup.lookup_batch.return_value = [
-            {"hash": "abc", "verdict": "clean"}
-        ]
+        mock_lookup.lookup_batch.return_value = [{"hash": "abc", "verdict": "clean"}]
         mock_lookup.cache = mock_cache
         mock_lookup.CACHE_NAMESPACE = "hash_lookup"
 
-        with patch(
-            "sys.argv",
-            ["lookup.py", "abc", "--verbose"],
-        ), patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup):
+        with (
+            patch(
+                "sys.argv",
+                ["lookup.py", "abc", "--verbose"],
+            ),
+            patch("vlair.tools.hash_lookup.HashLookup", return_value=mock_lookup),
+        ):
             main()
 
 
@@ -526,9 +533,7 @@ class TestIOCExtractorMain:
         input_file = tmp_path / "report.txt"
         input_file.write_text("IP 1.2.3.4")
 
-        with patch(
-            "sys.argv", ["extractor.py", str(input_file), "--format", "stix"]
-        ):
+        with patch("sys.argv", ["extractor.py", str(input_file), "--format", "stix"]):
             main()
 
     def test_main_file_not_found(self):
@@ -560,9 +565,7 @@ class TestIOCExtractorMain:
         input_file = tmp_path / "report.txt"
         input_file.write_text("IP 1.2.3.4")
 
-        with patch(
-            "sys.argv", ["extractor.py", str(input_file), "--verbose"]
-        ):
+        with patch("sys.argv", ["extractor.py", str(input_file), "--verbose"]):
             main()
 
     def test_main_with_types(self, tmp_path):
@@ -583,9 +586,7 @@ class TestIOCExtractorMain:
         input_file = tmp_path / "report.txt"
         input_file.write_text("IP 1.2.3.4")
 
-        with patch(
-            "sys.argv", ["extractor.py", str(input_file), "--defang"]
-        ):
+        with patch("sys.argv", ["extractor.py", str(input_file), "--defang"]):
             main()
 
     def test_main_with_refang(self, tmp_path):
@@ -594,9 +595,7 @@ class TestIOCExtractorMain:
         input_file = tmp_path / "report.txt"
         input_file.write_text("IP 1[.]2[.]3[.]4")
 
-        with patch(
-            "sys.argv", ["extractor.py", str(input_file), "--refang"]
-        ):
+        with patch("sys.argv", ["extractor.py", str(input_file), "--refang"]):
             main()
 
     def test_main_with_no_private_ips(self, tmp_path):
@@ -614,9 +613,7 @@ class TestIOCExtractorMain:
     def test_main_stdin_no_input(self):
         from vlair.tools.ioc_extractor import main
 
-        with patch("sys.argv", ["extractor.py"]), patch(
-            "sys.stdin"
-        ) as mock_stdin:
+        with patch("sys.argv", ["extractor.py"]), patch("sys.stdin") as mock_stdin:
             mock_stdin.isatty.return_value = True
             with pytest.raises(SystemExit) as exc_info:
                 main()
@@ -625,9 +622,7 @@ class TestIOCExtractorMain:
     def test_main_stdin_with_data(self):
         from vlair.tools.ioc_extractor import main
 
-        with patch("sys.argv", ["extractor.py", "-"]), patch(
-            "sys.stdin"
-        ) as mock_stdin:
+        with patch("sys.argv", ["extractor.py", "-"]), patch("sys.stdin") as mock_stdin:
             mock_stdin.isatty.return_value = False
             mock_stdin.read.return_value = "Found IP 1.2.3.4"
             main()
@@ -697,9 +692,7 @@ class TestVirusTotalURLAPI:
 
         api = VirusTotalURLAPI("test_key")
 
-        with patch(
-            "vlair.tools.url_analyzer.requests.get", side_effect=Exception("timeout")
-        ):
+        with patch("vlair.tools.url_analyzer.requests.get", side_effect=Exception("timeout")):
             result = api.analyze_url("http://evil.com")
 
         assert result["verdict"] == "error"
@@ -718,14 +711,8 @@ class TestVirusTotalURLAPI:
         assert api._classify_verdict({"malicious": 5}) == "malicious"
         assert api._classify_verdict({"malicious": 1}) == "suspicious"
         assert api._classify_verdict({"malicious": 0, "suspicious": 2}) == "suspicious"
-        assert (
-            api._classify_verdict({"malicious": 0, "suspicious": 0, "harmless": 10})
-            == "clean"
-        )
-        assert (
-            api._classify_verdict({"malicious": 0, "suspicious": 0, "harmless": 0})
-            == "unknown"
-        )
+        assert api._classify_verdict({"malicious": 0, "suspicious": 0, "harmless": 10}) == "clean"
+        assert api._classify_verdict({"malicious": 0, "suspicious": 0, "harmless": 0}) == "unknown"
 
 
 class TestURLhausAPI:
@@ -747,9 +734,7 @@ class TestURLhausAPI:
             "urlhaus_reference": "https://urlhaus.abuse.ch/url/123/",
         }
 
-        with patch(
-            "vlair.tools.url_analyzer.requests.post", return_value=mock_response
-        ):
+        with patch("vlair.tools.url_analyzer.requests.post", return_value=mock_response):
             result = api.lookup_url("http://evil.com/malware.exe")
 
         assert result["verdict"] == "malicious"
@@ -762,9 +747,7 @@ class TestURLhausAPI:
         mock_response.status_code = 200
         mock_response.json.return_value = {"query_status": "no_results"}
 
-        with patch(
-            "vlair.tools.url_analyzer.requests.post", return_value=mock_response
-        ):
+        with patch("vlair.tools.url_analyzer.requests.post", return_value=mock_response):
             result = api.lookup_url("http://safe.com")
 
         assert result["verdict"] == "unknown"
@@ -774,9 +757,7 @@ class TestURLhausAPI:
 
         api = URLhausAPI()
 
-        with patch(
-            "vlair.tools.url_analyzer.requests.post", side_effect=Exception("error")
-        ):
+        with patch("vlair.tools.url_analyzer.requests.post", side_effect=Exception("error")):
             result = api.lookup_url("http://evil.com")
 
         assert result["verdict"] == "error"
@@ -855,9 +836,7 @@ class TestURLAnalyzerOrchestrator:
             analyzer = URLAnalyzer(cache_enabled=False)
 
         assert (
-            analyzer._classify_risk(
-                {"verdict": "malicious", "pattern_analysis": {"risk_score": 0}}
-            )
+            analyzer._classify_risk({"verdict": "malicious", "pattern_analysis": {"risk_score": 0}})
             == "high"
         )
         assert (
@@ -867,15 +846,11 @@ class TestURLAnalyzerOrchestrator:
             == "medium"
         )
         assert (
-            analyzer._classify_risk(
-                {"verdict": "clean", "pattern_analysis": {"risk_score": 0}}
-            )
+            analyzer._classify_risk({"verdict": "clean", "pattern_analysis": {"risk_score": 0}})
             == "low"
         )
         assert (
-            analyzer._classify_risk(
-                {"verdict": "unknown", "pattern_analysis": {"risk_score": 0}}
-            )
+            analyzer._classify_risk({"verdict": "unknown", "pattern_analysis": {"risk_score": 0}})
             == "unknown"
         )
 
@@ -889,9 +864,7 @@ class TestURLAnalyzerOrchestrator:
                 "analyze",
                 return_value={"url": "http://x.com", "verdict": "clean"},
             ):
-                results = analyzer.analyze_batch(
-                    ["http://a.com", "http://b.com"]
-                )
+                results = analyzer.analyze_batch(["http://a.com", "http://b.com"])
 
         assert len(results) == 2
 
@@ -978,13 +951,12 @@ class TestURLAnalyzerMain:
         from vlair.tools.url_analyzer import main
 
         mock_analyzer = MagicMock()
-        mock_analyzer.analyze_batch.return_value = [
-            {"url": "http://test.com", "verdict": "clean"}
-        ]
+        mock_analyzer.analyze_batch.return_value = [{"url": "http://test.com", "verdict": "clean"}]
 
-        with patch(
-            "sys.argv", ["analyzer.py", "http://test.com"]
-        ), patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer):
+        with (
+            patch("sys.argv", ["analyzer.py", "http://test.com"]),
+            patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer),
+        ):
             main()
 
     def test_main_with_file(self, tmp_path):
@@ -999,9 +971,10 @@ class TestURLAnalyzerMain:
             {"url": "http://example.com", "verdict": "clean"},
         ]
 
-        with patch(
-            "sys.argv", ["analyzer.py", "--file", str(url_file)]
-        ), patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer):
+        with (
+            patch("sys.argv", ["analyzer.py", "--file", str(url_file)]),
+            patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer),
+        ):
             main()
 
     def test_main_file_not_found(self):
@@ -1026,9 +999,10 @@ class TestURLAnalyzerMain:
             }
         ]
 
-        with patch(
-            "sys.argv", ["analyzer.py", "http://test.com", "--format", "csv"]
-        ), patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer):
+        with (
+            patch("sys.argv", ["analyzer.py", "http://test.com", "--format", "csv"]),
+            patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer),
+        ):
             main()
 
     def test_main_txt_format(self):
@@ -1045,9 +1019,10 @@ class TestURLAnalyzerMain:
             }
         ]
 
-        with patch(
-            "sys.argv", ["analyzer.py", "http://test.com", "--format", "txt"]
-        ), patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer):
+        with (
+            patch("sys.argv", ["analyzer.py", "http://test.com", "--format", "txt"]),
+            patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer),
+        ):
             main()
 
     def test_main_with_output(self, tmp_path):
@@ -1056,19 +1031,20 @@ class TestURLAnalyzerMain:
         output_file = tmp_path / "result.json"
 
         mock_analyzer = MagicMock()
-        mock_analyzer.analyze_batch.return_value = [
-            {"url": "http://test.com", "verdict": "clean"}
-        ]
+        mock_analyzer.analyze_batch.return_value = [{"url": "http://test.com", "verdict": "clean"}]
 
-        with patch(
-            "sys.argv",
-            [
-                "analyzer.py",
-                "http://test.com",
-                "--output",
-                str(output_file),
-            ],
-        ), patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer):
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "analyzer.py",
+                    "http://test.com",
+                    "--output",
+                    str(output_file),
+                ],
+            ),
+            patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer),
+        ):
             main()
 
         assert output_file.exists()
@@ -1170,9 +1146,7 @@ class TestLogAnalyzerMain:
             '192.168.1.1 - - [01/Jan/2024:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"\n'
         )
 
-        with patch(
-            "sys.argv", ["analyzer.py", str(log_file), "--format", "csv"]
-        ):
+        with patch("sys.argv", ["analyzer.py", str(log_file), "--format", "csv"]):
             main()
 
     def test_main_with_text_format(self, tmp_path):
@@ -1183,9 +1157,7 @@ class TestLogAnalyzerMain:
             '192.168.1.1 - - [01/Jan/2024:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"\n'
         )
 
-        with patch(
-            "sys.argv", ["analyzer.py", str(log_file), "--format", "txt"]
-        ):
+        with patch("sys.argv", ["analyzer.py", str(log_file), "--format", "txt"]):
             main()
 
     def test_main_file_not_found(self):
@@ -1226,9 +1198,7 @@ class TestLogAnalyzerMain:
             '192.168.1.1 - - [01/Jan/2024:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"\n'
         )
 
-        with patch(
-            "sys.argv", ["analyzer.py", str(log_file), "--verbose"]
-        ):
+        with patch("sys.argv", ["analyzer.py", str(log_file), "--verbose"]):
             main()
 
     def test_main_syslog(self, tmp_path):
@@ -1239,9 +1209,7 @@ class TestLogAnalyzerMain:
             "Jan  1 10:00:00 myhost sshd[1234]: Accepted publickey for user from 1.2.3.4\n"
         )
 
-        with patch(
-            "sys.argv", ["analyzer.py", str(log_file), "--type", "syslog"]
-        ):
+        with patch("sys.argv", ["analyzer.py", str(log_file), "--type", "syslog"]):
             main()
 
 
@@ -1463,18 +1431,22 @@ class TestThreatFeedAggregatorExtended:
         db_path = str(tmp_path / "feeds.db")
         storage = ThreatFeedStorage(db_path)
 
-        storage.store_ioc({
-            "type": "domain",
-            "value": "evil1.com",
-            "source": "threatfox",
-            "confidence": 90,
-        })
-        storage.store_ioc({
-            "type": "ip",
-            "value": "1.2.3.4",
-            "source": "urlhaus",
-            "confidence": 80,
-        })
+        storage.store_ioc(
+            {
+                "type": "domain",
+                "value": "evil1.com",
+                "source": "threatfox",
+                "confidence": 90,
+            }
+        )
+        storage.store_ioc(
+            {
+                "type": "ip",
+                "value": "1.2.3.4",
+                "source": "urlhaus",
+                "confidence": 80,
+            }
+        )
 
         stats = storage.get_statistics()
         assert stats["total_iocs"] >= 2

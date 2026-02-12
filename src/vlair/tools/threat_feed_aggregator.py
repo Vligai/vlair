@@ -54,8 +54,7 @@ class ThreatFeedStorage:
         cursor = self.conn.cursor()
 
         # IOCs table
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS iocs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ioc_hash TEXT UNIQUE NOT NULL,
@@ -70,12 +69,10 @@ class ThreatFeedStorage:
                 sources TEXT,
                 created_at TEXT NOT NULL
             )
-        """
-        )
+        """)
 
         # Sources table
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS sources (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
@@ -83,12 +80,10 @@ class ThreatFeedStorage:
                 ioc_count INTEGER DEFAULT 0,
                 status TEXT DEFAULT 'active'
             )
-        """
-        )
+        """)
 
         # Updates table
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS updates (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source_name TEXT NOT NULL,
@@ -98,8 +93,7 @@ class ThreatFeedStorage:
                 success BOOLEAN DEFAULT 1,
                 error_message TEXT
             )
-        """
-        )
+        """)
 
         # Create indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_ioc_type ON iocs(ioc_type)")
@@ -261,27 +255,23 @@ class ThreatFeedStorage:
         by_type = {row["ioc_type"]: row["count"] for row in cursor.fetchall()}
 
         # IOCs by malware family
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT malware_family, COUNT(*) as count
             FROM iocs
             WHERE malware_family IS NOT NULL
             GROUP BY malware_family
             ORDER BY count DESC
             LIMIT 10
-        """
-        )
+        """)
         by_malware = {row["malware_family"]: row["count"] for row in cursor.fetchall()}
 
         # Recent updates
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT source_name, update_date, iocs_added
             FROM updates
             ORDER BY update_date DESC
             LIMIT 5
-        """
-        )
+        """)
         recent_updates = [dict(row) for row in cursor.fetchall()]
 
         return {

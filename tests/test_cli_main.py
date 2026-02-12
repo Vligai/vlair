@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 # Helpers: build a fake tool registry used across many tests
 # ---------------------------------------------------------------------------
 
+
 def _fake_registry():
     """Return a minimal fake tool registry for testing."""
     return {
@@ -74,6 +75,7 @@ def _fake_registry():
 # ---------------------------------------------------------------------------
 # ToolDiscovery tests
 # ---------------------------------------------------------------------------
+
 
 class TestToolDiscovery:
     """Test the ToolDiscovery class"""
@@ -273,6 +275,7 @@ class TestToolDiscovery:
 # ToolManager tests
 # ---------------------------------------------------------------------------
 
+
 class TestToolManager:
     """Test the ToolManager class"""
 
@@ -422,6 +425,7 @@ class TestToolManager:
 # print_usage tests
 # ---------------------------------------------------------------------------
 
+
 class TestPrintUsage:
     """Test the print_usage function"""
 
@@ -463,6 +467,7 @@ class TestPrintUsage:
 # ---------------------------------------------------------------------------
 # main() dispatch tests
 # ---------------------------------------------------------------------------
+
 
 class TestMainHelp:
     """Test main() --help / -h / help dispatch"""
@@ -693,17 +698,23 @@ class TestMainAnalyze:
         mock_reporter.format_console.return_value = "CONSOLE OUTPUT: SUSPICIOUS"
         mock_reporter.get_exit_code.return_value = 1
 
-        with patch("vlair.cli.main.Analyzer", return_value=mock_analyzer) if False else \
-             patch.dict("sys.modules", {}):
+        with (
+            patch("vlair.cli.main.Analyzer", return_value=mock_analyzer)
+            if False
+            else patch.dict("sys.modules", {})
+        ):
             # We need to patch the imports inside the analyze block
             pass
 
         # Use proper patching for the dynamic imports
-        with patch.dict("sys.modules", {
-            "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
@@ -735,11 +746,14 @@ class TestMainAnalyze:
         mock_reporter.format_json.return_value = '{"verdict": "CLEAN"}'
         mock_reporter.get_exit_code.return_value = 0
 
-        with patch.dict("sys.modules", {
-            "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 0
@@ -771,11 +785,14 @@ class TestMainAnalyze:
         mock_reporter.format_quiet.return_value = "MALICIOUS 95/100"
         mock_reporter.get_exit_code.return_value = 2
 
-        with patch.dict("sys.modules", {
-            "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 2
@@ -807,11 +824,14 @@ class TestMainAnalyze:
         mock_reporter.format_verbose.return_value = "VERBOSE: Detailed analysis..."
         mock_reporter.get_exit_code.return_value = 1
 
-        with patch.dict("sys.modules", {
-            "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
@@ -846,14 +866,17 @@ class TestMainAnalyze:
         mock_generator = MagicMock()
         mock_generator.generate.return_value = "/tmp/report.html"
 
-        with patch.dict("sys.modules", {
-            "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-            "vlair.core.report_generator": MagicMock(
-                ReportGenerator=MagicMock(return_value=mock_generator)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+                "vlair.core.report_generator": MagicMock(
+                    ReportGenerator=MagicMock(return_value=mock_generator)
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 0
@@ -868,7 +891,9 @@ class TestMainAnalyze:
         from vlair.cli.main import main
 
         # Force ImportError for the analyzer module
-        original_import = __builtins__.__import__ if hasattr(__builtins__, '__import__') else __import__
+        original_import = (
+            __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
+        )
 
         def mock_import(name, *args, **kwargs):
             if name == "vlair.core.analyzer":
@@ -892,10 +917,13 @@ class TestMainAnalyze:
         mock_analyzer = MagicMock()
         mock_analyzer.analyze.side_effect = RuntimeError("Analysis failed")
 
-        with patch.dict("sys.modules", {
-            "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
-            "vlair.core.reporter": MagicMock(),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
+                "vlair.core.reporter": MagicMock(),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
@@ -935,12 +963,15 @@ class TestMainCheck:
             "sources": ["VirusTotal"],
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.hash_lookup": MagicMock(
-                HashLookup=MagicMock(return_value=mock_lookup)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.hash_lookup": MagicMock(
+                    HashLookup=MagicMock(return_value=mock_lookup)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -963,12 +994,15 @@ class TestMainCheck:
             "total_engines": 70,
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.hash_lookup": MagicMock(
-                HashLookup=MagicMock(return_value=mock_lookup)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.hash_lookup": MagicMock(
+                    HashLookup=MagicMock(return_value=mock_lookup)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1002,12 +1036,15 @@ class TestMainCheck:
             "categories": ["malware"],
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.domain_ip_intel": MagicMock(
-                DomainIPIntelligence=MagicMock(return_value=mock_intel)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.domain_ip_intel": MagicMock(
+                    DomainIPIntelligence=MagicMock(return_value=mock_intel)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1026,12 +1063,15 @@ class TestMainCheck:
         mock_intel = MagicMock()
         mock_intel.lookup.return_value = {"verdict": "SUSPICIOUS", "risk_score": 75}
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.domain_ip_intel": MagicMock(
-                DomainIPIntelligence=MagicMock(return_value=mock_intel)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.domain_ip_intel": MagicMock(
+                    DomainIPIntelligence=MagicMock(return_value=mock_intel)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1065,12 +1105,15 @@ class TestMainCheck:
             "country": "US",
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.domain_ip_intel": MagicMock(
-                DomainIPIntelligence=MagicMock(return_value=mock_intel)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.domain_ip_intel": MagicMock(
+                    DomainIPIntelligence=MagicMock(return_value=mock_intel)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1089,12 +1132,15 @@ class TestMainCheck:
         mock_intel = MagicMock()
         mock_intel.lookup.return_value = {"verdict": "CLEAN", "risk_score": 5}
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.domain_ip_intel": MagicMock(
-                DomainIPIntelligence=MagicMock(return_value=mock_intel)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.domain_ip_intel": MagicMock(
+                    DomainIPIntelligence=MagicMock(return_value=mock_intel)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1127,12 +1173,15 @@ class TestMainCheck:
             "threats": ["Known phishing URL", "Suspicious TLD"],
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.url_analyzer": MagicMock(
-                URLAnalyzer=MagicMock(return_value=mock_analyzer)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.url_analyzer": MagicMock(
+                    URLAnalyzer=MagicMock(return_value=mock_analyzer)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1150,12 +1199,15 @@ class TestMainCheck:
         mock_analyzer = MagicMock()
         mock_analyzer.analyze.return_value = {"verdict": "CLEAN", "risk_score": 0}
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.url_analyzer": MagicMock(
-                URLAnalyzer=MagicMock(return_value=mock_analyzer)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.url_analyzer": MagicMock(
+                    URLAnalyzer=MagicMock(return_value=mock_analyzer)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1212,15 +1264,18 @@ class TestMainCheck:
         mock_reporter.get_exit_code.return_value = 0
 
         with patch("os.path.isfile", return_value=True):
-            with patch.dict("sys.modules", {
-                "vlair.core.analyzer": MagicMock(
-                    Analyzer=MagicMock(return_value=mock_analyzer)
-                ),
-                "vlair.core.reporter": MagicMock(
-                    Reporter=MagicMock(return_value=mock_reporter)
-                ),
-                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-            }):
+            with patch.dict(
+                "sys.modules",
+                {
+                    "vlair.core.analyzer": MagicMock(
+                        Analyzer=MagicMock(return_value=mock_analyzer)
+                    ),
+                    "vlair.core.reporter": MagicMock(
+                        Reporter=MagicMock(return_value=mock_reporter)
+                    ),
+                    "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+                },
+            ):
                 with pytest.raises(SystemExit) as exc_info:
                     main()
                 assert exc_info.value.code == 0
@@ -1240,11 +1295,14 @@ class TestMainCheck:
         mock_lookup = MagicMock()
         mock_lookup.lookup.side_effect = raise_error
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.hash_lookup": MagicMock(
-                HashLookup=MagicMock(return_value=mock_lookup)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.hash_lookup": MagicMock(
+                    HashLookup=MagicMock(return_value=mock_lookup)
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
@@ -1258,7 +1316,9 @@ class TestMainCheck:
         """main() check handles ImportError"""
         from vlair.cli.main import main
 
-        original_import = __builtins__.__import__ if hasattr(__builtins__, '__import__') else __import__
+        original_import = (
+            __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
+        )
 
         def mock_import(name, *args, **kwargs):
             if "hash_lookup" in name:
@@ -1339,17 +1399,20 @@ class TestMainWorkflow:
         mock_reporter.format_console.return_value = "Workflow console output"
         mock_reporter.get_exit_code.return_value = 1
 
-        with patch.dict("sys.modules", {
-            "vlair.core.workflow": MagicMock(WorkflowRegistry=mock_registry_cls),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "workflows": MagicMock(
-                PhishingEmailWorkflow=MagicMock(),
-                MalwareTriageWorkflow=MagicMock(),
-                IOCHuntWorkflow=MagicMock(),
-                NetworkForensicsWorkflow=MagicMock(),
-                LogInvestigationWorkflow=MagicMock(),
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.workflow": MagicMock(WorkflowRegistry=mock_registry_cls),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "workflows": MagicMock(
+                    PhishingEmailWorkflow=MagicMock(),
+                    MalwareTriageWorkflow=MagicMock(),
+                    IOCHuntWorkflow=MagicMock(),
+                    NetworkForensicsWorkflow=MagicMock(),
+                    LogInvestigationWorkflow=MagicMock(),
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
@@ -1393,17 +1456,20 @@ class TestMainWorkflow:
         mock_reporter = MagicMock()
         mock_reporter.get_exit_code.return_value = 0
 
-        with patch.dict("sys.modules", {
-            "vlair.core.workflow": MagicMock(WorkflowRegistry=mock_wf_registry),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "workflows": MagicMock(
-                PhishingEmailWorkflow=MagicMock(),
-                MalwareTriageWorkflow=MagicMock(),
-                IOCHuntWorkflow=MagicMock(),
-                NetworkForensicsWorkflow=MagicMock(),
-                LogInvestigationWorkflow=MagicMock(),
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.workflow": MagicMock(WorkflowRegistry=mock_wf_registry),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "workflows": MagicMock(
+                    PhishingEmailWorkflow=MagicMock(),
+                    MalwareTriageWorkflow=MagicMock(),
+                    IOCHuntWorkflow=MagicMock(),
+                    NetworkForensicsWorkflow=MagicMock(),
+                    LogInvestigationWorkflow=MagicMock(),
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 0
@@ -1422,17 +1488,20 @@ class TestMainWorkflow:
         mock_wf_registry = MagicMock()
         mock_wf_registry.get.return_value = None
 
-        with patch.dict("sys.modules", {
-            "vlair.core.workflow": MagicMock(WorkflowRegistry=mock_wf_registry),
-            "vlair.core.reporter": MagicMock(),
-            "workflows": MagicMock(
-                PhishingEmailWorkflow=MagicMock(),
-                MalwareTriageWorkflow=MagicMock(),
-                IOCHuntWorkflow=MagicMock(),
-                NetworkForensicsWorkflow=MagicMock(),
-                LogInvestigationWorkflow=MagicMock(),
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.workflow": MagicMock(WorkflowRegistry=mock_wf_registry),
+                "vlair.core.reporter": MagicMock(),
+                "workflows": MagicMock(
+                    PhishingEmailWorkflow=MagicMock(),
+                    MalwareTriageWorkflow=MagicMock(),
+                    IOCHuntWorkflow=MagicMock(),
+                    NetworkForensicsWorkflow=MagicMock(),
+                    LogInvestigationWorkflow=MagicMock(),
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
@@ -1446,7 +1515,9 @@ class TestMainWorkflow:
         """main() workflow handles ImportError"""
         from vlair.cli.main import main
 
-        original_import = __builtins__.__import__ if hasattr(__builtins__, '__import__') else __import__
+        original_import = (
+            __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
+        )
 
         def mock_import(name, *args, **kwargs):
             if name == "vlair.core.workflow":
@@ -1487,11 +1558,14 @@ class TestMainInvestigate:
 
         mock_investigation = MagicMock()
 
-        with patch.dict("sys.modules", {
-            "vlair.core.interactive": MagicMock(
-                InteractiveInvestigation=MagicMock(return_value=mock_investigation)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.interactive": MagicMock(
+                    InteractiveInvestigation=MagicMock(return_value=mock_investigation)
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 0
@@ -1504,7 +1578,9 @@ class TestMainInvestigate:
         """main() investigate interactive handles ImportError"""
         from vlair.cli.main import main
 
-        original_import = __builtins__.__import__ if hasattr(__builtins__, '__import__') else __import__
+        original_import = (
+            __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
+        )
 
         def mock_import(name, *args, **kwargs):
             if "interactive" in name:
@@ -1578,19 +1654,20 @@ class TestMainInvestigate:
         mock_playbook_registry = MagicMock()
 
         with patch("os.path.exists", return_value=True):
-            with patch.dict("sys.modules", {
-                "vlair.investigate": MagicMock(
-                    InvestigationEngine=MagicMock(return_value=mock_engine),
-                    PlaybookRegistry=mock_playbook_registry,
-                ),
-                "vlair.investigate.playbooks.phishing": MagicMock(
-                    PhishingPlaybook=MagicMock()
-                ),
-                "vlair.investigate.connectors.mock": MagicMock(
-                    MockEmailConnector=MagicMock(),
-                    MockSIEMConnector=MagicMock(),
-                ),
-            }):
+            with patch.dict(
+                "sys.modules",
+                {
+                    "vlair.investigate": MagicMock(
+                        InvestigationEngine=MagicMock(return_value=mock_engine),
+                        PlaybookRegistry=mock_playbook_registry,
+                    ),
+                    "vlair.investigate.playbooks.phishing": MagicMock(PhishingPlaybook=MagicMock()),
+                    "vlair.investigate.connectors.mock": MagicMock(
+                        MockEmailConnector=MagicMock(),
+                        MockSIEMConnector=MagicMock(),
+                    ),
+                },
+            ):
                 with pytest.raises(SystemExit) as exc_info:
                     main()
                 assert exc_info.value.code == 0
@@ -1614,31 +1691,32 @@ class TestMainInvestigate:
         mock_state.risk_score = 95
         mock_state.verdict = "MALICIOUS"
         mock_state.steps = [mock_step]
-        mock_state.findings = [
-            {"severity": "critical", "message": "Known malware attachment"}
-        ]
+        mock_state.findings = [{"severity": "critical", "message": "Known malware attachment"}]
         mock_state.iocs = {"hashes": ["abc123"], "domains": ["evil.com"]}
         mock_state.remediation_actions = [
-            MagicMock(name="Block sender", status=MagicMock(value="pending"), target="sender@evil.com")
+            MagicMock(
+                name="Block sender", status=MagicMock(value="pending"), target="sender@evil.com"
+            )
         ]
 
         mock_engine = MagicMock()
         mock_engine.start_investigation.return_value = mock_state
 
         with patch("os.path.exists", return_value=True):
-            with patch.dict("sys.modules", {
-                "vlair.investigate": MagicMock(
-                    InvestigationEngine=MagicMock(return_value=mock_engine),
-                    PlaybookRegistry=MagicMock(),
-                ),
-                "vlair.investigate.playbooks.phishing": MagicMock(
-                    PhishingPlaybook=MagicMock()
-                ),
-                "vlair.investigate.connectors.mock": MagicMock(
-                    MockEmailConnector=MagicMock(),
-                    MockSIEMConnector=MagicMock(),
-                ),
-            }):
+            with patch.dict(
+                "sys.modules",
+                {
+                    "vlair.investigate": MagicMock(
+                        InvestigationEngine=MagicMock(return_value=mock_engine),
+                        PlaybookRegistry=MagicMock(),
+                    ),
+                    "vlair.investigate.playbooks.phishing": MagicMock(PhishingPlaybook=MagicMock()),
+                    "vlair.investigate.connectors.mock": MagicMock(
+                        MockEmailConnector=MagicMock(),
+                        MockSIEMConnector=MagicMock(),
+                    ),
+                },
+            ):
                 with pytest.raises(SystemExit) as exc_info:
                     main()
                 assert exc_info.value.code == 2
@@ -1668,27 +1746,28 @@ class TestMainInvestigate:
         mock_engine.start_investigation.return_value = mock_state
 
         with patch("os.path.exists", return_value=True):
-            with patch.dict("sys.modules", {
-                "vlair.investigate": MagicMock(
-                    InvestigationEngine=MagicMock(return_value=mock_engine),
-                    PlaybookRegistry=MagicMock(),
-                ),
-                "vlair.investigate.playbooks.phishing": MagicMock(
-                    PhishingPlaybook=MagicMock()
-                ),
-                "vlair.investigate.connectors.mock": MagicMock(
-                    MockEmailConnector=MagicMock(),
-                    MockSIEMConnector=MagicMock(),
-                ),
-            }):
+            with patch.dict(
+                "sys.modules",
+                {
+                    "vlair.investigate": MagicMock(
+                        InvestigationEngine=MagicMock(return_value=mock_engine),
+                        PlaybookRegistry=MagicMock(),
+                    ),
+                    "vlair.investigate.playbooks.phishing": MagicMock(PhishingPlaybook=MagicMock()),
+                    "vlair.investigate.connectors.mock": MagicMock(
+                        MockEmailConnector=MagicMock(),
+                        MockSIEMConnector=MagicMock(),
+                    ),
+                },
+            ):
                 with pytest.raises(SystemExit) as exc_info:
                     main()
                 assert exc_info.value.code == 1
 
     @patch("vlair.cli.main.get_tool_registry", return_value=_fake_registry())
-    @patch("sys.argv", [
-        "vlair", "investigate", "phishing", "--file", "test.eml", "--mock", "--json"
-    ])
+    @patch(
+        "sys.argv", ["vlair", "investigate", "phishing", "--file", "test.eml", "--mock", "--json"]
+    )
     def test_investigate_phishing_json_output(self, mock_registry, capsys):
         """main() investigate phishing --json produces JSON"""
         from vlair.cli.main import main
@@ -1706,19 +1785,20 @@ class TestMainInvestigate:
         mock_engine.start_investigation.return_value = mock_state
 
         with patch("os.path.exists", return_value=True):
-            with patch.dict("sys.modules", {
-                "vlair.investigate": MagicMock(
-                    InvestigationEngine=MagicMock(return_value=mock_engine),
-                    PlaybookRegistry=MagicMock(),
-                ),
-                "vlair.investigate.playbooks.phishing": MagicMock(
-                    PhishingPlaybook=MagicMock()
-                ),
-                "vlair.investigate.connectors.mock": MagicMock(
-                    MockEmailConnector=MagicMock(),
-                    MockSIEMConnector=MagicMock(),
-                ),
-            }):
+            with patch.dict(
+                "sys.modules",
+                {
+                    "vlair.investigate": MagicMock(
+                        InvestigationEngine=MagicMock(return_value=mock_engine),
+                        PlaybookRegistry=MagicMock(),
+                    ),
+                    "vlair.investigate.playbooks.phishing": MagicMock(PhishingPlaybook=MagicMock()),
+                    "vlair.investigate.connectors.mock": MagicMock(
+                        MockEmailConnector=MagicMock(),
+                        MockSIEMConnector=MagicMock(),
+                    ),
+                },
+            ):
                 with pytest.raises(SystemExit) as exc_info:
                     main()
                 assert exc_info.value.code == 0
@@ -1759,11 +1839,14 @@ class TestMainInvestigate:
         mock_engine = MagicMock()
         mock_engine.get_investigation.return_value = mock_state
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1780,11 +1863,14 @@ class TestMainInvestigate:
         mock_engine = MagicMock()
         mock_engine.get_investigation.return_value = None
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
@@ -1816,11 +1902,14 @@ class TestMainInvestigate:
             },
         ]
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1837,11 +1926,14 @@ class TestMainInvestigate:
         mock_engine = MagicMock()
         mock_engine.list_investigations.return_value = []
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 0
@@ -1857,14 +1949,23 @@ class TestMainInvestigate:
 
         mock_engine = MagicMock()
         mock_engine.list_investigations.return_value = [
-            {"id": "INV-X", "type": "phishing", "status": "completed", "verdict": "CLEAN", "risk_score": 0}
+            {
+                "id": "INV-X",
+                "type": "phishing",
+                "status": "completed",
+                "verdict": "CLEAN",
+                "risk_score": 0,
+            }
         ]
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             main()
 
         mock_engine.list_investigations.assert_called_once_with(limit=5, since_hours=24)
@@ -1878,11 +1979,14 @@ class TestMainInvestigate:
         mock_engine = MagicMock()
         mock_engine.list_investigations.return_value = []
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 0
@@ -1914,11 +2018,14 @@ class TestMainInvestigate:
         mock_engine = MagicMock()
         mock_engine.get_investigation.return_value = mock_state
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1966,11 +2073,14 @@ class TestMainInvestigate:
         mock_engine = MagicMock()
         mock_engine.get_investigation.return_value = mock_state
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -1992,11 +2102,14 @@ class TestMainInvestigate:
         mock_engine = MagicMock()
         mock_engine.get_investigation.return_value = None
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 1
@@ -2042,12 +2155,15 @@ class TestMainStatus:
             }
         ]
 
-        with patch.dict("sys.modules", {
-            "dotenv": MagicMock(load_dotenv=MagicMock()),
-            "vlair.core.history": MagicMock(
-                AnalysisHistory=MagicMock(return_value=mock_history)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "dotenv": MagicMock(load_dotenv=MagicMock()),
+                "vlair.core.history": MagicMock(
+                    AnalysisHistory=MagicMock(return_value=mock_history)
+                ),
+            },
+        ):
             with patch("os.getenv", return_value=None):
                 main()
 
@@ -2074,12 +2190,15 @@ class TestMainStatus:
             "last_analysis": None,
         }
 
-        with patch.dict("sys.modules", {
-            "dotenv": MagicMock(load_dotenv=MagicMock()),
-            "vlair.core.history": MagicMock(
-                AnalysisHistory=MagicMock(return_value=mock_history)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "dotenv": MagicMock(load_dotenv=MagicMock()),
+                "vlair.core.history": MagicMock(
+                    AnalysisHistory=MagicMock(return_value=mock_history)
+                ),
+            },
+        ):
             with patch("os.getenv", side_effect=fake_getenv):
                 main()
 
@@ -2092,12 +2211,17 @@ class TestMainStatus:
         """main() status handles missing history gracefully"""
         from vlair.cli.main import main
 
-        with patch.dict("sys.modules", {
-            "dotenv": MagicMock(load_dotenv=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "dotenv": MagicMock(load_dotenv=MagicMock()),
+            },
+        ):
             with patch("os.getenv", return_value=None):
                 # Make history import fail
-                original_import = __builtins__.__import__ if hasattr(__builtins__, '__import__') else __import__
+                original_import = (
+                    __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
+                )
 
                 def mock_import(name, *args, **kwargs):
                     if "history" in name:
@@ -2168,6 +2292,7 @@ class TestMainInteractiveMenu:
 # InteractiveMenu standalone tests
 # ---------------------------------------------------------------------------
 
+
 class TestInteractiveMenuMethods:
     """Test InteractiveMenu methods in isolation"""
 
@@ -2191,7 +2316,8 @@ class TestInteractiveMenuMethods:
             (tid, tool) for tid, tool in reg.items() if tool["category"] == cat
         ]
         discovery.search_tools.side_effect = lambda kw: [
-            (tid, tool) for tid, tool in reg.items()
+            (tid, tool)
+            for tid, tool in reg.items()
             if kw.lower() in tool["name"].lower() or kw.lower() in tool["description"].lower()
         ]
 
@@ -2395,6 +2521,7 @@ class TestInteractiveMenuMethods:
 # Edge cases and error paths
 # ---------------------------------------------------------------------------
 
+
 class TestEdgeCases:
     """Test miscellaneous edge cases"""
 
@@ -2412,12 +2539,15 @@ class TestEdgeCases:
             "sources": [],
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.hash_lookup": MagicMock(
-                HashLookup=MagicMock(return_value=mock_lookup)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.hash_lookup": MagicMock(
+                    HashLookup=MagicMock(return_value=mock_lookup)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -2440,12 +2570,15 @@ class TestEdgeCases:
             "sources": ["VirusTotal"],
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.hash_lookup": MagicMock(
-                HashLookup=MagicMock(return_value=mock_lookup)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.hash_lookup": MagicMock(
+                    HashLookup=MagicMock(return_value=mock_lookup)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -2463,12 +2596,15 @@ class TestEdgeCases:
             "risk_score": 5,
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.domain_ip_intel": MagicMock(
-                DomainIPIntelligence=MagicMock(return_value=mock_intel)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.domain_ip_intel": MagicMock(
+                    DomainIPIntelligence=MagicMock(return_value=mock_intel)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -2489,12 +2625,15 @@ class TestEdgeCases:
             "categories": [],
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.domain_ip_intel": MagicMock(
-                DomainIPIntelligence=MagicMock(return_value=mock_intel)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.domain_ip_intel": MagicMock(
+                    DomainIPIntelligence=MagicMock(return_value=mock_intel)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -2514,12 +2653,15 @@ class TestEdgeCases:
             "threats": [],
         }
 
-        with patch.dict("sys.modules", {
-            "vlair.tools.url_analyzer": MagicMock(
-                URLAnalyzer=MagicMock(return_value=mock_analyzer)
-            ),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.tools.url_analyzer": MagicMock(
+                    URLAnalyzer=MagicMock(return_value=mock_analyzer)
+                ),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -2552,12 +2694,13 @@ class TestEdgeCases:
         )
 
         with patch("os.path.exists", return_value=True):
-            with patch.dict("sys.modules", {
-                "vlair.investigate": mock_investigate_module,
-                "vlair.investigate.playbooks.phishing": MagicMock(
-                    PhishingPlaybook=MagicMock()
-                ),
-            }):
+            with patch.dict(
+                "sys.modules",
+                {
+                    "vlair.investigate": mock_investigate_module,
+                    "vlair.investigate.playbooks.phishing": MagicMock(PhishingPlaybook=MagicMock()),
+                },
+            ):
                 with pytest.raises(SystemExit) as exc_info:
                     main()
                 assert exc_info.value.code == 0
@@ -2586,11 +2729,14 @@ class TestEdgeCases:
         mock_engine = MagicMock()
         mock_engine.get_investigation.return_value = mock_state
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -2623,11 +2769,14 @@ class TestEdgeCases:
         mock_engine = MagicMock()
         mock_engine.get_investigation.return_value = mock_state
 
-        with patch.dict("sys.modules", {
-            "vlair.investigate": MagicMock(
-                InvestigationEngine=MagicMock(return_value=mock_engine)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.investigate": MagicMock(
+                    InvestigationEngine=MagicMock(return_value=mock_engine)
+                ),
+            },
+        ):
             main()
 
         captured = capsys.readouterr()
@@ -2641,7 +2790,9 @@ class TestEdgeCases:
         """investigate phishing handles ImportError"""
         from vlair.cli.main import main
 
-        original_import = __builtins__.__import__ if hasattr(__builtins__, '__import__') else __import__
+        original_import = (
+            __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
+        )
 
         def mock_import(name, *args, **kwargs):
             if "vlair.investigate" in str(name):
@@ -2667,19 +2818,20 @@ class TestEdgeCases:
         mock_engine.start_investigation.side_effect = RuntimeError("DB error")
 
         with patch("os.path.exists", return_value=True):
-            with patch.dict("sys.modules", {
-                "vlair.investigate": MagicMock(
-                    InvestigationEngine=MagicMock(return_value=mock_engine),
-                    PlaybookRegistry=MagicMock(),
-                ),
-                "vlair.investigate.playbooks.phishing": MagicMock(
-                    PhishingPlaybook=MagicMock()
-                ),
-                "vlair.investigate.connectors.mock": MagicMock(
-                    MockEmailConnector=MagicMock(),
-                    MockSIEMConnector=MagicMock(),
-                ),
-            }):
+            with patch.dict(
+                "sys.modules",
+                {
+                    "vlair.investigate": MagicMock(
+                        InvestigationEngine=MagicMock(return_value=mock_engine),
+                        PlaybookRegistry=MagicMock(),
+                    ),
+                    "vlair.investigate.playbooks.phishing": MagicMock(PhishingPlaybook=MagicMock()),
+                    "vlair.investigate.connectors.mock": MagicMock(
+                        MockEmailConnector=MagicMock(),
+                        MockSIEMConnector=MagicMock(),
+                    ),
+                },
+            ):
                 with pytest.raises(SystemExit) as exc_info:
                     main()
                 assert exc_info.value.code == 1
@@ -2688,10 +2840,19 @@ class TestEdgeCases:
         assert "Error during investigation" in captured.err
 
     @patch("vlair.cli.main.get_tool_registry", return_value=_fake_registry())
-    @patch("sys.argv", [
-        "vlair", "workflow", "phishing-email", "test.eml",
-        "--report", "html", "--output", "/tmp/out.html"
-    ])
+    @patch(
+        "sys.argv",
+        [
+            "vlair",
+            "workflow",
+            "phishing-email",
+            "test.eml",
+            "--report",
+            "html",
+            "--output",
+            "/tmp/out.html",
+        ],
+    )
     def test_workflow_with_report_generation(self, mock_registry, capsys):
         """workflow with --report and --output generates report"""
         from vlair.cli.main import main
@@ -2728,20 +2889,23 @@ class TestEdgeCases:
         mock_generator = MagicMock()
         mock_generator.generate.return_value = "/tmp/out.html"
 
-        with patch.dict("sys.modules", {
-            "vlair.core.workflow": MagicMock(WorkflowRegistry=mock_wf_registry),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "vlair.core.report_generator": MagicMock(
-                ReportGenerator=MagicMock(return_value=mock_generator)
-            ),
-            "workflows": MagicMock(
-                PhishingEmailWorkflow=MagicMock(),
-                MalwareTriageWorkflow=MagicMock(),
-                IOCHuntWorkflow=MagicMock(),
-                NetworkForensicsWorkflow=MagicMock(),
-                LogInvestigationWorkflow=MagicMock(),
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.workflow": MagicMock(WorkflowRegistry=mock_wf_registry),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "vlair.core.report_generator": MagicMock(
+                    ReportGenerator=MagicMock(return_value=mock_generator)
+                ),
+                "workflows": MagicMock(
+                    PhishingEmailWorkflow=MagicMock(),
+                    MalwareTriageWorkflow=MagicMock(),
+                    IOCHuntWorkflow=MagicMock(),
+                    NetworkForensicsWorkflow=MagicMock(),
+                    LogInvestigationWorkflow=MagicMock(),
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 0
@@ -2776,14 +2940,17 @@ class TestEdgeCases:
         mock_generator = MagicMock()
         mock_generator.generate.return_value = "/tmp/report.html"
 
-        with patch.dict("sys.modules", {
-            "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
-            "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
-            "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
-            "vlair.core.report_generator": MagicMock(
-                ReportGenerator=MagicMock(return_value=mock_generator)
-            ),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "vlair.core.analyzer": MagicMock(Analyzer=MagicMock(return_value=mock_analyzer)),
+                "vlair.core.reporter": MagicMock(Reporter=MagicMock(return_value=mock_reporter)),
+                "vlair.core.history": MagicMock(AnalysisHistory=MagicMock()),
+                "vlair.core.report_generator": MagicMock(
+                    ReportGenerator=MagicMock(return_value=mock_generator)
+                ),
+            },
+        ):
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 0

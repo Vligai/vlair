@@ -590,7 +590,12 @@ class TestMainRouting:
             main()
         mock_eml_main.assert_called_once()
         assert captured["argv"] == [
-            "emlParser.py", "phish.eml", "--output", "r.json", "--vt", "--verbose"
+            "emlParser.py",
+            "phish.eml",
+            "--output",
+            "r.json",
+            "--vt",
+            "--verbose",
         ]
 
     @patch("vlair.tools.eml_parser.main")
@@ -624,12 +629,21 @@ class TestMainRouting:
             sys,
             "argv",
             [
-                "vlair", "ioc", "report.txt",
-                "--file", "extra.txt",
-                "--output", "iocs.csv",
-                "--format", "csv",
-                "--types", "ip", "domain",
-                "--refang", "--defang", "--exclude-private",
+                "vlair",
+                "ioc",
+                "report.txt",
+                "--file",
+                "extra.txt",
+                "--output",
+                "iocs.csv",
+                "--format",
+                "csv",
+                "--types",
+                "ip",
+                "domain",
+                "--refang",
+                "--defang",
+                "--exclude-private",
             ],
         ):
             main()
@@ -676,12 +690,18 @@ class TestMainRouting:
             sys,
             "argv",
             [
-                "vlair", "hash", "abc123",
-                "--file", "hashes.txt",
-                "--output", "out.json",
-                "--format", "csv",
+                "vlair",
+                "hash",
+                "abc123",
+                "--file",
+                "hashes.txt",
+                "--output",
+                "out.json",
+                "--format",
+                "csv",
                 "--no-cache",
-                "--rate-limit", "10",
+                "--rate-limit",
+                "10",
                 "--verbose",
             ],
         ):
@@ -735,10 +755,15 @@ class TestMainRouting:
             sys,
             "argv",
             [
-                "vlair", "intel", "evil.com",
-                "--file", "domains.txt",
-                "--output", "out.json",
-                "--format", "csv",
+                "vlair",
+                "intel",
+                "evil.com",
+                "--file",
+                "domains.txt",
+                "--output",
+                "out.json",
+                "--format",
+                "csv",
                 "--verbose",
             ],
         ):
@@ -781,10 +806,15 @@ class TestMainRouting:
             sys,
             "argv",
             [
-                "vlair", "log", "access.log",
-                "--type", "apache",
-                "--output", "out.json",
-                "--format", "txt",
+                "vlair",
+                "log",
+                "access.log",
+                "--type",
+                "apache",
+                "--output",
+                "out.json",
+                "--format",
+                "txt",
                 "--verbose",
             ],
         ):
@@ -828,9 +858,13 @@ class TestMainRouting:
             sys,
             "argv",
             [
-                "vlair", "pcap", "capture.pcap",
-                "--output", "out.json",
-                "--format", "txt",
+                "vlair",
+                "pcap",
+                "capture.pcap",
+                "--output",
+                "out.json",
+                "--format",
+                "txt",
                 "--verbose",
             ],
         ):
@@ -872,10 +906,15 @@ class TestMainRouting:
             sys,
             "argv",
             [
-                "vlair", "url", "http://evil.com",
-                "--file", "urls.txt",
-                "--output", "out.json",
-                "--format", "txt",
+                "vlair",
+                "url",
+                "http://evil.com",
+                "--file",
+                "urls.txt",
+                "--output",
+                "out.json",
+                "--format",
+                "txt",
                 "--no-cache",
                 "--verbose",
             ],
@@ -957,14 +996,23 @@ class TestMainRouting:
             sys,
             "argv",
             [
-                "vlair", "cert", "example.com",
-                "--file", "cert.pem",
-                "--file-list", "domains.txt",
-                "--hostname", "example.com",
-                "--port", "8443",
-                "--ct-search", "example.com",
-                "--format", "json",
-                "--output", "out.json",
+                "vlair",
+                "cert",
+                "example.com",
+                "--file",
+                "cert.pem",
+                "--file-list",
+                "domains.txt",
+                "--hostname",
+                "example.com",
+                "--port",
+                "8443",
+                "--ct-search",
+                "example.com",
+                "--format",
+                "json",
+                "--output",
+                "out.json",
                 "--verbose",
             ],
         ):
@@ -1020,16 +1068,25 @@ class TestMainRouting:
             sys,
             "argv",
             [
-                "vlair", "deobfuscate", "malware.ps1",
-                "--language", "powershell",
-                "--max-layers", "5",
+                "vlair",
+                "deobfuscate",
+                "malware.ps1",
+                "--language",
+                "powershell",
+                "--max-layers",
+                "5",
                 "--extract-iocs",
-                "--format", "json",
-                "--output", "out.json",
+                "--format",
+                "json",
+                "--output",
+                "out.json",
                 "--verbose",
-                "--decode-base64", "SGVsbG8=",
-                "--decode-hex", "48656c6c6f",
-                "--decode-url", "%48%65%6c%6c%6f",
+                "--decode-base64",
+                "SGVsbG8=",
+                "--decode-hex",
+                "48656c6c6f",
+                "--decode-url",
+                "%48%65%6c%6c%6f",
             ],
         ):
             main()
@@ -1082,9 +1139,7 @@ class TestMainRouting:
     def test_deobfuscate_non_default_max_layers_included(self, mock_deobf_main):
         captured = {}
         mock_deobf_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "deobfuscate", "malware.js", "--max-layers", "3"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "deobfuscate", "malware.js", "--max-layers", "3"]):
             main()
         assert "--max-layers" in captured["argv"]
         assert "3" in captured["argv"]
@@ -1132,9 +1187,7 @@ class TestMainEdgeCases:
         """Unknown extra arguments should be forwarded via 'remaining'."""
         captured = {}
         mock_eml_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "eml", "email.eml", "--custom-flag", "value"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "eml", "email.eml", "--custom-flag", "value"]):
             main()
         mock_eml_main.assert_called_once()
         assert "--custom-flag" in captured["argv"]
@@ -1144,9 +1197,7 @@ class TestMainEdgeCases:
     def test_remaining_args_forwarded_ioc(self, mock_ioc_main):
         captured = {}
         mock_ioc_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "ioc", "report.txt", "--extra", "stuff"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "ioc", "report.txt", "--extra", "stuff"]):
             main()
         mock_ioc_main.assert_called_once()
         assert "--extra" in captured["argv"]
@@ -1156,9 +1207,7 @@ class TestMainEdgeCases:
     def test_remaining_args_forwarded_hash(self, mock_hash_main):
         captured = {}
         mock_hash_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "hash", "abc", "--unknown-flag"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "hash", "abc", "--unknown-flag"]):
             main()
         mock_hash_main.assert_called_once()
         assert "--unknown-flag" in captured["argv"]
@@ -1177,9 +1226,7 @@ class TestMainEdgeCases:
     def test_remaining_args_forwarded_pcap(self, mock_pcap_main):
         captured = {}
         mock_pcap_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "pcap", "c.pcap", "--extra-flag"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "pcap", "c.pcap", "--extra-flag"]):
             main()
         mock_pcap_main.assert_called_once()
         assert "--extra-flag" in captured["argv"]
@@ -1221,7 +1268,12 @@ class TestSysArgvReconstruction:
         ):
             main()
         assert captured["argv"] == [
-            "emlParser.py", "test.eml", "--output", "r.json", "--vt", "--verbose",
+            "emlParser.py",
+            "test.eml",
+            "--output",
+            "r.json",
+            "--vt",
+            "--verbose",
         ]
 
     @patch("vlair.tools.log_analyzer.main")
@@ -1231,14 +1283,29 @@ class TestSysArgvReconstruction:
         with patch.object(
             sys,
             "argv",
-            ["vlair", "log", "access.log", "--type", "apache", "--output", "o.json", "--format", "txt", "--verbose"],
+            [
+                "vlair",
+                "log",
+                "access.log",
+                "--type",
+                "apache",
+                "--output",
+                "o.json",
+                "--format",
+                "txt",
+                "--verbose",
+            ],
         ):
             main()
         assert captured["argv"] == [
-            "analyzer.py", "access.log",
-            "--type", "apache",
-            "--output", "o.json",
-            "--format", "txt",
+            "analyzer.py",
+            "access.log",
+            "--type",
+            "apache",
+            "--output",
+            "o.json",
+            "--format",
+            "txt",
             "--verbose",
         ]
 
@@ -1253,9 +1320,12 @@ class TestSysArgvReconstruction:
         ):
             main()
         assert captured["argv"] == [
-            "analyzer.py", "capture.pcap",
-            "--output", "o.json",
-            "--format", "txt",
+            "analyzer.py",
+            "capture.pcap",
+            "--output",
+            "o.json",
+            "--format",
+            "txt",
             "--verbose",
         ]
 
@@ -1268,7 +1338,12 @@ class TestSysArgvReconstruction:
         ):
             main()
         assert captured["argv"] == [
-            "scanner.py", "scan", "/samples/", "--rules", "r/", "--recursive",
+            "scanner.py",
+            "scan",
+            "/samples/",
+            "--rules",
+            "r/",
+            "--recursive",
         ]
 
     @patch("vlair.tools.domain_ip_intel.main")
@@ -1278,13 +1353,28 @@ class TestSysArgvReconstruction:
         with patch.object(
             sys,
             "argv",
-            ["vlair", "intel", "evil.com", "--file", "d.txt", "--output", "o.json", "--format", "csv", "--verbose"],
+            [
+                "vlair",
+                "intel",
+                "evil.com",
+                "--file",
+                "d.txt",
+                "--output",
+                "o.json",
+                "--format",
+                "csv",
+                "--verbose",
+            ],
         ):
             main()
         assert captured["argv"] == [
-            "intel.py", "evil.com",
-            "--file", "d.txt",
-            "--output", "o.json",
-            "--format", "csv",
+            "intel.py",
+            "evil.com",
+            "--file",
+            "d.txt",
+            "--output",
+            "o.json",
+            "--format",
+            "csv",
             "--verbose",
         ]

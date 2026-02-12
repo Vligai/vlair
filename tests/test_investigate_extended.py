@@ -42,7 +42,6 @@ from vlair.investigate.connectors.base import Email, URLClickEvent
 from vlair.investigate.connectors.mock.email import MockEmailConnector
 from vlair.investigate.connectors.mock.siem import MockSIEMConnector
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -422,9 +421,7 @@ class TestBasePlaybookHelpers:
 
             def _define_steps(self):
                 self.steps = [
-                    PlaybookStep(
-                        name="step1", description="test", depends_on=["nonexistent"]
-                    ),
+                    PlaybookStep(name="step1", description="test", depends_on=["nonexistent"]),
                 ]
 
             def _execute_step(self, step, state, connectors):
@@ -657,7 +654,11 @@ class TestInvestigationEngineGetAndList:
 
         # Create investigations with different statuses
         for i, status in enumerate(
-            [InvestigationStatus.COMPLETED, InvestigationStatus.FAILED, InvestigationStatus.COMPLETED]
+            [
+                InvestigationStatus.COMPLETED,
+                InvestigationStatus.FAILED,
+                InvestigationStatus.COMPLETED,
+            ]
         ):
             state = _create_test_state(inv_id=f"INV-LIST-{i}", status=status)
             manager.save(state)
@@ -836,9 +837,7 @@ class TestInvestigationEngineRemediation:
         engine = InvestigationEngine(state_manager=manager)
         self._setup_state_with_actions(manager)
 
-        result = engine.approve_remediation(
-            "INV-REM-001", "act-block", "admin@company.com"
-        )
+        result = engine.approve_remediation("INV-REM-001", "act-block", "admin@company.com")
         assert result is True
 
         # Verify saved
@@ -898,9 +897,7 @@ class TestInvestigationEngineRemediation:
         manager = InvestigationStateManager(db_path=temp_db)
         mock_email = MagicMock()
         mock_email.block_sender.return_value = True
-        engine = InvestigationEngine(
-            state_manager=manager, connectors={"email": mock_email}
-        )
+        engine = InvestigationEngine(state_manager=manager, connectors={"email": mock_email})
         self._setup_state_with_actions(manager)
 
         engine.approve_remediation("INV-REM-001", "act-block", "admin")
@@ -914,9 +911,7 @@ class TestInvestigationEngineRemediation:
         manager = InvestigationStateManager(db_path=temp_db)
         mock_email = MagicMock()
         mock_email.delete_message.return_value = True
-        engine = InvestigationEngine(
-            state_manager=manager, connectors={"email": mock_email}
-        )
+        engine = InvestigationEngine(state_manager=manager, connectors={"email": mock_email})
         self._setup_state_with_actions(manager)
 
         engine.approve_remediation("INV-REM-001", "act-delete", "admin")
@@ -930,9 +925,7 @@ class TestInvestigationEngineRemediation:
         manager = InvestigationStateManager(db_path=temp_db)
         mock_edr = MagicMock()
         mock_edr.isolate_host.return_value = True
-        engine = InvestigationEngine(
-            state_manager=manager, connectors={"edr": mock_edr}
-        )
+        engine = InvestigationEngine(state_manager=manager, connectors={"edr": mock_edr})
         self._setup_state_with_actions(manager)
 
         engine.approve_remediation("INV-REM-001", "act-isolate", "admin")
@@ -946,9 +939,7 @@ class TestInvestigationEngineRemediation:
         manager = InvestigationStateManager(db_path=temp_db)
         mock_identity = MagicMock()
         mock_identity.disable_user.return_value = True
-        engine = InvestigationEngine(
-            state_manager=manager, connectors={"identity": mock_identity}
-        )
+        engine = InvestigationEngine(state_manager=manager, connectors={"identity": mock_identity})
         self._setup_state_with_actions(manager)
 
         engine.approve_remediation("INV-REM-001", "act-disable", "admin")
@@ -962,9 +953,7 @@ class TestInvestigationEngineRemediation:
         manager = InvestigationStateManager(db_path=temp_db)
         mock_identity = MagicMock()
         mock_identity.revoke_sessions.return_value = True
-        engine = InvestigationEngine(
-            state_manager=manager, connectors={"identity": mock_identity}
-        )
+        engine = InvestigationEngine(state_manager=manager, connectors={"identity": mock_identity})
         self._setup_state_with_actions(manager)
 
         engine.approve_remediation("INV-REM-001", "act-revoke", "admin")
@@ -978,9 +967,7 @@ class TestInvestigationEngineRemediation:
         manager = InvestigationStateManager(db_path=temp_db)
         mock_identity = MagicMock()
         mock_identity.reset_password.return_value = True
-        engine = InvestigationEngine(
-            state_manager=manager, connectors={"identity": mock_identity}
-        )
+        engine = InvestigationEngine(state_manager=manager, connectors={"identity": mock_identity})
         self._setup_state_with_actions(manager)
 
         engine.approve_remediation("INV-REM-001", "act-reset", "admin")
@@ -1012,9 +999,7 @@ class TestInvestigationEngineRemediation:
         manager = InvestigationStateManager(db_path=temp_db)
         mock_email = MagicMock()
         mock_email.block_sender.side_effect = ConnectionError("connection refused")
-        engine = InvestigationEngine(
-            state_manager=manager, connectors={"email": mock_email}
-        )
+        engine = InvestigationEngine(state_manager=manager, connectors={"email": mock_email})
         self._setup_state_with_actions(manager)
 
         engine.approve_remediation("INV-REM-001", "act-block", "admin")
@@ -1503,9 +1488,7 @@ class TestInvestigationStateManagerExtended:
                 result="success",
             )
         )
-        state.findings = [
-            {"severity": "high", "message": "test", "source": "test", "details": {}}
-        ]
+        state.findings = [{"severity": "high", "message": "test", "source": "test", "details": {}}]
         state.iocs = {"urls": ["http://evil.com"], "domains": ["evil.com"]}
         state.risk_score = 75
         state.verdict = "MALICIOUS"
@@ -1612,13 +1595,9 @@ class TestInvestigationStateManagerExtended:
         manager = InvestigationStateManager(db_path=temp_db)
 
         state = _create_test_state(inv_id="INV-DEL")
-        state.add_step_result(
-            StepResult(name="s1", status=StepStatus.COMPLETED)
-        )
+        state.add_step_result(StepResult(name="s1", status=StepStatus.COMPLETED))
         state.add_remediation_action(
-            RemediationAction(
-                id="a1", name="act", action_type="block", target="x"
-            )
+            RemediationAction(id="a1", name="act", action_type="block", target="x")
         )
         manager.save(state)
 
@@ -1779,7 +1758,13 @@ class TestStateSerialization:
                 }
             ],
             "findings": [{"severity": "high", "message": "test", "source": "x"}],
-            "iocs": {"urls": ["http://test.com"], "hashes": [], "domains": [], "ips": [], "emails": []},
+            "iocs": {
+                "urls": ["http://test.com"],
+                "hashes": [],
+                "domains": [],
+                "ips": [],
+                "emails": [],
+            },
             "risk_score": 80,
             "verdict": "MALICIOUS",
             "remediation_actions": [
@@ -1811,15 +1796,11 @@ class TestStateSerialization:
             risk_score=60,
             verdict="SUSPICIOUS",
         )
-        state.add_step_result(
-            StepResult(name="s1", status=StepStatus.COMPLETED, output={"k": "v"})
-        )
+        state.add_step_result(StepResult(name="s1", status=StepStatus.COMPLETED, output={"k": "v"}))
         state.add_finding("critical", "Finding 1", "test_tool", {"detail": "x"})
         state.add_iocs("urls", ["http://example.com"])
         state.add_remediation_action(
-            RemediationAction(
-                id="a1", name="Act", action_type="block", target="t", priority=2
-            )
+            RemediationAction(id="a1", name="Act", action_type="block", target="t", priority=2)
         )
         state.completed_at = datetime.now(timezone.utc)
 
@@ -1872,19 +1853,28 @@ class TestStateSerialization:
         state = _create_test_state()
         state.add_remediation_action(
             RemediationAction(
-                id="a1", name="A1", action_type="block", target="t",
+                id="a1",
+                name="A1",
+                action_type="block",
+                target="t",
                 status=RemediationStatus.PENDING,
             )
         )
         state.add_remediation_action(
             RemediationAction(
-                id="a2", name="A2", action_type="block", target="t",
+                id="a2",
+                name="A2",
+                action_type="block",
+                target="t",
                 status=RemediationStatus.APPROVED,
             )
         )
         state.add_remediation_action(
             RemediationAction(
-                id="a3", name="A3", action_type="block", target="t",
+                id="a3",
+                name="A3",
+                action_type="block",
+                target="t",
                 status=RemediationStatus.PENDING,
             )
         )

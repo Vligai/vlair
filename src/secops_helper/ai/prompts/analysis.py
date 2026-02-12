@@ -7,7 +7,6 @@ Templates for constructing analysis prompts from threat intelligence data.
 from typing import Dict, Any, Optional
 import json
 
-
 ANALYSIS_PROMPT_TEMPLATE = """
 Analyze the following threat intelligence data and provide a security assessment.
 

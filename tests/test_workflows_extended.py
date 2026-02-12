@@ -32,7 +32,6 @@ from vlair.core.workflow import (
 )
 from vlair.core.scorer import Severity, RiskScorer
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -253,9 +252,7 @@ class TestPhishingEmailWorkflowSteps:
             "emails": ["a@b.com"],
         }
 
-        with patch(
-            "vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor
-        ):
+        with patch("vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor):
             result = wf._extract_iocs(ctx)
 
         assert result.success is True
@@ -283,9 +280,7 @@ class TestPhishingEmailWorkflowSteps:
         mock_extractor = MagicMock()
         mock_extractor.extract_from_file.side_effect = ValueError("bad file")
 
-        with patch(
-            "vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor
-        ):
+        with patch("vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor):
             result = wf._extract_iocs(ctx)
 
         assert result.success is False
@@ -428,9 +423,7 @@ class TestPhishingEmailWorkflowSteps:
             "suspicious_patterns": ["ip_address_in_url", "long_url"],
         }
 
-        with patch(
-            "vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer
-        ):
+        with patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer):
             result = wf._check_urls(ctx)
 
         assert result.success is True
@@ -447,9 +440,7 @@ class TestPhishingEmailWorkflowSteps:
         mock_analyzer = MagicMock()
         mock_analyzer.analyze.return_value = {"verdict": "suspicious", "suspicious_patterns": []}
 
-        with patch(
-            "vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer
-        ):
+        with patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer):
             result = wf._check_urls(ctx)
 
         assert result.success is True
@@ -643,9 +634,7 @@ class TestNetworkForensicsWorkflowSteps:
             "statistics": {"total_packets": 1500},
         }
 
-        with patch(
-            "vlair.tools.pcap_analyzer.PCAPAnalyzer", return_value=mock_analyzer
-        ):
+        with patch("vlair.tools.pcap_analyzer.PCAPAnalyzer", return_value=mock_analyzer):
             result = wf._parse_pcap(ctx)
 
         assert result.success is True
@@ -837,9 +826,7 @@ class TestNetworkForensicsWorkflowSteps:
             ],
         }
 
-        with patch(
-            "vlair.tools.yara_scanner.YaraScanner", return_value=mock_scanner
-        ):
+        with patch("vlair.tools.yara_scanner.YaraScanner", return_value=mock_scanner):
             result = wf._yara_scan(ctx)
 
         assert result.success is True
@@ -933,9 +920,7 @@ class TestLogInvestigationWorkflowSteps:
             "statistics": {"total_entries": 200},
         }
 
-        with patch(
-            "vlair.tools.log_analyzer.LogAnalyzer", return_value=mock_analyzer
-        ):
+        with patch("vlair.tools.log_analyzer.LogAnalyzer", return_value=mock_analyzer):
             result = wf._parse_logs(ctx)
 
         assert result.success is True
@@ -1224,9 +1209,7 @@ class TestMalwareTriageWorkflowSteps:
 
         assert result.success is True
         # Should have CRITICAL for known malware + CRITICAL for family
-        critical_findings = [
-            f for f in ctx.scorer.findings if f.severity == Severity.CRITICAL
-        ]
+        critical_findings = [f for f in ctx.scorer.findings if f.severity == Severity.CRITICAL]
         assert len(critical_findings) >= 2
 
     def test_check_hashes_suspicious(self):
@@ -1275,9 +1258,7 @@ class TestMalwareTriageWorkflowSteps:
             ],
         }
 
-        with patch(
-            "vlair.tools.yara_scanner.YaraScanner", return_value=mock_scanner
-        ):
+        with patch("vlair.tools.yara_scanner.YaraScanner", return_value=mock_scanner):
             result = wf._yara_scan(ctx)
 
         assert result.success is True
@@ -1320,9 +1301,7 @@ class TestMalwareTriageWorkflowSteps:
             },
         }
 
-        with patch(
-            "vlair.tools.deobfuscator.Deobfuscator", return_value=mock_deob
-        ):
+        with patch("vlair.tools.deobfuscator.Deobfuscator", return_value=mock_deob):
             result = wf._deobfuscate(ctx)
 
         assert result.success is True
@@ -1344,15 +1323,12 @@ class TestMalwareTriageWorkflowSteps:
             "extracted_iocs": {},
         }
 
-        with patch(
-            "vlair.tools.deobfuscator.Deobfuscator", return_value=mock_deob
-        ):
+        with patch("vlair.tools.deobfuscator.Deobfuscator", return_value=mock_deob):
             result = wf._deobfuscate(ctx)
 
         assert result.success is True
         assert any(
-            f.severity == Severity.MEDIUM and "obfuscated" in f.message
-            for f in ctx.scorer.findings
+            f.severity == Severity.MEDIUM and "obfuscated" in f.message for f in ctx.scorer.findings
         )
 
     def test_deobfuscate_import_error(self):
@@ -1381,9 +1357,7 @@ class TestMalwareTriageWorkflowSteps:
             "emails": ["x@y.com"],
         }
 
-        with patch(
-            "vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor
-        ):
+        with patch("vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor):
             result = wf._extract_iocs(ctx)
 
         assert result.success is True
@@ -1523,9 +1497,7 @@ class TestIOCHuntWorkflowSteps:
             "urls": ["http://evil.com"],
         }
 
-        with patch(
-            "vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor
-        ):
+        with patch("vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor):
             result = wf._parse_iocs(ctx)
 
         assert result.success is True
@@ -1540,9 +1512,7 @@ class TestIOCHuntWorkflowSteps:
         mock_extractor = MagicMock()
         mock_extractor.extract_from_file.side_effect = FileNotFoundError("no file")
 
-        with patch(
-            "vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor
-        ):
+        with patch("vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor):
             result = wf._parse_iocs(ctx)
 
         assert result.success is False
@@ -1586,9 +1556,7 @@ class TestIOCHuntWorkflowSteps:
         ctx = _make_context()
         ctx.add_iocs("hashes", ["h1"])
 
-        with patch(
-            "vlair.tools.hash_lookup.HashLookup", side_effect=Exception("fail")
-        ):
+        with patch("vlair.tools.hash_lookup.HashLookup", side_effect=Exception("fail")):
             result = wf._check_hashes(ctx)
 
         assert result.success is False
@@ -1680,9 +1648,7 @@ class TestIOCHuntWorkflowSteps:
         mock_analyzer = MagicMock()
         mock_analyzer.analyze.return_value = {"verdict": "malicious"}
 
-        with patch(
-            "vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer
-        ):
+        with patch("vlair.tools.url_analyzer.URLAnalyzer", return_value=mock_analyzer):
             result = wf._check_urls(ctx)
 
         assert result.success is True
@@ -1755,9 +1721,7 @@ class TestWorkflowDependencySkipping:
                 result = wf.execute("/fake/file.eml", "email")
 
         # parse_email should have failed
-        parse_step = next(
-            (r for r in result["step_results"] if r["name"] == "parse_email"), None
-        )
+        parse_step = next((r for r in result["step_results"] if r["name"] == "parse_email"), None)
         assert parse_step is not None
         assert parse_step["success"] is False
 
@@ -1794,9 +1758,7 @@ class TestWorkflowVerboseOutput:
             "connections": [],
         }
 
-        with patch(
-            "vlair.tools.pcap_analyzer.PCAPAnalyzer", return_value=mock_analyzer
-        ):
+        with patch("vlair.tools.pcap_analyzer.PCAPAnalyzer", return_value=mock_analyzer):
             result = wf.execute("test.pcap", "pcap")
 
         assert result is not None
@@ -1812,9 +1774,7 @@ class TestWorkflowVerboseOutput:
             "threats": {},
         }
 
-        with patch(
-            "vlair.tools.log_analyzer.LogAnalyzer", return_value=mock_analyzer
-        ):
+        with patch("vlair.tools.log_analyzer.LogAnalyzer", return_value=mock_analyzer):
             result = wf.execute("test.log", "log")
 
         assert result is not None
@@ -1834,9 +1794,7 @@ class TestWorkflowVerboseOutput:
             "urls": [],
         }
 
-        with patch(
-            "vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor
-        ):
+        with patch("vlair.tools.ioc_extractor.IOCExtractor", return_value=mock_extractor):
             result = wf.execute("test.txt", "ioc_list")
 
         assert result is not None
