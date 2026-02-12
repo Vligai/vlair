@@ -19,8 +19,8 @@ from collections import defaultdict
 # File signatures database
 FILE_SIGNATURES = {
     "jpg": {
-        "header": b"\xFF\xD8\xFF",
-        "footer": b"\xFF\xD9",
+        "header": b"\xff\xd8\xff",
+        "footer": b"\xff\xd9",
         "extension": "jpg",
         "mime": "image/jpeg",
         "description": "JPEG image",

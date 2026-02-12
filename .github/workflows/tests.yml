@@ -48,7 +48,7 @@ jobs:
     - name: Run tests with pytest
       run: |
         # Run tests, excluding PCAP analyzer tests due to scapy dependency issues in CI
-        pytest tests/ --ignore=tests/test_pcap_analyzer.py -v --cov=src/secops_helper --cov-report=xml --cov-report=term-missing --no-cov-on-fail
+        pytest tests/ --ignore=tests/test_pcap_analyzer.py -v --cov=src/vlair --cov-report=xml --cov-report=term-missing --cov-fail-under=75
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

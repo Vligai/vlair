@@ -7,7 +7,6 @@ Templates for generating investigation summaries and reports.
 from typing import Dict, Any, Optional, List
 import json
 
-
 REPORT_PROMPT_TEMPLATE = """
 Generate a formal investigation report based on the following analysis.
 

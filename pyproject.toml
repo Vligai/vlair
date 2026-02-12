@@ -111,7 +111,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --strict-markers"
+addopts = "-v --strict-markers --cov=src/vlair --cov-report=term-missing --cov-fail-under=75"
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
@@ -122,12 +122,16 @@ omit = [
     "tests/*",
     "*/__pycache__/*",
     "*/site-packages/*",
+    "src/vlair/tools/pcap_analyzer.py",
+    "src/vlair/tools/eml_parser.py",
+    "src/vlair/tools/cert_analyzer.py",
 ]
 
 [tool.coverage.report]
 precision = 2
 show_missing = true
 skip_covered = false
+fail_under = 75
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
