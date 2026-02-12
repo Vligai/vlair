@@ -13,12 +13,17 @@ Tests individual step execution paths with mocked tools,
 error handling, verbose mode output, and edge cases.
 """
 
+import importlib.util
+
 import pytest
 import sys
 import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock, PropertyMock
+
+eml_parser_available = importlib.util.find_spec("eml_parser") is not None
+cryptography_available = importlib.util.find_spec("cryptography") is not None
 
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -89,6 +94,7 @@ class TestPhishingEmailWorkflowSteps:
         assert result.success is False
         assert "not available" in result.error or "no module" in result.error
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     def test_parse_email_spf_fail_finding(self):
         """SPF fail adds HIGH finding."""
         wf = self._make_workflow()
@@ -117,6 +123,7 @@ class TestPhishingEmailWorkflowSteps:
         findings = ctx.scorer.findings
         assert any("SPF" in f.message for f in findings)
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     def test_parse_email_spf_softfail_finding(self):
         """SPF softfail adds MEDIUM finding."""
         wf = self._make_workflow()
@@ -142,6 +149,7 @@ class TestPhishingEmailWorkflowSteps:
         findings = ctx.scorer.findings
         assert any("soft fail" in f.message.lower() for f in findings)
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     def test_parse_email_dkim_fail_finding(self):
         """DKIM fail adds MEDIUM finding."""
         wf = self._make_workflow()
@@ -167,6 +175,7 @@ class TestPhishingEmailWorkflowSteps:
         findings = ctx.scorer.findings
         assert any("DKIM" in f.message for f in findings)
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     def test_parse_email_dmarc_fail_finding(self):
         """DMARC fail adds HIGH finding."""
         wf = self._make_workflow()
@@ -192,6 +201,7 @@ class TestPhishingEmailWorkflowSteps:
         findings = ctx.scorer.findings
         assert any("DMARC" in f.message for f in findings)
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     def test_parse_email_extracts_attachment_hashes(self):
         """Attachment hashes are added to context IOCs."""
         wf = self._make_workflow()
@@ -217,6 +227,7 @@ class TestPhishingEmailWorkflowSteps:
         assert "def456" in ctx.iocs["hashes"]
         assert "ghi789" in ctx.iocs["hashes"]
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     def test_parse_email_generic_exception(self):
         """Generic exception in _parse_email is caught."""
         wf = self._make_workflow()
@@ -469,6 +480,7 @@ class TestPhishingEmailWorkflowSteps:
         assert result.success is True
         assert "No HTTPS" in result.data["message"]
 
+    @pytest.mark.skipif(not cryptography_available, reason="cryptography not installed")
     def test_check_certificates_suspicious_and_phishing(self):
         """Certificate with suspicious verdict and phishing indicators adds findings."""
         wf = self._make_workflow()
@@ -492,6 +504,7 @@ class TestPhishingEmailWorkflowSteps:
         assert any("Certificate issues" in f.message for f in findings)
         assert any("phishing indicators" in f.message for f in findings)
 
+    @pytest.mark.skipif(not cryptography_available, reason="cryptography not installed")
     def test_check_certificates_analyzer_exception_per_url(self):
         """Exception on individual URL is swallowed and processing continues."""
         wf = self._make_workflow()
@@ -567,6 +580,7 @@ class TestPhishingEmailWorkflowSteps:
 
     # ----- full workflow with mocked tools -----
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     def test_full_workflow_verbose_mode(self, capsys):
         """Verbose mode prints progress to stderr."""
         wf = self._make_workflow(verbose=True)

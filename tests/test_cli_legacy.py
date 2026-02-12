@@ -10,11 +10,16 @@ Tests cover:
 - Unknown command handling
 """
 
+import importlib.util
 import sys
+
 import pytest
 from unittest.mock import patch, MagicMock
 
 from vlair.cli.legacy import create_parser, main
+
+eml_parser_available = importlib.util.find_spec("eml_parser") is not None
+cryptography_available = importlib.util.find_spec("cryptography") is not None
 
 
 def _capture_argv(storage):
@@ -571,6 +576,7 @@ class TestMainRouting:
 
     # -- EML routing --
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     @patch("vlair.tools.eml_parser.main")
     def test_eml_minimal(self, mock_eml_main):
         captured = {}
@@ -580,6 +586,7 @@ class TestMainRouting:
         mock_eml_main.assert_called_once()
         assert captured["argv"] == ["emlParser.py", "phish.eml"]
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     @patch("vlair.tools.eml_parser.main")
     def test_eml_all_options(self, mock_eml_main):
         captured = {}
@@ -598,6 +605,7 @@ class TestMainRouting:
             "--verbose",
         ]
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     @patch("vlair.tools.eml_parser.main")
     def test_eml_short_output(self, mock_eml_main):
         captured = {}
@@ -979,6 +987,7 @@ class TestMainRouting:
 
     # -- Cert routing --
 
+    @pytest.mark.skipif(not cryptography_available, reason="cryptography not installed")
     @patch("vlair.tools.cert_analyzer.main")
     def test_cert_minimal(self, mock_cert_main):
         captured = {}
@@ -988,6 +997,7 @@ class TestMainRouting:
         mock_cert_main.assert_called_once()
         assert captured["argv"][0] == "analyzer.py"
 
+    @pytest.mark.skipif(not cryptography_available, reason="cryptography not installed")
     @patch("vlair.tools.cert_analyzer.main")
     def test_cert_all_options(self, mock_cert_main):
         captured = {}
@@ -1030,6 +1040,7 @@ class TestMainRouting:
         assert "--output" in argv and "out.json" in argv
         assert "--verbose" in argv
 
+    @pytest.mark.skipif(not cryptography_available, reason="cryptography not installed")
     @patch("vlair.tools.cert_analyzer.main")
     def test_cert_default_port_not_included(self, mock_cert_main):
         """Port 443 (default) should NOT be added to sys.argv."""
@@ -1040,6 +1051,7 @@ class TestMainRouting:
         mock_cert_main.assert_called_once()
         assert "--port" not in captured["argv"]
 
+    @pytest.mark.skipif(not cryptography_available, reason="cryptography not installed")
     @patch("vlair.tools.cert_analyzer.main")
     def test_cert_non_default_port_included(self, mock_cert_main):
         captured = {}
@@ -1182,6 +1194,7 @@ class TestUnknownCommand:
 class TestMainEdgeCases:
     """Edge cases and additional coverage for main()."""
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     @patch("vlair.tools.eml_parser.main")
     def test_remaining_args_forwarded_eml(self, mock_eml_main):
         """Unknown extra arguments should be forwarded via 'remaining'."""
@@ -1242,6 +1255,7 @@ class TestMainEdgeCases:
         assert "urls.txt" in captured["argv"]
         assert captured["argv"][0] == "analyzer.py"
 
+    @pytest.mark.skipif(not cryptography_available, reason="cryptography not installed")
     @patch("vlair.tools.cert_analyzer.main")
     def test_cert_ct_search_only(self, mock_cert_main):
         captured = {}
@@ -1259,6 +1273,7 @@ class TestMainEdgeCases:
 class TestSysArgvReconstruction:
     """Verify the exact sys.argv list produced for each tool (strict ordering checks)."""
 
+    @pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
     @patch("vlair.tools.eml_parser.main")
     def test_eml_exact_argv(self, mock_eml_main):
         captured = {}

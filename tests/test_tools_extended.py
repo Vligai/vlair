@@ -3,6 +3,7 @@ Extended tests for tool modules to improve coverage.
 Focuses on main() functions, format functions, and API classes.
 """
 
+import importlib.util
 import json
 import os
 import sys
@@ -11,6 +12,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch, mock_open
 
 import pytest
+
+eml_parser_available = importlib.util.find_spec("eml_parser") is not None
 
 # ============================================================================
 # Hash Lookup - main(), format functions, API classes
@@ -1533,6 +1536,7 @@ class TestDeobfuscatorExtended:
 # ============================================================================
 
 
+@pytest.mark.skipif(not eml_parser_available, reason="eml-parser not installed")
 class TestEMLParserExtended:
     """Extended tests for EML parser"""
 
