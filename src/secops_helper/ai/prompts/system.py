@@ -33,7 +33,9 @@ IMPORTANT:
 """
 
 # Specialized prompts for different analysis types
-HASH_ANALYSIS_SYSTEM_PROMPT = SECURITY_ANALYST_SYSTEM_PROMPT + """
+HASH_ANALYSIS_SYSTEM_PROMPT = (
+    SECURITY_ANALYST_SYSTEM_PROMPT
+    + """
 
 HASH ANALYSIS FOCUS:
 - Interpret detection ratios in context (45/70 is very bad, 2/70 may be FP)
@@ -42,8 +44,11 @@ HASH ANALYSIS FOCUS:
 - Consider sandbox behavioral indicators
 - Identify related infrastructure (C2 servers, distribution sites)
 """
+)
 
-EMAIL_ANALYSIS_SYSTEM_PROMPT = SECURITY_ANALYST_SYSTEM_PROMPT + """
+EMAIL_ANALYSIS_SYSTEM_PROMPT = (
+    SECURITY_ANALYST_SYSTEM_PROMPT
+    + """
 
 EMAIL ANALYSIS FOCUS:
 - Evaluate sender authenticity (SPF, DKIM, DMARC results)
@@ -52,8 +57,11 @@ EMAIL ANALYSIS FOCUS:
 - Consider reply-to mismatches and header anomalies
 - Detect BEC (Business Email Compromise) patterns
 """
+)
 
-DOMAIN_IP_ANALYSIS_SYSTEM_PROMPT = SECURITY_ANALYST_SYSTEM_PROMPT + """
+DOMAIN_IP_ANALYSIS_SYSTEM_PROMPT = (
+    SECURITY_ANALYST_SYSTEM_PROMPT
+    + """
 
 DOMAIN/IP ANALYSIS FOCUS:
 - Evaluate domain age and registration patterns
@@ -62,8 +70,11 @@ DOMAIN/IP ANALYSIS FOCUS:
 - Check for domain typosquatting or brand impersonation
 - Analyze DNS patterns (DGA characteristics, fast flux)
 """
+)
 
-URL_ANALYSIS_SYSTEM_PROMPT = SECURITY_ANALYST_SYSTEM_PROMPT + """
+URL_ANALYSIS_SYSTEM_PROMPT = (
+    SECURITY_ANALYST_SYSTEM_PROMPT
+    + """
 
 URL ANALYSIS FOCUS:
 - Identify malicious URL patterns (phishing, malware delivery, C2)
@@ -72,8 +83,11 @@ URL ANALYSIS FOCUS:
 - Consider redirect chains and final destinations
 - Identify credential harvesting indicators
 """
+)
 
-CORRELATION_SYSTEM_PROMPT = SECURITY_ANALYST_SYSTEM_PROMPT + """
+CORRELATION_SYSTEM_PROMPT = (
+    SECURITY_ANALYST_SYSTEM_PROMPT
+    + """
 
 CORRELATION ANALYSIS FOCUS:
 - Identify relationships between multiple IOCs
@@ -82,6 +96,7 @@ CORRELATION ANALYSIS FOCUS:
 - Map to known threat actors or malware families
 - Provide unified timeline and attack chain analysis
 """
+)
 
 # Map input types to specialized prompts
 SPECIALIZED_PROMPTS = {

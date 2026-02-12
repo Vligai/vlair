@@ -364,7 +364,8 @@ class InteractiveMenu:
         print("\n" + "=" * 70)
         print("  Quick Start Guide")
         print("=" * 70)
-        print("""
+        print(
+            """
 1. Basic Usage:
 
    Interactive Mode:
@@ -416,7 +417,8 @@ class InteractiveMenu:
    - Multiple output formats (JSON, CSV, TXT)
    - Caching for improved performance
    - STIX 2.1 export support
-        """)
+        """
+        )
 
         input("\nPress Enter to continue...")
         self.show_main_menu()
@@ -424,7 +426,8 @@ class InteractiveMenu:
 
 def print_usage():
     """Print usage information"""
-    print("""
+    print(
+        """
 vlair - Security Operations Toolkit
 
 Quick Start:
@@ -488,7 +491,8 @@ Individual Tools:
     carve        File carving and extraction
 
 Documentation: https://github.com/Vligai/secops-helper
-    """)
+    """
+    )
 
 
 def main():
