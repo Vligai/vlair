@@ -22,11 +22,12 @@ from typing import Optional, Dict, List
 # Role hierarchy
 # ---------------------------------------------------------------------------
 
+
 class Role(str, enum.Enum):
-    VIEWER = "viewer"                # read-only: view past results
-    ANALYST = "analyst"              # run tools, submit IOCs
+    VIEWER = "viewer"  # read-only: view past results
+    ANALYST = "analyst"  # run tools, submit IOCs
     SENIOR_ANALYST = "senior_analyst"  # approve findings, manage feeds
-    ADMIN = "admin"                  # user management, system config
+    ADMIN = "admin"  # user management, system config
 
     # Ordered list for comparison (lowest → highest privilege)
     @staticmethod
@@ -73,10 +74,12 @@ def _connect():
 # Schema
 # ---------------------------------------------------------------------------
 
+
 def init_db() -> None:
     """Create tables if they do not exist. Safe to call on every startup."""
     with _connect() as conn:
-        conn.executescript("""
+        conn.executescript(
+            """
             CREATE TABLE IF NOT EXISTS users (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 username    TEXT    NOT NULL UNIQUE,
@@ -118,12 +121,14 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_api_keys_hash    ON api_keys(key_hash);
             CREATE INDEX IF NOT EXISTS idx_audit_user       ON audit_log(user_id);
             CREATE INDEX IF NOT EXISTS idx_audit_timestamp  ON audit_log(timestamp);
-        """)
+        """
+        )
 
 
 # ---------------------------------------------------------------------------
 # User CRUD
 # ---------------------------------------------------------------------------
+
 
 def _hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
@@ -170,17 +175,13 @@ def get_user_by_id(user_id: int) -> Optional[Dict]:
 
 def get_user_by_username(username: str) -> Optional[Dict]:
     with _connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM users WHERE username = ?", (username.lower(),)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM users WHERE username = ?", (username.lower(),)).fetchone()
     return _row_to_user(row)
 
 
 def get_user_by_email(email: str) -> Optional[Dict]:
     with _connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM users WHERE email = ?", (email.lower(),)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM users WHERE email = ?", (email.lower(),)).fetchone()
     return _row_to_user(row)
 
 
@@ -190,9 +191,7 @@ def authenticate_user(username: str, password: str) -> Optional[Dict]:
     Does NOT check is_active – callers should verify that separately.
     """
     with _connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM users WHERE username = ?", (username.lower(),)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM users WHERE username = ?", (username.lower(),)).fetchone()
     if row is None:
         return None
     if not _verify_password(password, row["password_hash"]):
@@ -223,9 +222,7 @@ def activate_user(user_id: int) -> None:
 
 def list_users() -> List[Dict]:
     with _connect() as conn:
-        rows = conn.execute(
-            "SELECT * FROM users ORDER BY created_at DESC"
-        ).fetchall()
+        rows = conn.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
     return [_row_to_user(r) for r in rows if r]
 
 
@@ -244,18 +241,15 @@ def _row_to_user(row) -> Optional[Dict]:
 # MFA helpers
 # ---------------------------------------------------------------------------
 
+
 def set_mfa_secret(user_id: int, secret: str) -> None:
     with _connect() as conn:
-        conn.execute(
-            "UPDATE users SET mfa_secret = ? WHERE id = ?", (secret, user_id)
-        )
+        conn.execute("UPDATE users SET mfa_secret = ? WHERE id = ?", (secret, user_id))
 
 
 def enable_mfa(user_id: int) -> None:
     with _connect() as conn:
-        conn.execute(
-            "UPDATE users SET mfa_enabled = 1 WHERE id = ?", (user_id,)
-        )
+        conn.execute("UPDATE users SET mfa_enabled = 1 WHERE id = ?", (user_id,))
 
 
 def disable_mfa(user_id: int) -> None:
@@ -268,15 +262,14 @@ def disable_mfa(user_id: int) -> None:
 
 def get_mfa_secret(user_id: int) -> Optional[str]:
     with _connect() as conn:
-        row = conn.execute(
-            "SELECT mfa_secret FROM users WHERE id = ?", (user_id,)
-        ).fetchone()
+        row = conn.execute("SELECT mfa_secret FROM users WHERE id = ?", (user_id,)).fetchone()
     return row["mfa_secret"] if row else None
 
 
 # ---------------------------------------------------------------------------
 # API keys
 # ---------------------------------------------------------------------------
+
 
 def create_api_key(user_id: int, name: str, expires_at: Optional[str] = None) -> str:
     """
@@ -354,6 +347,7 @@ def revoke_api_key(key_id: int, user_id: int) -> bool:
 # Audit log
 # ---------------------------------------------------------------------------
 
+
 def log_action(
     action: str,
     *,
@@ -376,8 +370,17 @@ def log_action(
                    user_agent, status_code, detail, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (user_id, username, action, resource, ip_address,
-                 user_agent, status_code, detail, now),
+                (
+                    user_id,
+                    username,
+                    action,
+                    resource,
+                    ip_address,
+                    user_agent,
+                    status_code,
+                    detail,
+                    now,
+                ),
             )
     except Exception:
         pass  # audit failures must not break the request

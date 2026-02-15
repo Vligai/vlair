@@ -66,6 +66,7 @@ from vlair.webapp.auth.routes import auth_bp, admin_bp
 # Application factory
 # ---------------------------------------------------------------------------
 
+
 def create_app() -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -108,13 +109,13 @@ def create_app() -> Flask:
 # ---------------------------------------------------------------------------
 
 ALLOWED_EXTENSIONS = {
-    "eml":    {".eml", ".msg"},
-    "ioc":    {".txt", ".md", ".log", ".json"},
-    "log":    {".log", ".txt"},
-    "pcap":   {".pcap", ".pcapng", ".cap"},
-    "hash":   {".txt", ".csv"},
-    "yara":   {".yar", ".yara", ".txt"},
-    "cert":   {".crt", ".cer", ".pem", ".der"},
+    "eml": {".eml", ".msg"},
+    "ioc": {".txt", ".md", ".log", ".json"},
+    "log": {".log", ".txt"},
+    "pcap": {".pcap", ".pcapng", ".cap"},
+    "hash": {".txt", ".csv"},
+    "yara": {".yar", ".yara", ".txt"},
+    "cert": {".crt", ".cer", ".pem", ".der"},
     "script": {".js", ".ps1", ".vbs", ".bat", ".py", ".txt"},
     "binary": {".bin", ".exe", ".dll", ".img", ".raw", ".dd"},
 }
@@ -138,6 +139,7 @@ def _save_upload(file, label: str) -> str:
 # ---------------------------------------------------------------------------
 # Tool route registration
 # ---------------------------------------------------------------------------
+
 
 def _register_tool_routes(app: Flask) -> None:
 
@@ -183,12 +185,14 @@ def _register_tool_routes(app: Flask) -> None:
                 + len(results.get("cves", []))
             )
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": {"total_iocs": total},
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": {"total_iocs": total},
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -222,12 +226,14 @@ def _register_tool_routes(app: Flask) -> None:
                 v = r.get("verdict", "unknown")
                 verdicts[v] = verdicts.get(v, 0) + 1
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": {"total": len(results), "verdicts": verdicts},
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": {"total": len(results), "verdicts": verdicts},
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -261,12 +267,14 @@ def _register_tool_routes(app: Flask) -> None:
                 cl = r.get("classification", "unknown")
                 risk_levels[cl] = risk_levels.get(cl, 0) + 1
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": {"total": len(results), "risk_levels": risk_levels},
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": {"total": len(results), "risk_levels": risk_levels},
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -299,12 +307,14 @@ def _register_tool_routes(app: Flask) -> None:
                 v = r.get("verdict", "unknown")
                 verdicts[v] = verdicts.get(v, 0) + 1
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": {"total": len(results), "verdicts": verdicts},
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": {"total": len(results), "verdicts": verdicts},
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -343,14 +353,16 @@ def _register_tool_routes(app: Flask) -> None:
                 if temp_path and os.path.exists(temp_path):
                     os.remove(temp_path)
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": results.get("statistics", {}),
-                "alerts": results.get("alerts", []),
-                "top_ips": results.get("top_ips", []),
-                "top_paths": results.get("top_paths", []),
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": results.get("statistics", {}),
+                    "alerts": results.get("alerts", []),
+                    "top_ips": results.get("top_ips", []),
+                    "top_paths": results.get("top_paths", []),
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -378,11 +390,13 @@ def _register_tool_routes(app: Flask) -> None:
             finally:
                 os.remove(temp_path)
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -421,15 +435,17 @@ def _register_tool_routes(app: Flask) -> None:
                 if _cleanup and os.path.exists(temp_path):
                     os.remove(temp_path)
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": {
-                    "matches": len(results.get("matches", [])),
-                    "rules_loaded": results.get("rules_loaded", 0),
-                },
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": {
+                        "matches": len(results.get("matches", [])),
+                        "rules_loaded": results.get("rules_loaded", 0),
+                    },
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -454,7 +470,13 @@ def _register_tool_routes(app: Flask) -> None:
                     cert_data = f.read()
                     analyzer = CertificateAnalyzer()
                     results = analyzer.analyze_certificate_data(cert_data)
-                    return jsonify({"success": True, "timestamp": datetime.utcnow().isoformat() + "Z", "results": results})
+                    return jsonify(
+                        {
+                            "success": True,
+                            "timestamp": datetime.utcnow().isoformat() + "Z",
+                            "results": results,
+                        }
+                    )
 
             data = request.get_json(silent=True) or {}
             hostname = data.get("hostname")
@@ -463,7 +485,13 @@ def _register_tool_routes(app: Flask) -> None:
 
             analyzer = CertificateAnalyzer()
             results = analyzer.analyze_host(hostname, data.get("port", 443))
-            return jsonify({"success": True, "timestamp": datetime.utcnow().isoformat() + "Z", "results": results})
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -505,15 +533,17 @@ def _register_tool_routes(app: Flask) -> None:
             iocs = results.get("iocs", {})
             total_iocs = sum(len(v) for v in iocs.values() if isinstance(v, list))
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": {
-                    "layers_decoded": results.get("layers", 0),
-                    "iocs_found": total_iocs,
-                },
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": {
+                        "layers_decoded": results.get("layers", 0),
+                        "iocs_found": total_iocs,
+                    },
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -540,14 +570,16 @@ def _register_tool_routes(app: Flask) -> None:
             finally:
                 os.remove(temp_path)
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": results.get("statistics", {}),
-                "alerts": results.get("alerts", []),
-                "protocols": results.get("protocols", {}),
-                "top_talkers": results.get("top_talkers", []),
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": results.get("statistics", {}),
+                    "alerts": results.get("alerts", []),
+                    "protocols": results.get("protocols", {}),
+                    "top_talkers": results.get("top_talkers", []),
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -573,16 +605,15 @@ def _register_tool_routes(app: Flask) -> None:
                 min_confidence=data.get("min_confidence", 0),
             )
 
-            avg_conf = (
-                sum(r.get("confidence", 0) for r in results) / len(results)
-                if results else 0
+            avg_conf = sum(r.get("confidence", 0) for r in results) / len(results) if results else 0
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": {"total": len(results), "avg_confidence": avg_conf},
+                    "results": results,
+                }
             )
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": {"total": len(results), "avg_confidence": avg_conf},
-                "results": results,
-            })
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -596,12 +627,14 @@ def _register_tool_routes(app: Flask) -> None:
             data = request.get_json(silent=True) or {}
             agg = ThreatFeedAggregator()
             results = agg.update_feeds(sources=data.get("sources"))
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": results.get("statistics", {}),
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": results.get("statistics", {}),
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -631,16 +664,18 @@ def _register_tool_routes(app: Flask) -> None:
             finally:
                 os.remove(temp_path)
 
-            return jsonify({
-                "success": True,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "statistics": {
-                    "files_carved": len(results.get("files", [])),
-                    "file_types": results.get("file_types", {}),
-                    "output_directory": output_dir,
-                },
-                "results": results,
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "statistics": {
+                        "files_carved": len(results.get("files", [])),
+                        "file_types": results.get("file_types", {}),
+                        "output_directory": output_dir,
+                    },
+                    "results": results,
+                }
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -649,42 +684,147 @@ def _register_tool_routes(app: Flask) -> None:
 # Utility / informational routes
 # ---------------------------------------------------------------------------
 
+
 def _register_utility_routes(app: Flask) -> None:
 
     @app.get("/api/health")
     def health():
         """Public health check endpoint."""
-        return jsonify({
-            "status": "healthy",
-            "version": "5.1.0",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        return jsonify(
+            {
+                "status": "healthy",
+                "version": "5.1.0",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
     @app.get("/api/endpoints")
     @require_auth
     def list_endpoints():
         """Return a summary of all available tool endpoints with required roles."""
-        return jsonify({
-            "endpoints": [
-                {"path": "/api/ioc/extract",       "method": "POST", "role": "analyst",        "description": "Extract IOCs from text or file"},
-                {"path": "/api/hash/lookup",        "method": "POST", "role": "analyst",        "description": "Look up file hashes"},
-                {"path": "/api/intel/analyze",      "method": "POST", "role": "analyst",        "description": "Analyze domains and IP addresses"},
-                {"path": "/api/url/analyze",        "method": "POST", "role": "analyst",        "description": "Analyze URLs for threats"},
-                {"path": "/api/log/analyze",        "method": "POST", "role": "analyst",        "description": "Analyze security logs"},
-                {"path": "/api/eml/parse",          "method": "POST", "role": "analyst",        "description": "Parse and analyze email files"},
-                {"path": "/api/yara/scan",          "method": "POST", "role": "analyst",        "description": "Scan files with YARA rules"},
-                {"path": "/api/cert/analyze",       "method": "POST", "role": "analyst",        "description": "Analyze SSL/TLS certificates"},
-                {"path": "/api/deobfuscate",        "method": "POST", "role": "analyst",        "description": "Deobfuscate malicious scripts"},
-                {"path": "/api/pcap/analyze",       "method": "POST", "role": "analyst",        "description": "Analyze PCAP network captures"},
-                {"path": "/api/threatfeed/search",  "method": "POST", "role": "analyst",        "description": "Search threat feed database"},
-                {"path": "/api/threatfeed/update",  "method": "POST", "role": "senior_analyst", "description": "Update threat feed data"},
-                {"path": "/api/carve/extract",      "method": "POST", "role": "senior_analyst", "description": "Extract files from disk images"},
-                {"path": "/api/auth/register",      "method": "POST", "role": "public",         "description": "Register a new account"},
-                {"path": "/api/auth/login",         "method": "POST", "role": "public",         "description": "Login and get tokens"},
-                {"path": "/api/auth/refresh",       "method": "POST", "role": "public",         "description": "Refresh access token"},
-                {"path": "/api/auth/me",            "method": "GET",  "role": "authenticated",  "description": "Get current user profile"},
-                {"path": "/api/auth/keys",          "method": "POST", "role": "authenticated",  "description": "Create API key"},
-                {"path": "/api/admin/users",        "method": "GET",  "role": "admin",          "description": "List all users"},
-                {"path": "/api/admin/audit",        "method": "GET",  "role": "senior_analyst", "description": "Query audit log"},
-            ]
-        })
+        return jsonify(
+            {
+                "endpoints": [
+                    {
+                        "path": "/api/ioc/extract",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Extract IOCs from text or file",
+                    },
+                    {
+                        "path": "/api/hash/lookup",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Look up file hashes",
+                    },
+                    {
+                        "path": "/api/intel/analyze",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Analyze domains and IP addresses",
+                    },
+                    {
+                        "path": "/api/url/analyze",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Analyze URLs for threats",
+                    },
+                    {
+                        "path": "/api/log/analyze",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Analyze security logs",
+                    },
+                    {
+                        "path": "/api/eml/parse",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Parse and analyze email files",
+                    },
+                    {
+                        "path": "/api/yara/scan",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Scan files with YARA rules",
+                    },
+                    {
+                        "path": "/api/cert/analyze",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Analyze SSL/TLS certificates",
+                    },
+                    {
+                        "path": "/api/deobfuscate",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Deobfuscate malicious scripts",
+                    },
+                    {
+                        "path": "/api/pcap/analyze",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Analyze PCAP network captures",
+                    },
+                    {
+                        "path": "/api/threatfeed/search",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Search threat feed database",
+                    },
+                    {
+                        "path": "/api/threatfeed/update",
+                        "method": "POST",
+                        "role": "senior_analyst",
+                        "description": "Update threat feed data",
+                    },
+                    {
+                        "path": "/api/carve/extract",
+                        "method": "POST",
+                        "role": "senior_analyst",
+                        "description": "Extract files from disk images",
+                    },
+                    {
+                        "path": "/api/auth/register",
+                        "method": "POST",
+                        "role": "public",
+                        "description": "Register a new account",
+                    },
+                    {
+                        "path": "/api/auth/login",
+                        "method": "POST",
+                        "role": "public",
+                        "description": "Login and get tokens",
+                    },
+                    {
+                        "path": "/api/auth/refresh",
+                        "method": "POST",
+                        "role": "public",
+                        "description": "Refresh access token",
+                    },
+                    {
+                        "path": "/api/auth/me",
+                        "method": "GET",
+                        "role": "authenticated",
+                        "description": "Get current user profile",
+                    },
+                    {
+                        "path": "/api/auth/keys",
+                        "method": "POST",
+                        "role": "authenticated",
+                        "description": "Create API key",
+                    },
+                    {
+                        "path": "/api/admin/users",
+                        "method": "GET",
+                        "role": "admin",
+                        "description": "List all users",
+                    },
+                    {
+                        "path": "/api/admin/audit",
+                        "method": "GET",
+                        "role": "senior_analyst",
+                        "description": "Query audit log",
+                    },
+                ]
+            }
+        )

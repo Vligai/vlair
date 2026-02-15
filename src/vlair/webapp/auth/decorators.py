@@ -111,11 +111,13 @@ def _write_audit(status_code: int = 200) -> None:
 # Public decorators
 # ---------------------------------------------------------------------------
 
+
 def require_auth(fn):
     """
     Require any valid authenticated user.
     Sets ``g.current_user`` before calling the wrapped function.
     """
+
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         err = _resolve_user()
@@ -129,6 +131,7 @@ def require_auth(fn):
         except Exception:
             _write_audit(500)
             raise
+
     return wrapper
 
 
@@ -141,6 +144,7 @@ def require_role(minimum_role: Role):
         @require_role(Role.ADMIN)
         def admin_endpoint(): ...
     """
+
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
@@ -151,11 +155,16 @@ def require_role(minimum_role: Role):
             user_role = Role(g.current_user["role"])
             if not user_role.has_at_least(minimum_role):
                 _write_audit(403)
-                return jsonify({
-                    "error": "Insufficient permissions",
-                    "required": minimum_role.value,
-                    "current": user_role.value,
-                }), 403
+                return (
+                    jsonify(
+                        {
+                            "error": "Insufficient permissions",
+                            "required": minimum_role.value,
+                            "current": user_role.value,
+                        }
+                    ),
+                    403,
+                )
             try:
                 response = fn(*args, **kwargs)
                 _write_audit(getattr(response, "status_code", 200))
@@ -163,5 +172,7 @@ def require_role(minimum_role: Role):
             except Exception:
                 _write_audit(500)
                 raise
+
         return wrapper
+
     return decorator

@@ -27,7 +27,7 @@ from typing import Optional, Dict
 # -----------------------------------------------------------------------
 
 SECRET_KEY: str = os.getenv("VLAIR_SECRET_KEY", "change-me-in-production")
-ACCESS_TOKEN_TTL: int = int(os.getenv("VLAIR_ACCESS_TTL", "900"))     # 15 min
+ACCESS_TOKEN_TTL: int = int(os.getenv("VLAIR_ACCESS_TTL", "900"))  # 15 min
 REFRESH_TOKEN_TTL: int = int(os.getenv("VLAIR_REFRESH_TTL", "604800"))  # 7 days
 
 # -----------------------------------------------------------------------
@@ -83,6 +83,7 @@ except ImportError:
 # -----------------------------------------------------------------------
 # Public API
 # -----------------------------------------------------------------------
+
 
 def create_access_token(user_id: int, role: str) -> str:
     """Return a signed JWT access token valid for ACCESS_TOKEN_TTL seconds."""
@@ -141,6 +142,7 @@ def verify_refresh_token(token: str) -> Optional[Dict]:
 
 try:
     import pyotp as _pyotp
+
     _PYOTP_AVAILABLE = True
 except ImportError:
     _PYOTP_AVAILABLE = False

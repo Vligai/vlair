@@ -72,6 +72,7 @@ OPEN_REGISTRATION = os.getenv("VLAIR_OPEN_REGISTRATION", "true").lower() == "tru
 # Registration
 # ---------------------------------------------------------------------------
 
+
 @auth_bp.post("/register")
 def register():
     """
@@ -85,6 +86,7 @@ def register():
     if not OPEN_REGISTRATION:
         # Require existing admin token
         from vlair.webapp.auth.decorators import _resolve_user
+
         err = _resolve_user()
         if err:
             return err
@@ -115,6 +117,7 @@ def register():
 # ---------------------------------------------------------------------------
 # Login / token issuance
 # ---------------------------------------------------------------------------
+
 
 @auth_bp.post("/login")
 def login():
@@ -166,12 +169,14 @@ def login():
         ip_address=request.remote_addr,
         status_code=200,
     )
-    return jsonify({
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "Bearer",
-        "user": user,
-    })
+    return jsonify(
+        {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "Bearer",
+            "user": user,
+        }
+    )
 
 
 @auth_bp.post("/refresh")
@@ -211,6 +216,7 @@ def logout():
 # ---------------------------------------------------------------------------
 # Current user profile
 # ---------------------------------------------------------------------------
+
 
 @auth_bp.get("/me")
 @require_auth
@@ -264,6 +270,7 @@ def change_password():
 # MFA setup
 # ---------------------------------------------------------------------------
 
+
 @auth_bp.post("/mfa/setup")
 @require_auth
 def mfa_setup():
@@ -280,11 +287,13 @@ def mfa_setup():
     set_mfa_secret(g.current_user["id"], secret)
     uri = get_totp_provisioning_uri(secret, g.current_user["username"])
 
-    return jsonify({
-        "secret": secret,
-        "provisioning_uri": uri,
-        "instructions": "Scan the QR code with your authenticator app, then call POST /api/auth/mfa/verify with a 6-digit code to activate MFA.",
-    })
+    return jsonify(
+        {
+            "secret": secret,
+            "provisioning_uri": uri,
+            "instructions": "Scan the QR code with your authenticator app, then call POST /api/auth/mfa/verify with a 6-digit code to activate MFA.",
+        }
+    )
 
 
 @auth_bp.post("/mfa/verify")
@@ -305,7 +314,10 @@ def mfa_verify():
 
     secret = get_mfa_secret(g.current_user["id"])
     if not secret:
-        return jsonify({"error": "MFA setup not initiated. Call POST /api/auth/mfa/setup first."}), 400
+        return (
+            jsonify({"error": "MFA setup not initiated. Call POST /api/auth/mfa/setup first."}),
+            400,
+        )
 
     if not verify_totp(secret, code):
         return jsonify({"error": "Invalid TOTP code"}), 400
@@ -348,6 +360,7 @@ def mfa_disable():
 # API key management
 # ---------------------------------------------------------------------------
 
+
 @auth_bp.post("/keys")
 @require_auth
 def create_key():
@@ -373,11 +386,16 @@ def create_key():
         detail=f"key_name={name}",
         ip_address=request.remote_addr,
     )
-    return jsonify({
-        "message": "API key created. Save this key - it will not be shown again.",
-        "api_key": raw_key,
-        "name": name,
-    }), 201
+    return (
+        jsonify(
+            {
+                "message": "API key created. Save this key - it will not be shown again.",
+                "api_key": raw_key,
+                "name": name,
+            }
+        ),
+        201,
+    )
 
 
 @auth_bp.get("/keys")
@@ -408,6 +426,7 @@ def delete_key(key_id: int):
 # ---------------------------------------------------------------------------
 # Admin: user management
 # ---------------------------------------------------------------------------
+
 
 @admin_bp.get("/users")
 @require_role(Role.ADMIN)
@@ -482,6 +501,7 @@ def admin_activate(user_id: int):
 # ---------------------------------------------------------------------------
 # Admin: audit log
 # ---------------------------------------------------------------------------
+
 
 @admin_bp.get("/audit")
 @require_role(Role.SENIOR_ANALYST)
