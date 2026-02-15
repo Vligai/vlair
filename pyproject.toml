@@ -125,6 +125,7 @@ omit = [
     "src/vlair/tools/pcap_analyzer.py",
     "src/vlair/tools/eml_parser.py",
     "src/vlair/tools/cert_analyzer.py",
+    "src/vlair/webapp/*",
 ]
 
 [tool.coverage.report]

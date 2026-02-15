@@ -12,3 +12,10 @@ Flask-CORS>=4.0.0
 
 # Additional security headers
 flask-talisman>=1.1.0
+
+# Authentication
+# JWT tokens (optional - falls back to built-in HS256 implementation)
+PyJWT>=2.8.0
+
+# TOTP / MFA (optional - MFA endpoints return 501 without this)
+pyotp>=2.9.0

@@ -50,29 +50,70 @@
 
 ### Phase 5: Complete Web Interface (Q1 2026)
 
-**Status:** Partially Complete (5/12 tools have web APIs)
+**Status:** 🔄 In Progress
 
-#### 5.1 Missing Web API Endpoints (2-3 weeks)
-**Priority:** HIGH
+#### 5.1 Web API - All 12 Tools ✅ COMPLETE
+**Completed:** All tool endpoints implemented in `src/vlair/webapp/app.py`
 
-Add the following tools to the web API:
-- [ ] YARA Scanner API endpoint
-- [ ] Certificate Analyzer API endpoint
-- [ ] Script Deobfuscator API endpoint
-- [ ] Threat Feed Aggregator API endpoint
-- [ ] File Carver API endpoint
-- [ ] PCAP Analyzer file upload API
-- [ ] URL Analyzer API endpoint (verify/complete)
+- ✅ IOC Extractor - `/api/ioc/extract`
+- ✅ Hash Lookup - `/api/hash/lookup`
+- ✅ Domain/IP Intel - `/api/intel/analyze`
+- ✅ URL Analyzer - `/api/url/analyze`
+- ✅ Log Analyzer - `/api/log/analyze`
+- ✅ EML Parser - `/api/eml/parse`
+- ✅ YARA Scanner - `/api/yara/scan`
+- ✅ Certificate Analyzer - `/api/cert/analyze`
+- ✅ Script Deobfuscator - `/api/deobfuscate`
+- ✅ PCAP Analyzer - `/api/pcap/analyze`
+- ✅ Threat Feed Search - `/api/threatfeed/search`
+- ✅ Threat Feed Update - `/api/threatfeed/update`
+- ✅ File Carver - `/api/carve/extract`
 
-**Expected Outcome:**
-- All 12 tools accessible via REST API
-- Unified error handling and response format
-- Automatic OpenAPI/Swagger documentation
+#### 5.2 Authentication & Authorization ✅ COMPLETE
+**Completed:** Full auth system in `src/vlair/webapp/auth/`
 
-#### 5.2 Modern Frontend (4-6 weeks)
-**Priority:** HIGH
+- ✅ **User accounts** - SQLite-backed, PBKDF2-SHA256 passwords
+- ✅ **JWT tokens** - Access (15 min) + Refresh (7 days), zero external deps fallback
+- ✅ **Role-based access control** - Viewer / Analyst / Senior Analyst / Admin
+- ✅ **TOTP MFA** - Optional setup/verify/disable (via `pyotp`)
+- ✅ **API keys** - SHA-256 hashed, prefix for display, per-user, expiry support
+- ✅ **Audit log** - Immutable SQLite record of every authenticated action
+- ✅ **Admin endpoints** - User management, role changes, activate/deactivate
+- ✅ **Configurable registration** - Open or admin-only (`VLAIR_OPEN_REGISTRATION`)
 
-**Current:** Basic HTML/CSS/JS (626 lines)
+**Auth endpoint reference:**
+```
+POST   /api/auth/register          - Create account
+POST   /api/auth/login             - Get access + refresh tokens
+POST   /api/auth/refresh           - Renew access token
+POST   /api/auth/logout            - Revoke session
+GET    /api/auth/me                - Current user profile
+PUT    /api/auth/me/password       - Change password
+POST   /api/auth/mfa/setup         - Initiate TOTP enrollment
+POST   /api/auth/mfa/verify        - Enable MFA after verifying code
+DELETE /api/auth/mfa               - Disable MFA
+POST   /api/auth/keys              - Create API key
+GET    /api/auth/keys              - List API keys
+DELETE /api/auth/keys/<id>         - Revoke API key
+GET    /api/admin/users            - List users (admin)
+PUT    /api/admin/users/<id>/role  - Change role (admin)
+GET    /api/admin/audit            - Audit log (senior_analyst+)
+```
+
+**Environment variables:**
+```
+VLAIR_SECRET_KEY         JWT signing secret (required in production)
+VLAIR_WEBAPP_DB          SQLite DB path (default: ~/.vlair/webapp.db)
+VLAIR_OPEN_REGISTRATION  true/false - allow self-registration (default: true)
+VLAIR_ACCESS_TTL         Access token lifetime in seconds (default: 900)
+VLAIR_REFRESH_TTL        Refresh token lifetime in seconds (default: 604800)
+```
+
+#### 5.3 Modern Frontend (4-6 weeks)
+**Priority:** HIGH - Next step
+
+**Current:** No frontend yet (API-only)
+**Target:** Vue.js 3 + TypeScript SPA
 **Target:** Modern Vue.js 3 + TypeScript SPA
 
 **Features:**
@@ -681,10 +722,11 @@ SecOps Helper has evolved from a collection of 12 security tools into a producti
 **The AI integration (Phase 6) represents a paradigm shift** - moving from reactive analysis to proactive, intelligent threat hunting. This will differentiate SecOps Helper from commercial alternatives while remaining open-source and community-driven.
 
 **Next Steps:**
-1. Complete web API endpoints (7 tools remaining)
-2. Build modern frontend (Vue.js 3)
-3. Begin AI integration research and prototyping
-4. Engage community for feedback on AI features
+1. ✅ ~~Complete web API endpoints~~ (all 12 tools done)
+2. ✅ ~~Implement authentication & RBAC~~ (complete with TOTP MFA + audit log)
+3. Build modern Vue.js 3 frontend
+4. Begin AI integration research and prototyping
+5. Engage community for feedback on AI features
 
 **We're building the future of security operations - one AI-powered analysis at a time.** 🚀🤖
 
