@@ -48,7 +48,7 @@ import tempfile
 from pathlib import Path
 from datetime import datetime
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory, render_template
 from werkzeug.utils import secure_filename
 
 # ---------------------------------------------------------------------------
@@ -828,3 +828,14 @@ def _register_utility_routes(app: Flask) -> None:
                 ]
             }
         )
+
+    # ------------------------------------------------------------------
+    # SPA catch-all: serve the Vue.js frontend for any non-API route
+    # ------------------------------------------------------------------
+    @app.get("/")
+    @app.get("/<path:path>")
+    def spa_index(path=""):
+        """Serve the Vue.js SPA for all non-API routes."""
+        if path.startswith("api/"):
+            return jsonify({"error": "Endpoint not found"}), 404
+        return render_template("index.html")
