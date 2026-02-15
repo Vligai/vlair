@@ -16,6 +16,9 @@ from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+# Skip all tests in this module if Flask is not installed
+flask = pytest.importorskip("flask", reason="Flask not installed")
+
 
 class TestAppCreation:
     """Test Flask application factory."""
