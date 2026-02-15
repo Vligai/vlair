@@ -1160,9 +1160,7 @@ class TestAdminRoutes:
         self.client = self.app.test_client()
 
         # Create admin user
-        self.admin = create_user(
-            "admintest", "admin@example.com", "adminpass", role=Role.ADMIN
-        )
+        self.admin = create_user("admintest", "admin@example.com", "adminpass", role=Role.ADMIN)
 
     def teardown_method(self):
         """Clean up test database."""
@@ -1293,7 +1291,9 @@ class TestAdminRoutes:
         """Test senior analyst can access audit log."""
         from vlair.webapp.auth.models import create_user, Role
 
-        senior = create_user("senior", "senior@example.com", "password123", role=Role.SENIOR_ANALYST)
+        senior = create_user(
+            "senior", "senior@example.com", "password123", role=Role.SENIOR_ANALYST
+        )
         login_resp = self.client.post(
             "/api/auth/login", json={"username": "senior", "password": "password123"}
         )

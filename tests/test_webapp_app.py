@@ -771,17 +771,13 @@ class TestEMLParserEndpoint:
     def test_eml_requires_auth(self):
         """Test EML parsing requires authentication."""
         data = {"file": (io.BytesIO(b"email content"), "test.eml")}
-        resp = self.client.post(
-            "/api/eml/parse", data=data, content_type="multipart/form-data"
-        )
+        resp = self.client.post("/api/eml/parse", data=data, content_type="multipart/form-data")
         assert resp.status_code == 401
 
     def test_eml_no_file(self):
         """Test EML parsing with no file."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/eml/parse", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = self.client.post("/api/eml/parse", headers={"Authorization": f"Bearer {token}"})
         # May be 400 or 500 depending on error handling
         assert resp.status_code in [400, 500]
 
@@ -835,9 +831,7 @@ class TestYARAScannerEndpoint:
     def test_yara_requires_auth(self):
         """Test YARA scanning requires authentication."""
         data = {"file": (io.BytesIO(b"content"), "test.exe")}
-        resp = self.client.post(
-            "/api/yara/scan", data=data, content_type="multipart/form-data"
-        )
+        resp = self.client.post("/api/yara/scan", data=data, content_type="multipart/form-data")
         assert resp.status_code == 401
 
     def test_yara_no_file(self):
@@ -933,17 +927,13 @@ class TestPCAPAnalyzerEndpoint:
     def test_pcap_requires_auth(self):
         """Test PCAP analysis requires authentication."""
         data = {"file": (io.BytesIO(b"content"), "test.pcap")}
-        resp = self.client.post(
-            "/api/pcap/analyze", data=data, content_type="multipart/form-data"
-        )
+        resp = self.client.post("/api/pcap/analyze", data=data, content_type="multipart/form-data")
         assert resp.status_code == 401
 
     def test_pcap_no_file(self):
         """Test PCAP analysis with no file."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/pcap/analyze", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = self.client.post("/api/pcap/analyze", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 400
 
     def test_pcap_invalid_file_type(self):
@@ -1017,9 +1007,7 @@ class TestFileCarverEndpoint:
     def test_carve_no_file(self):
         """Test file carving with no file."""
         token = self.get_senior_token()
-        resp = self.client.post(
-            "/api/carve/extract", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = self.client.post("/api/carve/extract", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 400
 
     def test_carve_invalid_file_type(self):
