@@ -33,6 +33,29 @@ cp .env.example .env
 
 ## Usage
 
+### Shell (interactive session)
+
+Start a persistent prompt so you don't have to retype `vlair` for every command.
+
+```bash
+vlair shell
+```
+
+```
+  ██╗   ██╗██╗      █████╗ ██╗██████╗
+  ...
+
+  Security Operations Toolkit — interactive shell
+  Type  help  for commands,  exit  to quit.
+
+vlair> analyze suspicious.eml
+vlair> check hash 44d88612fea8a8f36de82e1278abb02f
+vlair> workflow phishing-email report.eml --verbose
+vlair> exit
+```
+
+The shell supports command history (Up/Down arrows), per-command `help`, and all the same commands as the CLI — just without the leading `vlair`.
+
 ### Analyze (auto-detect input type)
 
 The primary command. Automatically identifies what you're analyzing and runs the appropriate tools.
@@ -97,6 +120,7 @@ vlair carve --image disk.dd --output /carved/
 ### Other commands
 
 ```bash
+vlair shell                 # Interactive REPL shell
 vlair list                  # List all tools with status
 vlair info <tool>           # Detailed tool documentation
 vlair search <keyword>      # Find tools by keyword

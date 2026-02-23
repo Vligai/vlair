@@ -4,7 +4,8 @@ vlair - Central Control System
 A unified security operations toolkit with automatic tool discovery and management.
 
 Usage:
-    vlair                      # Interactive mode
+    vlair shell                # Interactive shell (REPL)
+    vlair                      # Tool-browser menu
     vlair analyze <input>      # Smart analyze (auto-detect input type)
     vlair check <type> <value> # Quick indicator lookup
     vlair workflow <name> <in> # Run pre-built investigation workflow
@@ -432,11 +433,15 @@ vlair - Security Operations Toolkit
 
 Quick Start:
     vlair analyze <input>      Auto-detect and analyze (RECOMMENDED)
+    vlair shell                Start the interactive shell (REPL)
 
 The 'analyze' command automatically detects what you're analyzing and runs
 the appropriate tools. Just give it a file, hash, IP, domain, or URL.
+The 'shell' command opens a persistent prompt so you don't have to retype
+'vlair' for every command.
 
 Usage:
+    vlair shell                Interactive shell (persistent session)
     vlair analyze <input>      Smart analysis (auto-detect input type)
     vlair workflow <name> <input>  Run pre-built investigation workflow
     vlair investigate <cmd>    Automated investigation commands
@@ -513,6 +518,12 @@ def main():
         except KeyboardInterrupt:
             print("\n\nGoodbye!")
             sys.exit(0)
+
+    elif sys.argv[1] == "shell":
+        from vlair.cli.shell import run_shell
+
+        run_shell()
+        sys.exit(0)
 
     elif sys.argv[1] in ["--help", "-h", "help"]:
         print_usage()
