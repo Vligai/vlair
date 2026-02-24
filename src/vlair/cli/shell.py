@@ -149,13 +149,13 @@ class VlairShell(cmd.Cmd):
     def do_analyze(self, args: str):
         """Auto-detect input type and run the appropriate analysis.
 
-Usage:  analyze <input> [--verbose] [--json] [--quiet] [--report html|md]
+        Usage:  analyze <input> [--verbose] [--json] [--quiet] [--report html|md]
 
-Examples:
-  analyze suspicious.eml
-  analyze 44d88612fea8a8f36de82e1278abb02f
-  analyze malicious.com --verbose
-  analyze capture.pcap --json"""
+        Examples:
+          analyze suspicious.eml
+          analyze 44d88612fea8a8f36de82e1278abb02f
+          analyze malicious.com --verbose
+          analyze capture.pcap --json"""
         parts = self._split(args)
         if not parts:
             print("Usage: analyze <input>  (see 'help analyze')")
@@ -165,13 +165,13 @@ Examples:
     def do_check(self, args: str):
         """Quick single-indicator lookup routed to the right tool.
 
-Usage:  check hash|domain|ip|url <value> [--json] [--verbose]
+        Usage:  check hash|domain|ip|url <value> [--json] [--verbose]
 
-Examples:
-  check hash 44d88612fea8a8f36de82e1278abb02f
-  check domain malicious.com
-  check ip 1.2.3.4 --json
-  check url http://evil.com/payload"""
+        Examples:
+          check hash 44d88612fea8a8f36de82e1278abb02f
+          check domain malicious.com
+          check ip 1.2.3.4 --json
+          check url http://evil.com/payload"""
         parts = self._split(args)
         if not parts:
             print("Usage: check hash|domain|ip|url <value>  (see 'help check')")
@@ -181,18 +181,18 @@ Examples:
     def do_workflow(self, args: str):
         """Run a pre-built multi-step investigation workflow.
 
-Usage:  workflow <name> <input> [--verbose] [--json] [--report html|md]
+        Usage:  workflow <name> <input> [--verbose] [--json] [--report html|md]
 
-Workflows:
-  phishing-email     Comprehensive phishing email investigation
-  malware-triage     Quick malware analysis
-  ioc-hunt           Bulk IOC threat hunting
-  network-forensics  PCAP forensic analysis
-  log-investigation  Security log investigation
+        Workflows:
+          phishing-email     Comprehensive phishing email investigation
+          malware-triage     Quick malware analysis
+          ioc-hunt           Bulk IOC threat hunting
+          network-forensics  PCAP forensic analysis
+          log-investigation  Security log investigation
 
-Examples:
-  workflow phishing-email suspicious.eml
-  workflow malware-triage sample.exe --verbose"""
+        Examples:
+          workflow phishing-email suspicious.eml
+          workflow malware-triage sample.exe --verbose"""
         parts = self._split(args)
         if not parts:
             print("Usage: workflow <name> <input>  (see 'help workflow')")
@@ -202,16 +202,16 @@ Examples:
     def do_investigate(self, args: str):
         """Automated investigation engine.
 
-Usage:
-  investigate phishing --file <eml> [--mock] [--verbose] [--json]
-  investigate status  <investigation-id>
-  investigate list    [--last 24h] [--limit N]
-  investigate results <investigation-id> [--json]
+        Usage:
+          investigate phishing --file <eml> [--mock] [--verbose] [--json]
+          investigate status  <investigation-id>
+          investigate list    [--last 24h] [--limit N]
+          investigate results <investigation-id> [--json]
 
-Examples:
-  investigate phishing --file suspicious.eml --mock
-  investigate status INV-2026-01-31-ABCD1234
-  investigate list --last 24h"""
+        Examples:
+          investigate phishing --file suspicious.eml --mock
+          investigate status INV-2026-01-31-ABCD1234
+          investigate list --last 24h"""
         parts = self._split(args)
         self._dispatch(["investigate"] + parts)
 
@@ -224,9 +224,9 @@ Examples:
     def do_search(self, args: str):
         """Search for tools by keyword.
 
-Usage:  search <keyword>
+        Usage:  search <keyword>
 
-Example:  search phishing"""
+        Example:  search phishing"""
         parts = self._split(args)
         if not parts:
             print("Usage: search <keyword>")
@@ -236,9 +236,9 @@ Example:  search phishing"""
     def do_info(self, args: str):
         """Show detailed documentation for a tool.
 
-Usage:  info <tool>
+        Usage:  info <tool>
 
-Example:  info hash"""
+        Example:  info hash"""
         parts = self._split(args)
         if not parts:
             print("Usage: info <tool>")
@@ -254,73 +254,73 @@ Example:  info hash"""
     def do_eml(self, args: str):
         """Parse and analyse an email (.eml) file.
 
-Usage:  eml <file.eml> [--vt] [--output <path>]"""
+        Usage:  eml <file.eml> [--vt] [--output <path>]"""
         self._dispatch(["eml"] + self._split(args))
 
     def do_ioc(self, args: str):
         """Extract IOCs (IPs, domains, hashes, URLs, CVEs) from a file or text.
 
-Usage:  ioc <file> [--format json|csv|txt] [--output <path>]"""
+        Usage:  ioc <file> [--format json|csv|txt] [--output <path>]"""
         self._dispatch(["ioc"] + self._split(args))
 
     def do_hash(self, args: str):
         """Look up a file hash against VirusTotal and MalwareBazaar.
 
-Usage:  hash <md5|sha1|sha256>"""
+        Usage:  hash <md5|sha1|sha256>"""
         self._dispatch(["hash"] + self._split(args))
 
     def do_intel(self, args: str):
         """Get threat intelligence for a domain or IP address.
 
-Usage:  intel <domain|ip>"""
+        Usage:  intel <domain|ip>"""
         self._dispatch(["intel"] + self._split(args))
 
     def do_log(self, args: str):
         """Analyse a log file for security events (Apache, Nginx, syslog).
 
-Usage:  log <logfile> [--format json|txt]"""
+        Usage:  log <logfile> [--format json|txt]"""
         self._dispatch(["log"] + self._split(args))
 
     def do_pcap(self, args: str):
         """Analyse a PCAP/PCAPNG network capture.
 
-Usage:  pcap <file.pcap>"""
+        Usage:  pcap <file.pcap>"""
         self._dispatch(["pcap"] + self._split(args))
 
     def do_url(self, args: str):
         """Check a URL's reputation and detect suspicious patterns.
 
-Usage:  url "<url>" [--json]"""
+        Usage:  url "<url>" [--json]"""
         self._dispatch(["url"] + self._split(args))
 
     def do_yara(self, args: str):
         """Run YARA rules against files or directories.
 
-Usage:  yara scan <path> [--rules <rules_dir>]"""
+        Usage:  yara scan <path> [--rules <rules_dir>]"""
         self._dispatch(["yara"] + self._split(args))
 
     def do_cert(self, args: str):
         """Analyse an SSL/TLS certificate from a live host or file.
 
-Usage:  cert <https://host | hostname | file.pem>"""
+        Usage:  cert <https://host | hostname | file.pem>"""
         self._dispatch(["cert"] + self._split(args))
 
     def do_deobfuscate(self, args: str):
         """Deobfuscate JS, PowerShell, VBScript, or Batch scripts.
 
-Usage:  deobfuscate <file> [--extract-iocs] [--verbose]"""
+        Usage:  deobfuscate <file> [--extract-iocs] [--verbose]"""
         self._dispatch(["deobfuscate"] + self._split(args))
 
     def do_feeds(self, args: str):
         """Aggregate and query threat intelligence feeds.
 
-Usage:  feeds update|search|stats [args]"""
+        Usage:  feeds update|search|stats [args]"""
         self._dispatch(["feeds"] + self._split(args))
 
     def do_carve(self, args: str):
         """Carve embedded files from disk images or memory dumps.
 
-Usage:  carve --image <file> --output <dir>"""
+        Usage:  carve --image <file> --output <dir>"""
         self._dispatch(["carve"] + self._split(args))
 
     # ── Shell control ─────────────────────────────────────────────────────────
