@@ -66,6 +66,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip build
 
+    - name: Set version from tag
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+        echo "Building version: $VERSION"
+
     - name: Build package
       run: python -m build
 
