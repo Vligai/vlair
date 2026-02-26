@@ -2,7 +2,7 @@
 
 > Token-optimized quick reference. Full details in linked files.
 
-**Version:** 5.1.0 | **Status:** Phase 5 (Operationalization) in progress | **Python:** 3.9+
+**Version:** 5.0.0 | **Status:** Phase 5 (Operationalization) complete | **Python:** 3.9+
 
 ---
 
@@ -18,7 +18,7 @@ Unified CLI security operations toolkit. 12 tools under one `vlair` command with
 
 ```
 src/vlair/
-├── cli/          main.py (primary), legacy.py
+├── cli/          main.py (primary), shell.py (REPL), legacy.py
 ├── core/         analyzer.py, detector.py, scorer.py, reporter.py,
 │                 workflow.py, interactive.py, report_generator.py, history.py
 ├── tools/        12 security tools (see table below)
@@ -27,7 +27,7 @@ src/vlair/
 ├── investigate/  engine.py, state.py, registry.py, playbooks/, connectors/
 ├── common/       cache_manager.py (Redis), stix_export.py
 ├── data/         yara_rules/
-└── webapp/       Flask web UI (experimental)
+└── webapp/       Flask API (all 12 tools) + auth (JWT/TOTP/RBAC) — no frontend yet
 tests/            test_*.py — >80% coverage target
 docs/             INDEX.md (this), CONTRIBUTING.md, ROADMAP.md, openspec/
 ```
@@ -58,6 +58,12 @@ docs/             INDEX.md (this), CONTRIBUTING.md, ROADMAP.md, openspec/
 ```bash
 # Smart analysis (auto-detects type)
 vlair analyze <file|hash|domain|ip|url>  [--verbose] [--json] [--quiet]
+
+# Quick single-indicator check
+vlair check hash <hash>
+vlair check domain <domain>
+vlair check ip <ip>
+vlair check url <url>
 
 # Workflows
 vlair workflow phishing-email <file>
@@ -107,18 +113,24 @@ REDIS_URL=        # Optional; falls back to in-memory cache
 
 ---
 
-## Current Phase: Phase 5 — Operationalization
+## Implementation Status
 
 | Feature | Status |
 |---------|--------|
+| 12 security tools | ✅ Done |
 | Smart `analyze` command | ✅ Done |
+| `vlair check` quick lookup | ✅ Done |
 | Pre-built workflows (5) | ✅ Done |
 | Interactive `investigate` mode | ✅ Done |
-| Investigation automation engine | ✅ Done (Phase 1) |
+| Investigation automation engine | ✅ Done |
 | Phishing investigation playbook | ✅ Done |
-| Web frontend (Vue.js) | 🔄 Planned |
+| Flask API (all 12 tools) | ✅ Done |
+| Auth (JWT, TOTP MFA, RBAC, API keys, audit) | ✅ Done |
+| Web frontend (Vue.js 3) | ❌ Not started |
+| AI-powered analysis (Phase 6) | ❌ Not started |
+| Enterprise / SIEM integration (Phase 7+) | ❌ Not started |
 
-Spec: `docs/openspec/specs/operationalize.spec.md`
+Operationalize spec: `docs/openspec/specs/operationalize.spec.md`
 
 ---
 

@@ -17,7 +17,7 @@ This document provides comprehensive guidance for AI assistants working with the
 
 ## Current Development: Operationalization (Phase 5)
 
-**Branch:** `feat/operationalize`
+**Branch:** `main` (feat/operationalize merged)
 **Spec:** `docs/openspec/specs/operationalize.spec.md`
 
 The project is transitioning from a collection of tools to an operational platform. Key changes:
@@ -107,7 +107,8 @@ vlair/
         ├── cli/           # Command-line interfaces
         │   ├── __init__.py
         │   ├── main.py    # Primary CLI (vlair command)
-        │   └── legacy.py  # Legacy CLI (vlair command)
+        │   ├── shell.py   # Interactive REPL shell (VlairShell)
+        │   └── legacy.py  # Legacy CLI
         │
         ├── core/          # Orchestration engine
         │   ├── __init__.py
@@ -168,7 +169,9 @@ vlair/
         │       ├── malware/
         │       └── apt/
         │
-        └── webapp/        # Web interface (future)
+        └── webapp/        # Web interface (Flask, experimental)
+            ├── app.py         # Flask app with all 12 tool API endpoints
+            ├── auth/          # Auth system (JWT, TOTP MFA, RBAC, API keys, audit log)
             ├── static/
             └── templates/
 ```
@@ -1122,9 +1125,9 @@ See `docs/openspec/specs/operationalize.spec.md` for full details.
 
 ---
 
-**Last Updated:** 2026-02-01
+**Last Updated:** 2026-02-26
 **Maintained By:** Vligai
-**Version:** 5.1.0 (Investigation Automation - Phase 1 Foundation)
+**Version:** 5.0.0
 
 This document should be updated whenever:
 - New tools are added
