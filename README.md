@@ -216,7 +216,7 @@ pip install -r requirements-webapp.txt
 
 ## Contributing
 
-Contributions welcome. See [CLAUDE.md](CLAUDE.md) for development conventions and architecture details.
+Contributions welcome. See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines and [CLAUDE.md](CLAUDE.md) for architecture details.
 
 ## License
 

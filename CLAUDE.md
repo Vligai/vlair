@@ -18,7 +18,7 @@ This document provides comprehensive guidance for AI assistants working with the
 ## Current Development: Operationalization (Phase 5)
 
 **Branch:** `feat/operationalize`
-**Spec:** `openspec/specs/operationalize.spec.md`
+**Spec:** `docs/openspec/specs/operationalize.spec.md`
 
 The project is transitioning from a collection of tools to an operational platform. Key changes:
 
@@ -77,9 +77,13 @@ vlair/
 ├── pyproject.toml         # Modern Python packaging configuration
 ├── requirements.txt       # Python dependencies (legacy support)
 │
-├── openspec/              # Project specifications (OpenSpec format)
-│   ├── project.openspec.md
-│   └── specs/             # Individual feature specs
+├── docs/                  # Documentation
+│   ├── INDEX.md           # Token-optimized quick reference (start here)
+│   ├── CONTRIBUTING.md    # Dev setup, PR process, CI/CD
+│   ├── ROADMAP.md         # Phase roadmap and future plans
+│   └── openspec/          # Project specifications (OpenSpec format)
+│       ├── project.openspec.md
+│       └── specs/         # Individual feature specs
 │
 ├── completions/           # Shell completions
 │   ├── vlair.bash
@@ -580,7 +584,7 @@ The CI pipeline runs `black --check` automatically. If formatting fails, run bla
 
 ### Adding a New Tool
 
-1. **Create Specification** (in `openspec/specs/`)
+1. **Create Specification** (in `docs/openspec/specs/`)
    - Follow the OpenSpec format
    - Include 15 functional requirements (FR-1 to FR-15)
    - Include 5 non-functional requirements
@@ -631,7 +635,7 @@ The CI pipeline runs `black --check` automatically. If formatting fails, run bla
 
 ### Specification-Driven Development
 
-**CRITICAL:** Always implement tools based on their OpenSpec specifications in `openspec/specs/`. The specs define:
+**CRITICAL:** Always implement tools based on their OpenSpec specifications in `docs/openspec/specs/`. The specs define:
 
 - Functional Requirements (FR-1 through FR-15)
 - Non-Functional Requirements (performance, security, etc.)
@@ -642,7 +646,7 @@ The CI pipeline runs `black --check` automatically. If formatting fails, run bla
 - Testing Strategy
 
 Before implementing any tool:
-1. Read the corresponding spec in `openspec/specs/`
+1. Read the corresponding spec in `docs/openspec/specs/`
 2. Understand all functional requirements
 3. Follow the defined CLI interface exactly
 4. Use the specified output formats
@@ -908,7 +912,7 @@ def extract_iocs(text: str, types: Optional[List[str]] = None) -> Dict:
 
 ### OpenSpec Documentation
 
-Each tool must have a corresponding specification in `openspec/specs/` that includes:
+Each tool must have a corresponding specification in `docs/openspec/specs/` that includes:
 
 1. **Overview** - Purpose, version, status, priority
 2. **User Stories** - Primary use cases
@@ -1083,7 +1087,7 @@ done
 ## Future Development
 
 ### Phase 5: Operationalization (IN PROGRESS)
-See `openspec/specs/operationalize.spec.md` for full details.
+See `docs/openspec/specs/operationalize.spec.md` for full details.
 - Smart analyze command with auto-detection
 - Pre-built investigation workflows
 - Risk scoring and verdicts
@@ -1109,8 +1113,11 @@ See `openspec/specs/operationalize.spec.md` for full details.
 - [Regex101](https://regex101.com/) - Test regex patterns
 
 ### Internal Documentation
-- `openspec/project.openspec.md` - Project overview
-- `openspec/specs/*.spec.md` - Individual tool specifications
+- `docs/INDEX.md` - Token-optimized quick reference (start here for AI sessions)
+- `docs/openspec/project.openspec.md` - Project overview
+- `docs/openspec/specs/*.spec.md` - Individual tool specifications
+- `docs/CONTRIBUTING.md` - Development guidelines
+- `docs/ROADMAP.md` - Future roadmap
 - `README.md` - User documentation
 
 ---
