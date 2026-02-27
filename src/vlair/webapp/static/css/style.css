@@ -421,3 +421,42 @@ tr:hover td { background: rgba(255,255,255,.02); }
 .mb-8  { margin-bottom: 8px; }
 .mb-16 { margin-bottom: 16px; }
 .w-full { width: 100%; }
+
+/* Verdict badges */
+.verdict-badge { padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.verdict-clean      { background: rgba(63,185,80,.2);  color: #3fb950; }
+.verdict-suspicious { background: rgba(227,179,65,.2); color: #e3b341; }
+.verdict-malicious  { background: rgba(248,81,73,.2);  color: #f85149; }
+.verdict-unknown    { background: rgba(139,148,158,.15); color: #8b949e; }
+
+/* Risk score number */
+.risk-number { font-size: 22px; font-weight: 700; }
+
+/* Stat card color variants */
+.stat-card.stat-malicious .stat-value { color: #f85149; }
+.stat-card.stat-suspicious .stat-value { color: #e3b341; }
+.stat-card.stat-clean .stat-value { color: #3fb950; }
+.stat-card.stat-card-sm { padding: 10px 16px; }
+.stat-card.stat-card-sm .stat-value { font-size: 22px; }
+
+/* Severity badges */
+.sev-badge { padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-right: 4px; }
+.sev-critical { background: rgba(248,81,73,.25);  color: #f85149; }
+.sev-high     { background: rgba(248,81,73,.15);  color: #ff9a8c; }
+.sev-medium   { background: rgba(227,179,65,.2);  color: #e3b341; }
+.sev-low      { background: rgba(88,166,255,.15); color: #58a6ff; }
+
+/* IOC pill list */
+.ioc-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.ioc-pill { background: #161b22; border: 1px solid #30363d; border-radius: 4px; padding: 2px 8px; font-family: monospace; font-size: 12px; color: #c9d1d9; word-break: break-all; }
+.ioc-pill-url { color: #58a6ff; }
+
+/* Chart container */
+.chart-container { position: relative; height: 200px; margin-top: 12px; }
+
+/* Confidence bar */
+.conf-bar { display: inline-block; width: 60px; height: 6px; background: #21262d; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
+.conf-fill { height: 100%; background: #58a6ff; border-radius: 3px; }
+
+/* MFA secret box */
+.mfa-secret { display: inline-block; padding: 6px 12px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; font-family: monospace; font-size: 14px; letter-spacing: 2px; color: #c9d1d9; user-select: all; }

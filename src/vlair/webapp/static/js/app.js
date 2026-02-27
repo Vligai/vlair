@@ -2,7 +2,7 @@
  * vlair — Security Operations Platform
  * Vue 3 SPA (CDN / no build step)
  */
-import { createApp, ref, reactive, computed, onMounted, watch } from "vue";
+import { createApp, ref, reactive, computed, onMounted, watch, nextTick } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,6 +79,10 @@ async function fetchMe() {
     if (res.ok) { const d = await res.json(); auth.user = d.user; }
     else { clearAuth(); }
   } catch { clearAuth(); }
+}
+
+async function copyText(text) {
+  if (text) await navigator.clipboard.writeText(text);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -229,7 +233,7 @@ const DashboardView = {
       { id: "intel",  name: "Domain/IP Intel",  icon: "🌐", desc: "DNS & threat intel for domains and IPs",   role: "analyst" },
       { id: "url",    name: "URL Analyzer",     icon: "🔗", desc: "Check URLs against threat databases",      role: "analyst" },
       { id: "eml",    name: "Email Parser",     icon: "📧", desc: "Analyze phishing and suspicious emails",   role: "analyst" },
-      { id: "hash",   name: "Deobfuscator",     icon: "🔓", desc: "Deobfuscate PowerShell/JS malware",        role: "analyst" },
+      { id: "deobfus", name: "Deobfuscator",     icon: "🔓", desc: "Deobfuscate PowerShell/JS malware",        role: "analyst" },
     ];
     onMounted(async () => {
       const res = await fetch("/api/health");
@@ -327,8 +331,8 @@ const ToolView = {
         <div class="card">
           <div class="card-title">Input</div>
           <div class="form-group">
-            <label class="form-label">Domain or IP address</label>
-            <input v-model="intelTarget" class="form-control" placeholder="example.com or 1.2.3.4" />
+            <label class="form-label">Domains or IPs (one per line)</label>
+            <textarea v-model="intelTarget" class="form-control" placeholder="example.com&#10;1.2.3.4&#10;..."></textarea>
           </div>
           <button class="btn btn-primary" :disabled="running" @click="runIntel">
             <span v-if="running" class="spinner"></span> Analyze
@@ -522,13 +526,358 @@ const ToolView = {
 
       <!-- Error / result -->
       <div v-if="error" class="alert alert-error">{{ error }}</div>
-      <div v-if="result" class="card">
-        <div class="card-title" style="justify-content:space-between">
-          Results
-          <button class="btn btn-secondary btn-sm" @click="copyResult">📋 Copy JSON</button>
+
+      <template v-if="result">
+
+        <!-- Hash Lookup Results -->
+        <template v-if="toolId==='hash'">
+          <div class="card">
+            <div class="card-title">Summary</div>
+            <div class="stats-grid">
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.total }}</div><div class="stat-label">Hashes</div></div>
+              <div class="stat-card stat-card-sm stat-malicious"><div class="stat-value">{{ result.statistics?.verdicts?.malicious }}</div><div class="stat-label">Malicious</div></div>
+              <div class="stat-card stat-card-sm stat-suspicious"><div class="stat-value">{{ result.statistics?.verdicts?.suspicious }}</div><div class="stat-label">Suspicious</div></div>
+              <div class="stat-card stat-card-sm stat-clean"><div class="stat-value">{{ result.statistics?.verdicts?.clean }}</div><div class="stat-label">Clean</div></div>
+            </div>
+            <div class="chart-container"><canvas ref="hashChartCanvas"></canvas></div>
+          </div>
+          <div class="card" v-for="r in result.results" :key="r.hash">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span class="text-mono" style="font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">{{ r.hash }}</span>
+              <span :class="'verdict-badge verdict-' + r.verdict">{{ r.verdict }}</span>
+              <span class="risk-number" :style="riskColor(r.risk_score)">{{ r.risk_score }}</span>
+            </div>
+            <div class="text-muted" style="font-size:12px;margin-top:6px">Type: {{ r.type }}</div>
+          </div>
+        </template>
+
+        <!-- IOC Extractor Results -->
+        <template v-else-if="toolId==='ioc'">
+          <div class="card">
+            <div class="card-title">Summary — {{ result.statistics?.total_iocs }} IOCs</div>
+            <div class="chart-container"><canvas ref="iocChartCanvas"></canvas></div>
+          </div>
+          <div class="card" v-if="result.results?.ips?.length">
+            <div class="card-title">IP Addresses ({{ result.results.ips.length }})</div>
+            <div class="ioc-list">
+              <span class="ioc-pill" v-for="ip in result.results.ips" :key="ip">{{ ip }}</span>
+            </div>
+          </div>
+          <div class="card" v-if="result.results?.domains?.length">
+            <div class="card-title">Domains ({{ result.results.domains.length }})</div>
+            <div class="ioc-list">
+              <span class="ioc-pill" v-for="d in result.results.domains" :key="d">{{ d }}</span>
+            </div>
+          </div>
+          <div class="card" v-if="result.results?.urls?.length">
+            <div class="card-title">URLs ({{ result.results.urls.length }})</div>
+            <div class="ioc-list">
+              <span class="ioc-pill ioc-pill-url" v-for="u in result.results.urls" :key="u">{{ u }}</span>
+            </div>
+          </div>
+          <div class="card" v-if="result.results?.emails?.length">
+            <div class="card-title">Emails ({{ result.results.emails.length }})</div>
+            <div class="ioc-list">
+              <span class="ioc-pill" v-for="e in result.results.emails" :key="e">{{ e }}</span>
+            </div>
+          </div>
+          <div class="card" v-if="allHashes.length">
+            <div class="card-title">Hashes ({{ allHashes.length }})</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Hash</th><th>Type</th></tr></thead>
+              <tbody><tr v-for="h in allHashes" :key="h.value"><td class="text-mono" style="font-size:11px">{{ h.value }}</td><td>{{ h.type }}</td></tr></tbody></table>
+            </div>
+          </div>
+          <div class="card" v-if="result.results?.cves?.length">
+            <div class="card-title">CVEs ({{ result.results.cves.length }})</div>
+            <div class="ioc-list">
+              <span class="ioc-pill" v-for="c in result.results.cves" :key="c">{{ c }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- Domain/IP Intel Results -->
+        <template v-else-if="toolId==='intel'">
+          <div class="card" v-for="r in result.results" :key="r.target">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+              <span class="text-mono">{{ r.target }}</span>
+              <span class="pill">{{ r.type }}</span>
+              <span :class="'verdict-badge verdict-' + r.classification">{{ r.classification }}</span>
+              <span class="risk-number" :style="riskColor(r.risk_score)">{{ r.risk_score }}</span>
+            </div>
+            <div v-if="r.dns_records" class="text-muted" style="font-size:12px">
+              DNS: {{ formatDns(r.dns_records) }}
+            </div>
+          </div>
+        </template>
+
+        <!-- URL Analyzer Results -->
+        <template v-else-if="toolId==='url'">
+          <div class="card" v-for="r in result.results" :key="r.url">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+              <span class="text-mono" style="font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.url }}</span>
+              <span :class="'verdict-badge verdict-' + r.verdict">{{ r.verdict }}</span>
+              <span class="risk-number" :style="riskColor(r.risk_score)">{{ r.risk_score }}</span>
+            </div>
+            <div class="ioc-list" v-if="triggeredChecks(r).length">
+              <span class="sev-badge sev-medium" v-for="c in triggeredChecks(r)" :key="c">&#9888; {{ c }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- Log Analyzer Results -->
+        <template v-else-if="toolId==='log'">
+          <div class="card">
+            <div class="card-title">Summary</div>
+            <div class="stats-grid">
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.total_lines }}</div><div class="stat-label">Log Lines</div></div>
+              <div class="stat-card stat-card-sm stat-malicious"><div class="stat-value">{{ result.statistics?.attacks_detected }}</div><div class="stat-label">Attacks</div></div>
+            </div>
+          </div>
+          <div class="card" v-if="result.alerts?.length">
+            <div class="card-title">Alerts</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Type</th><th>Severity</th><th>Count</th></tr></thead>
+              <tbody>
+                <tr v-for="a in result.alerts" :key="a.type">
+                  <td>{{ a.type }}</td>
+                  <td><span :class="'sev-badge sev-' + a.severity">{{ a.severity }}</span></td>
+                  <td>{{ a.count }}</td>
+                </tr>
+              </tbody></table>
+            </div>
+          </div>
+          <div class="card" v-if="result.top_ips?.length">
+            <div class="card-title">Top Source IPs</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>IP</th><th>Requests</th></tr></thead>
+              <tbody><tr v-for="ip in result.top_ips" :key="ip.ip"><td class="text-mono">{{ ip.ip }}</td><td>{{ ip.count }}</td></tr></tbody></table>
+            </div>
+          </div>
+        </template>
+
+        <!-- Email Parser Results -->
+        <template v-else-if="toolId==='eml'">
+          <div class="card">
+            <div class="card-title">Headers</div>
+            <table>
+              <tr><td class="text-muted" style="width:100px">From</td><td>{{ result.results?.headers?.from }}</td></tr>
+              <tr><td class="text-muted">Subject</td><td>{{ result.results?.headers?.subject }}</td></tr>
+              <tr><td class="text-muted">Date</td><td>{{ result.results?.headers?.date }}</td></tr>
+              <tr><td class="text-muted">SPF</td><td><span :class="authBadge(result.results?.headers?.spf)">{{ result.results?.headers?.spf }}</span></td></tr>
+              <tr><td class="text-muted">DKIM</td><td><span :class="authBadge(result.results?.headers?.dkim)">{{ result.results?.headers?.dkim }}</span></td></tr>
+              <tr><td class="text-muted">DMARC</td><td><span :class="authBadge(result.results?.headers?.dmarc)">{{ result.results?.headers?.dmarc }}</span></td></tr>
+            </table>
+          </div>
+          <div class="card" v-if="result.results?.attachments?.length">
+            <div class="card-title">Attachments ({{ result.results.attachments.length }})</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Filename</th><th>Size</th><th>SHA256</th></tr></thead>
+              <tbody>
+                <tr v-for="a in result.results.attachments" :key="a.filename">
+                  <td>{{ a.filename }}</td>
+                  <td>{{ formatSize(a.size) }}</td>
+                  <td class="text-mono" style="font-size:10px">{{ a.hashes?.sha256?.slice(0,16) }}&#8230;</td>
+                </tr>
+              </tbody></table>
+            </div>
+          </div>
+          <div class="card" v-if="result.results?.embedded_urls?.length">
+            <div class="card-title">Embedded URLs ({{ result.results.embedded_urls.length }})</div>
+            <div class="ioc-list">
+              <span class="ioc-pill ioc-pill-url" v-for="u in result.results.embedded_urls" :key="u">{{ u }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- PCAP Analyzer Results -->
+        <template v-else-if="toolId==='pcap'">
+          <div class="card">
+            <div class="card-title">Summary</div>
+            <div class="stats-grid">
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.total_packets?.toLocaleString() }}</div><div class="stat-label">Packets</div></div>
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ formatSize(result.statistics?.total_bytes) }}</div><div class="stat-label">Total Size</div></div>
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.capture_duration_seconds?.toFixed(1) }}s</div><div class="stat-label">Duration</div></div>
+            </div>
+            <div class="chart-container"><canvas ref="pcapChartCanvas"></canvas></div>
+          </div>
+          <div class="card" v-if="result.alerts?.length">
+            <div class="card-title">Alerts</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Type</th><th>Severity</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr v-for="a in result.alerts" :key="a.type + a.description">
+                  <td>{{ a.type }}</td>
+                  <td><span :class="'sev-badge sev-' + a.severity">{{ a.severity }}</span></td>
+                  <td style="font-size:12px">{{ a.description }}</td>
+                </tr>
+              </tbody></table>
+            </div>
+          </div>
+          <div class="card" v-if="result.top_talkers?.length">
+            <div class="card-title">Top Talkers</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Source</th><th>Dest</th><th>Proto</th><th>Packets</th></tr></thead>
+              <tbody>
+                <tr v-for="t in result.top_talkers.slice(0,10)" :key="t.source_ip+t.dest_ip">
+                  <td class="text-mono">{{ t.source_ip }}</td>
+                  <td class="text-mono">{{ t.dest_ip }}</td>
+                  <td>{{ t.protocol }}</td>
+                  <td>{{ t.packets }}</td>
+                </tr>
+              </tbody></table>
+            </div>
+          </div>
+        </template>
+
+        <!-- Cert Analyzer Results -->
+        <template v-else-if="toolId==='cert'">
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <span :class="'verdict-badge verdict-' + result.results?.verdict">{{ result.results?.verdict }}</span>
+              <span class="risk-number" :style="riskColor(result.results?.risk_score)">{{ result.results?.risk_score }}</span>
+            </div>
+            <table>
+              <tr><td class="text-muted" style="width:130px">Subject CN</td><td>{{ result.results?.subject?.common_name }}</td></tr>
+              <tr><td class="text-muted">Issuer</td><td>{{ result.results?.issuer?.organization }}</td></tr>
+              <tr><td class="text-muted">Valid Until</td><td>{{ result.results?.validity?.not_after?.slice(0,10) }}
+                <span v-if="result.results?.validity?.is_expired" class="sev-badge sev-critical">EXPIRED</span>
+                <span v-else class="text-muted" style="font-size:11px"> ({{ result.results?.validity?.days_remaining }}d left)</span>
+              </td></tr>
+              <tr><td class="text-muted">Key</td><td>{{ result.results?.key_info?.algorithm }} {{ result.results?.key_info?.key_size }}b
+                <span v-if="result.results?.key_info?.is_weak" class="sev-badge sev-high">WEAK</span>
+              </td></tr>
+            </table>
+          </div>
+          <div class="card" v-if="result.results?.security_issues?.length">
+            <div class="card-title">Security Issues</div>
+            <div v-for="i in result.results.security_issues" :key="i.type" style="margin-bottom:6px">
+              <span :class="'sev-badge sev-' + i.severity">{{ i.severity }}</span>
+              <span style="font-size:13px;margin-left:8px">{{ i.description }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- Deobfuscator Results -->
+        <template v-else-if="toolId==='deobfus'">
+          <div class="card">
+            <div class="stats-grid">
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.results?.language }}</div><div class="stat-label">Language</div></div>
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.results?.layers }}</div><div class="stat-label">Layers</div></div>
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.iocs_found }}</div><div class="stat-label">IOCs Found</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="justify-content:space-between">
+              Deobfuscated Code
+              <button class="btn btn-secondary btn-sm" @click="copyText(result.results?.deobfuscated_code)">&#128203; Copy</button>
+            </div>
+            <pre class="result-block" style="max-height:400px;overflow-y:auto">{{ result.results?.deobfuscated_code }}</pre>
+          </div>
+          <div class="card" v-if="hasIocs(result.results?.iocs)">
+            <div class="card-title">Extracted IOCs</div>
+            <template v-for="(vals, type) in result.results.iocs" :key="type">
+              <div v-if="vals && vals.length" style="margin-bottom:8px">
+                <div class="text-muted" style="font-size:12px;margin-bottom:4px">{{ type }} ({{ vals.length }})</div>
+                <div class="ioc-list"><span class="ioc-pill" v-for="v in vals" :key="v">{{ v }}</span></div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- YARA Scanner Results -->
+        <template v-else-if="toolId==='yara'">
+          <div class="card">
+            <div class="stats-grid">
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.rules_loaded }}</div><div class="stat-label">Rules Loaded</div></div>
+              <div class="stat-card stat-card-sm" :class="result.statistics?.matches > 0 ? 'stat-malicious' : 'stat-clean'"><div class="stat-value">{{ result.statistics?.matches }}</div><div class="stat-label">Matches</div></div>
+            </div>
+          </div>
+          <div class="card" v-if="result.results?.matches?.length">
+            <div class="card-title">Matches</div>
+            <div v-for="m in result.results.matches" :key="m.rule" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;gap:8px;align-items:center">
+                <strong>{{ m.rule }}</strong>
+                <span :class="'sev-badge sev-' + m.severity">{{ m.severity }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="card" v-else><p class="text-muted">No YARA matches found.</p></div>
+        </template>
+
+        <!-- Threat Feed Search Results -->
+        <template v-else-if="toolId==='threatfeed'">
+          <div class="card">
+            <div class="card-title">{{ result.statistics?.total }} Results</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>IOC</th><th>Type</th><th>Family</th><th>Confidence</th><th>Last Seen</th></tr></thead>
+              <tbody>
+                <tr v-for="r in result.results" :key="r.ioc">
+                  <td class="text-mono" style="font-size:11px">{{ r.ioc }}</td>
+                  <td>{{ r.type }}</td>
+                  <td>{{ r.malware_family || '&#8212;' }}</td>
+                  <td><div class="conf-bar"><div class="conf-fill" :style="{width: r.confidence + '%'}"></div></div> {{ r.confidence }}%</td>
+                  <td class="text-muted" style="font-size:11px">{{ r.last_seen?.slice(0,10) }}</td>
+                </tr>
+                <tr v-if="!result.results?.length"><td colspan="5" class="text-muted">No results found.</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </template>
+
+        <!-- Threat Feed Update Results -->
+        <template v-else-if="toolId==='feedupdate'">
+          <div class="card">
+            <div class="stats-grid">
+              <div class="stat-card stat-card-sm stat-clean"><div class="stat-value">{{ result.statistics?.new_iocs }}</div><div class="stat-label">New IOCs</div></div>
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.duplicates_skipped }}</div><div class="stat-label">Duplicates</div></div>
+              <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.update_time_seconds?.toFixed(1) }}s</div><div class="stat-label">Duration</div></div>
+            </div>
+          </div>
+        </template>
+
+        <!-- File Carver Results -->
+        <template v-else-if="toolId==='carve'">
+          <div class="card">
+            <div class="card-title">{{ result.statistics?.files_carved }} Files Carved</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Filename</th><th>Type</th><th>Size</th><th>SHA256</th></tr></thead>
+              <tbody>
+                <tr v-for="f in result.results?.files" :key="f.filename">
+                  <td>{{ f.filename }}</td>
+                  <td>{{ f.type }}</td>
+                  <td>{{ formatSize(f.size) }}</td>
+                  <td class="text-mono" style="font-size:10px">{{ f.hashes?.sha256?.slice(0,16) }}&#8230;</td>
+                </tr>
+                <tr v-if="!result.results?.files?.length"><td colspan="4" class="text-muted">No files carved.</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </template>
+
+        <!-- Generic fallback -->
+        <template v-else>
+          <div class="card">
+            <div class="card-title">Results</div>
+            <pre class="result-block">{{ resultFormatted }}</pre>
+          </div>
+        </template>
+
+        <!-- Raw JSON toggle (available on all tool results) -->
+        <div style="margin-top:8px;text-align:right">
+          <button class="btn btn-secondary btn-sm" @click="showRaw=!showRaw">
+            {{ showRaw ? 'Hide' : 'Show' }} Raw JSON
+          </button>
         </div>
-        <pre class="result-block">{{ resultFormatted }}</pre>
-      </div>
+        <div v-if="showRaw" class="card">
+          <div class="card-title" style="justify-content:space-between">
+            Raw JSON
+            <button class="btn btn-secondary btn-sm" @click="copyResult">&#128203; Copy</button>
+          </div>
+          <pre class="result-block">{{ resultFormatted }}</pre>
+        </div>
+
+      </template>
     </template>
   </div>`,
   setup() {
@@ -543,6 +892,52 @@ const ToolView = {
     const resultFormatted = computed(() =>
       result.value ? JSON.stringify(result.value, null, 2) : ""
     );
+
+    // result display state
+    const showRaw = ref(false);
+    const hashChartCanvas = ref(null);
+    const pcapChartCanvas = ref(null);
+    const iocChartCanvas  = ref(null);
+    let   activeChart = null;
+
+    watch(result, async (val) => {
+      if (!val) return;
+      showRaw.value = false;
+      await nextTick();
+      if (activeChart) { activeChart.destroy(); activeChart = null; }
+      if (toolId.value === 'hash' && hashChartCanvas.value) {
+        const v = val.statistics?.verdicts || {};
+        activeChart = new Chart(hashChartCanvas.value, {
+          type: 'doughnut',
+          data: { labels: ['Clean','Suspicious','Malicious','Unknown'],
+                  datasets: [{ data: [v.clean||0, v.suspicious||0, v.malicious||0, v.unknown||0],
+                               backgroundColor: ['#3fb950','#e3b341','#f85149','#8b949e'], borderWidth: 0 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#c9d1d9' } } } }
+        });
+      }
+      else if (toolId.value === 'pcap' && pcapChartCanvas.value) {
+        const p = val.protocols || {};
+        activeChart = new Chart(pcapChartCanvas.value, {
+          type: 'doughnut',
+          data: { labels: Object.keys(p), datasets: [{ data: Object.values(p), borderWidth: 0 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#c9d1d9' } } } }
+        });
+      }
+      else if (toolId.value === 'ioc' && iocChartCanvas.value) {
+        const r = val.results || {};
+        const counts = { IPs: r.ips?.length||0, Domains: r.domains?.length||0, URLs: r.urls?.length||0,
+                         Emails: r.emails?.length||0, Hashes: Object.values(r.hashes||{}).flat().length, CVEs: r.cves?.length||0 };
+        const filtered = Object.fromEntries(Object.entries(counts).filter(([,v]) => v > 0));
+        activeChart = new Chart(iocChartCanvas.value, {
+          type: 'bar',
+          data: { labels: Object.keys(filtered),
+                  datasets: [{ data: Object.values(filtered), backgroundColor: '#58a6ff', borderRadius: 4 }] },
+          options: { responsive: true, maintainAspectRatio: false,
+                     plugins: { legend: { display: false } },
+                     scales: { x: { ticks: { color: '#8b949e' } }, y: { ticks: { color: '#8b949e', stepSize: 1 } } } }
+        });
+      }
+    });
 
     // per-tool state
     const iocText      = ref(""); const uploadedFile = ref(null); const fileName = ref("");
@@ -588,7 +983,10 @@ const ToolView = {
       const hashes = hashText.value.trim().split(/\s+/).filter(Boolean);
       await runTool("/api/hash/lookup", { hashes });
     }
-    async function runIntel() { await runTool("/api/intel/analyze", { target: intelTarget.value }); }
+    async function runIntel() {
+      const targets = intelTarget.value.trim().split(/\n/).filter(Boolean);
+      await runTool("/api/intel/analyze", { targets });
+    }
     async function runUrl() {
       const urls = urlText.value.trim().split(/\n/).filter(Boolean);
       await runTool("/api/url/analyze", { urls });
@@ -621,6 +1019,43 @@ const ToolView = {
       await navigator.clipboard.writeText(JSON.stringify(result.value, null, 2));
     }
 
+    function riskColor(score) {
+      if (score >= 70) return 'color:#f85149';
+      if (score >= 40) return 'color:#e3b341';
+      return 'color:#3fb950';
+    }
+    function triggeredChecks(r) {
+      return Object.entries(r.heuristic_checks || {}).filter(([,v]) => v).map(([k]) => k.replace(/_/g,' '));
+    }
+    function authBadge(val) {
+      if (!val) return 'pill';
+      if (val.toLowerCase().includes('pass')) return 'pill pill-success';
+      if (val.toLowerCase().includes('fail')) return 'pill pill-danger';
+      return 'pill';
+    }
+    function formatSize(bytes) {
+      if (!bytes) return '0 B';
+      const units = ['B','KB','MB','GB'];
+      let i = 0; let n = bytes;
+      while (n >= 1024 && i < 3) { n /= 1024; i++; }
+      return n.toFixed(1) + ' ' + units[i];
+    }
+    function formatDns(records) {
+      if (!records) return '—';
+      return Object.entries(records).map(([k,v]) => `${k}: ${Array.isArray(v) ? v.slice(0,2).join(', ') : v}`).join(' | ');
+    }
+    function hasIocs(iocs) {
+      return iocs && Object.values(iocs).some(v => v?.length > 0);
+    }
+    const allHashes = computed(() => {
+      const h = result.value?.results?.hashes || {};
+      return [
+        ...(h.md5 || []).map(v => ({value: v, type: 'MD5'})),
+        ...(h.sha1 || []).map(v => ({value: v, type: 'SHA1'})),
+        ...(h.sha256 || []).map(v => ({value: v, type: 'SHA256'})),
+      ];
+    });
+
     return {
       toolId, tool, running, error, result, resultFormatted,
       iocText, uploadedFile, fileName, hashText, intelTarget, urlText,
@@ -628,6 +1063,8 @@ const ToolView = {
       onFileChange, runIoc, runHash, runIntel, runUrl, runLog, runEml,
       runYara, runCert, runDeobfus, runPcap, runFeedSearch, runFeedUpdate, runCarve,
       copyResult,
+      showRaw, hashChartCanvas, pcapChartCanvas, iocChartCanvas,
+      riskColor, triggeredChecks, authBadge, formatSize, formatDns, hasIocs, copyText, allHashes,
     };
   },
 };
@@ -647,6 +1084,62 @@ const ProfileView = {
         <tr><td class="text-muted">Created</td><td class="text-mono">{{ user.created_at }}</td></tr>
         <tr><td class="text-muted">Last Login</td><td class="text-mono">{{ user.last_login || 'N/A' }}</td></tr>
       </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        Two-Factor Authentication
+        <span :class="user.mfa_enabled ? 'pill pill-success' : 'pill'">{{ user.mfa_enabled ? 'Enabled' : 'Disabled' }}</span>
+      </div>
+      <div v-if="mfaMsg" :class="'alert alert-' + mfaMsgType">{{ mfaMsg }}</div>
+
+      <!-- Setup flow (MFA not enabled) -->
+      <template v-if="!user.mfa_enabled">
+        <button v-if="!mfaSetupData" class="btn btn-secondary" :disabled="mfaLoading" @click="startMfaSetup">
+          <span v-if="mfaLoading" class="spinner"></span> Enable MFA
+        </button>
+        <template v-if="mfaSetupData">
+          <p style="font-size:13px;color:var(--text-muted);margin:12px 0">Scan the URI or enter the secret manually in your authenticator app (Google Authenticator, Authy, etc.).</p>
+          <div class="form-group">
+            <label class="form-label">TOTP Secret</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <code class="mfa-secret">{{ mfaSetupData.secret }}</code>
+              <button class="btn btn-secondary btn-sm" @click="copyText(mfaSetupData.secret)">&#128203;</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Provisioning URI</label>
+            <a :href="mfaSetupData.provisioning_uri" class="text-mono" style="font-size:11px;word-break:break-all">{{ mfaSetupData.provisioning_uri }}</a>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Enter 6-digit code to verify</label>
+            <input v-model="mfaCode" class="form-control" placeholder="000000" maxlength="6" style="width:140px" />
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" :disabled="mfaLoading || mfaCode.length!==6" @click="verifyMfa">
+              <span v-if="mfaLoading" class="spinner"></span> Activate MFA
+            </button>
+            <button class="btn btn-secondary" @click="mfaSetupData=null;mfaCode=''">Cancel</button>
+          </div>
+        </template>
+      </template>
+
+      <!-- Disable flow (MFA enabled) -->
+      <template v-else>
+        <button v-if="!showDisableMfa" class="btn btn-danger" @click="showDisableMfa=true">Disable MFA</button>
+        <template v-if="showDisableMfa">
+          <div class="form-group" style="margin-top:12px">
+            <label class="form-label">Confirm your password</label>
+            <input v-model="mfaDisablePw" type="password" class="form-control" style="width:240px" />
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-danger" :disabled="mfaLoading || !mfaDisablePw" @click="disableMfa">
+              <span v-if="mfaLoading" class="spinner"></span> Confirm Disable
+            </button>
+            <button class="btn btn-secondary" @click="showDisableMfa=false;mfaDisablePw=''">Cancel</button>
+          </div>
+        </template>
+      </template>
     </div>
 
     <div class="card">
@@ -709,6 +1202,11 @@ const ProfileView = {
     const apiKeys = ref([]); const showCreateKey = ref(false); const newKeyName = ref("");
     const newKeyValue = ref(""); const keyLoading = ref(false);
 
+    // MFA state
+    const mfaLoading = ref(false); const mfaMsg = ref(""); const mfaMsgType = ref("");
+    const mfaSetupData = ref(null); const mfaCode = ref("");
+    const showDisableMfa = ref(false); const mfaDisablePw = ref("");
+
     onMounted(async () => {
       const r = await apiFetch("/api/auth/keys");
       if (r.ok) { const d = await r.json(); apiKeys.value = d.keys || []; }
@@ -746,8 +1244,47 @@ const ProfileView = {
       apiKeys.value = apiKeys.value.filter(k => k.id !== id);
     }
 
+    async function startMfaSetup() {
+      mfaLoading.value = true; mfaMsg.value = "";
+      const res = await apiFetch("/api/auth/mfa/setup", { method: "POST" });
+      const d = await res.json();
+      if (res.ok) { mfaSetupData.value = d; }
+      else { mfaMsg.value = d.error || "MFA setup failed"; mfaMsgType.value = "error"; }
+      mfaLoading.value = false;
+    }
+
+    async function verifyMfa() {
+      mfaLoading.value = true; mfaMsg.value = "";
+      const res = await apiFetch("/api/auth/mfa/verify", {
+        method: "POST", body: JSON.stringify({ totp_code: mfaCode.value }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        mfaMsg.value = "MFA enabled!"; mfaMsgType.value = "success";
+        mfaSetupData.value = null; mfaCode.value = "";
+        await fetchMe();
+      } else { mfaMsg.value = d.error || "Invalid code"; mfaMsgType.value = "error"; }
+      mfaLoading.value = false;
+    }
+
+    async function disableMfa() {
+      mfaLoading.value = true; mfaMsg.value = "";
+      const res = await apiFetch("/api/auth/mfa", {
+        method: "DELETE", body: JSON.stringify({ password: mfaDisablePw.value }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        mfaMsg.value = "MFA disabled."; mfaMsgType.value = "success";
+        showDisableMfa.value = false; mfaDisablePw.value = "";
+        await fetchMe();
+      } else { mfaMsg.value = d.error || "Incorrect password"; mfaMsgType.value = "error"; }
+      mfaLoading.value = false;
+    }
+
     return { user, rolePill, currentPw, newPw, pwMsg, pwMsgType, pwLoading, changePw,
-             apiKeys, showCreateKey, newKeyName, newKeyValue, keyLoading, createKey, revokeKey };
+             apiKeys, showCreateKey, newKeyName, newKeyValue, keyLoading, createKey, revokeKey,
+             mfaLoading, mfaMsg, mfaMsgType, mfaSetupData, mfaCode,
+             showDisableMfa, mfaDisablePw, startMfaSetup, verifyMfa, disableMfa, copyText };
   },
 };
 
