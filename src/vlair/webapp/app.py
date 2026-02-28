@@ -18,6 +18,7 @@ VLAIR_WEBAPP_DB         - SQLite DB path (default ~/.vlair/webapp.db)
 VLAIR_OPEN_REGISTRATION - "true"/"false" (default true)
 VLAIR_ACCESS_TTL        - Access token TTL in seconds (default 900)
 VLAIR_REFRESH_TTL       - Refresh token TTL in seconds (default 604800)
+ANTHROPIC_API_KEY       - Anthropic API key (required for /api/ai/summarize)
 
 Tool endpoints and their required roles
 ----------------------------------------
@@ -39,6 +40,8 @@ Endpoint                Role Required
 /api/threatfeed/update  senior_analyst
 /api/carve/extract      senior_analyst
 /api/admin/*            admin
+/api/ai/summarize       analyst
+/api/ai/status          authenticated
 """
 
 import os
@@ -47,6 +50,7 @@ import json
 import tempfile
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
 
 from flask import Flask, jsonify, request, send_from_directory, render_template
 from werkzeug.utils import secure_filename
@@ -60,6 +64,20 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from vlair.webapp.auth import Role, init_db, require_auth, require_role
 from vlair.webapp.auth.routes import auth_bp, admin_bp
+from vlair.ai.summarizer import ThreatSummarizer, SummaryConfig
+
+# ---------------------------------------------------------------------------
+# AI summarizer singleton (lazy-init)
+# ---------------------------------------------------------------------------
+
+_ai_summarizer: Optional[ThreatSummarizer] = None
+
+
+def _get_summarizer() -> ThreatSummarizer:
+    global _ai_summarizer
+    if _ai_summarizer is None:
+        _ai_summarizer = ThreatSummarizer()
+    return _ai_summarizer
 
 
 # ---------------------------------------------------------------------------
@@ -679,6 +697,54 @@ def _register_tool_routes(app: Flask) -> None:
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
+    # ------------------------------------------------------------------
+    # AI Analysis (Phase 6.1)
+    # ------------------------------------------------------------------
+    @app.post("/api/ai/summarize")
+    @require_role(Role.ANALYST)
+    def ai_summarize():
+        """
+        Generate a Claude-powered threat summary from an existing tool result.
+
+        Body (JSON): {
+            "ioc_value":   str,   # primary indicator (hash, domain, filename, …)
+            "ioc_type":    str,   # hash|domain|ip|url|email|log|pcap|cert|script|ioc
+            "tool_result": dict,  # parsed JSON from a vlair tool endpoint
+            "depth":       str    # quick|standard|thorough (optional, default standard)
+        }
+        """
+        body = request.get_json(silent=True) or {}
+        ioc_value = str(body.get("ioc_value", "")).strip()
+        ioc_type = str(body.get("ioc_type", "unknown")).strip()
+        tool_result = body.get("tool_result", {})
+        depth = body.get("depth", "standard")
+
+        if not ioc_value or not tool_result:
+            return jsonify({"error": "ioc_value and tool_result are required"}), 400
+
+        summarizer = _get_summarizer()
+        if not summarizer.is_available():
+            return jsonify({"error": "AI analysis unavailable. Set ANTHROPIC_API_KEY."}), 503
+
+        try:
+            result = summarizer.summarize(ioc_value, ioc_type, tool_result, depth)
+            return jsonify(
+                {
+                    "success": True,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "analysis": result,
+                }
+            )
+        except Exception as exc:
+            return jsonify({"error": f"AI analysis failed: {str(exc)}"}), 500
+
+    @app.get("/api/ai/status")
+    @require_auth
+    def ai_status():
+        """Return AI availability and configured model."""
+        summarizer = _get_summarizer()
+        return jsonify({"available": summarizer.is_available(), "model": summarizer.config.model})
+
 
 # ---------------------------------------------------------------------------
 # Utility / informational routes
@@ -824,6 +890,18 @@ def _register_utility_routes(app: Flask) -> None:
                         "method": "GET",
                         "role": "senior_analyst",
                         "description": "Query audit log",
+                    },
+                    {
+                        "path": "/api/ai/summarize",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Claude-powered threat summary for a tool result",
+                    },
+                    {
+                        "path": "/api/ai/status",
+                        "method": "GET",
+                        "role": "authenticated",
+                        "description": "AI analysis availability and model info",
                     },
                 ]
             }

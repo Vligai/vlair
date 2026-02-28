@@ -877,6 +877,62 @@ const ToolView = {
           <pre class="result-block">{{ resultFormatted }}</pre>
         </div>
 
+        <!-- AI Analysis button + result card -->
+        <div v-if="AI_TOOLS.includes(toolId)" style="margin-top:16px">
+          <button v-if="!aiResult && !aiLoading" class="btn btn-ai" @click="runAiAnalysis">
+            &#129302; AI Analysis
+          </button>
+          <button v-if="aiLoading" class="btn btn-ai" disabled>
+            <span class="spinner"></span> Analyzing with Claude&#8230;
+          </button>
+          <div v-if="aiError" class="alert alert-error" style="margin-top:8px">{{ aiError }}</div>
+          <div v-if="aiResult" class="card ai-card" style="margin-top:8px">
+            <div class="card-title" style="justify-content:space-between">
+              <span>&#129302; AI Analysis</span>
+              <span class="ai-model-badge">{{ aiResult.metadata?.model }}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+              <span :class="'verdict-badge verdict-' + (aiResult.verdict||'').toLowerCase()">{{ aiResult.verdict }}</span>
+              <span :class="'sev-badge sev-' + (aiResult.severity||'').toLowerCase()">{{ aiResult.severity }}</span>
+              <span class="text-muted" style="font-size:12px">{{ Math.round((aiResult.confidence||0)*100) }}% confidence</span>
+              <span v-if="aiResult.metadata?.cached" class="pill" style="font-size:11px">cached</span>
+            </div>
+            <div v-if="aiResult.key_findings?.length" style="margin-bottom:12px">
+              <div class="ai-section-title">Key Findings</div>
+              <ul style="padding-left:18px;margin:6px 0">
+                <li v-for="f in aiResult.key_findings" :key="f" style="margin-bottom:4px;font-size:13px">{{ f }}</li>
+              </ul>
+            </div>
+            <div v-if="aiResult.threat_context" style="margin-bottom:12px">
+              <div class="ai-section-title">Threat Context</div>
+              <p style="font-size:13px;line-height:1.6;color:var(--text-muted)">{{ aiResult.threat_context }}</p>
+            </div>
+            <div v-if="aiResult.mitre_attack?.length" style="margin-bottom:12px">
+              <div class="ai-section-title">MITRE ATT&amp;CK</div>
+              <div class="ioc-list" style="margin-top:4px">
+                <a v-for="t in aiResult.mitre_attack" :key="t"
+                   :href="'https://attack.mitre.org/techniques/' + t.replace('.','/') "
+                   target="_blank" class="mitre-pill">{{ t }}</a>
+              </div>
+            </div>
+            <div v-if="aiResult.recommended_actions?.length" style="margin-bottom:12px">
+              <div class="ai-section-title">Recommended Actions</div>
+              <div v-for="a in aiResult.recommended_actions" :key="a.action"
+                   style="margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">
+                <span :class="'action-badge action-' + a.priority">{{ a.priority }}</span>
+                <span style="font-size:13px">{{ a.action }}</span>
+              </div>
+            </div>
+            <div v-if="aiResult.confidence_notes" style="margin-bottom:8px">
+              <div class="ai-section-title">Confidence Notes</div>
+              <p style="font-size:12px;color:var(--text-muted)">{{ aiResult.confidence_notes }}</p>
+            </div>
+            <div style="text-align:right">
+              <button class="btn btn-secondary btn-sm" @click="aiResult=null;aiError=''">&#10005; Close</button>
+            </div>
+          </div>
+        </div>
+
       </template>
     </template>
   </div>`,
@@ -900,8 +956,45 @@ const ToolView = {
     const iocChartCanvas  = ref(null);
     let   activeChart = null;
 
+    // AI analysis state
+    const aiResult  = ref(null);
+    const aiLoading = ref(false);
+    const aiError   = ref("");
+
+    const AI_TOOLS = ['hash','intel','url','eml','log','cert','deobfus','pcap','ioc'];
+
+    function aiIocType() {
+      const map = { hash:'hash', intel:'domain', url:'url', eml:'email',
+                    log:'log', cert:'cert', deobfus:'script', pcap:'pcap', ioc:'ioc' };
+      return map[toolId.value] || 'unknown';
+    }
+
+    function aiIocValue() {
+      if (toolId.value === 'hash')  return hashText.value.trim().split(/\s+/)[0] || '';
+      if (toolId.value === 'intel') return intelTarget.value.trim().split(/\n/)[0] || '';
+      if (toolId.value === 'url')   return urlText.value.trim().split(/\n/)[0] || '';
+      if (toolId.value === 'cert')  return certHost.value;
+      return fileName.value || toolId.value;
+    }
+
+    async function runAiAnalysis() {
+      aiLoading.value = true; aiError.value = ""; aiResult.value = null;
+      try {
+        const res = await apiFetch("/api/ai/summarize", {
+          method: "POST",
+          body: JSON.stringify({ ioc_value: aiIocValue(), ioc_type: aiIocType(),
+                                 tool_result: result.value, depth: "standard" }),
+        });
+        const d = await res.json();
+        if (res.ok) aiResult.value = d.analysis;
+        else aiError.value = d.error || "AI analysis failed";
+      } catch (e) { aiError.value = "Network error: " + e.message; }
+      aiLoading.value = false;
+    }
+
     watch(result, async (val) => {
       if (!val) return;
+      aiResult.value = null; aiError.value = "";
       showRaw.value = false;
       await nextTick();
       if (activeChart) { activeChart.destroy(); activeChart = null; }
@@ -1065,6 +1158,7 @@ const ToolView = {
       copyResult,
       showRaw, hashChartCanvas, pcapChartCanvas, iocChartCanvas,
       riskColor, triggeredChecks, authBadge, formatSize, formatDns, hasIocs, copyText, allHashes,
+      aiResult, aiLoading, aiError, runAiAnalysis, AI_TOOLS,
     };
   },
 };

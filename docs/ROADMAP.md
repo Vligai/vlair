@@ -42,7 +42,7 @@
 
 ## Phase 5: Web Interface (Q1 2026)
 
-**Overall Status:** 🔄 In Progress — API and auth complete, frontend not started
+**Overall Status:** ✅ Complete — API, auth, and Vue 3 SPA all done
 
 ### 5.1 Web API — All 12 Tools ✅ Complete
 
@@ -105,40 +105,41 @@ VLAIR_WEBAPP_DB          SQLite DB path (default: ~/.vlair/webapp.db)
 VLAIR_OPEN_REGISTRATION  true/false — allow self-registration (default: true)
 VLAIR_ACCESS_TTL         Access token lifetime in seconds (default: 900)
 VLAIR_REFRESH_TTL        Refresh token lifetime in seconds (default: 604800)
+ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 ```
 
-### 5.3 Modern Frontend ❌ Not Started
+### 5.3 Modern Frontend ✅ Complete
 
-**Current:** API-only (no browser UI)
-**Target:** Vue.js 3 + TypeScript SPA
+**Implemented:** Vue 3 CDN SPA (no build step) with Chart.js charts and MFA UI
 
 **Technology Stack:**
-- **Frontend:** Vue.js 3 + TypeScript + Vite
-- **UI Framework:** Tailwind CSS + DaisyUI
-- **Charts:** Chart.js + Plotly.js
-- **State:** Pinia
-- **API Client:** TanStack Query
+- **Frontend:** Vue.js 3 (CDN, no build step)
+- **Charts:** Chart.js (CDN)
+- **Auth:** JWT + TOTP MFA setup/disable UI
 
-**Key Views:**
-1. **Dashboard** — Overview, recent analyses, statistics
-2. **IOC Extractor** — Paste text → extract → auto-enrich → visualize
-3. **Hash Lookup** — Batch upload, verdict pie charts, detection timeline
-4. **PCAP Analysis** — Upload, protocol distribution, traffic timeline
-5. **Threat Intel** — Feed aggregator dashboard, IOC search
-6. **Administration** — User management, API key config, settings
+**Key Views implemented:**
+1. **Dashboard** — Overview, stats, quick-action tool cards
+2. **Tools** — All 13 tools with per-tool structured result rendering
+3. **Profile** — Change password, MFA setup/disable, API key management
+4. **Administration** — User management, role changes, audit log
 
 ---
 
 ## Phase 6: AI-Powered Analysis (Q2 2026)
 
-**Status:** Not Started
+**Status:** 🔄 In Progress
 **Priority:** HIGH
 
-### 6.1 AI-Assisted IOC Analysis
+### 6.1 AI-Assisted IOC Analysis 🔄 In Progress
+- ✅ Claude-powered executive summaries from tool results (`/api/ai/summarize`)
+- ✅ MITRE ATT&CK technique mapping
+- ✅ Verdict + severity + key findings + recommended actions
+- ✅ In-memory result caching (24h TTL)
+- ✅ "AI Analysis" button in all tool result panels
 - Natural language queries ("Show me malicious URLs from the last 24 hours")
-- LLM-generated executive summaries from analysis results
-- MITRE ATT&CK technique mapping
 - Context-aware IOC extraction (reduce false positives)
+
+**Required:** `ANTHROPIC_API_KEY` environment variable
 
 **Technology:** Claude API (Anthropic), OpenAI embeddings, ChromaDB/Pinecone for semantic search
 
@@ -283,9 +284,9 @@ VLAIR_REFRESH_TTL        Refresh token lifetime in seconds (default: 604800)
 
 1. ✅ ~~Complete web API endpoints~~ (all 13 endpoints done)
 2. ✅ ~~Implement authentication & RBAC~~ (JWT, TOTP MFA, RBAC, audit log)
-3. Build Vue.js 3 frontend (Phase 5.3)
-4. Begin AI integration research and prototyping (Phase 6)
-5. Engage community for feedback on AI features
+3. ✅ ~~Build Vue.js 3 frontend~~ (Phase 5.3 complete — Vue 3 CDN SPA)
+4. ✅ ~~Begin AI integration~~ (Phase 6.1 — Claude summaries in all tool panels)
+5. Continue Phase 6: natural language queries, ML malware classification
 
 ---
 

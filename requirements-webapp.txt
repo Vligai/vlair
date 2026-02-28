@@ -19,3 +19,6 @@ PyJWT>=2.8.0
 
 # TOTP / MFA (optional - MFA endpoints return 501 without this)
 pyotp>=2.9.0
+
+# AI Analysis (Phase 6.1) — install to enable /api/ai/summarize
+# anthropic>=0.34.0

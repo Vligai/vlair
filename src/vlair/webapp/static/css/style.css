@@ -460,3 +460,16 @@ tr:hover td { background: rgba(255,255,255,.02); }
 
 /* MFA secret box */
 .mfa-secret { display: inline-block; padding: 6px 12px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; font-family: monospace; font-size: 14px; letter-spacing: 2px; color: #c9d1d9; user-select: all; }
+
+/* AI Analysis card */
+.btn-ai { background: linear-gradient(135deg, #1a1f35, #1f2d4a); border: 1px solid #58a6ff; color: #79c0ff; }
+.btn-ai:hover:not(:disabled) { background: rgba(88,166,255,.15); }
+.ai-card { border-color: rgba(88,166,255,.4); background: rgba(22,27,34,.95); }
+.ai-model-badge { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+.ai-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 4px; }
+.mitre-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--font-mono); background: rgba(121,192,255,.12); border: 1px solid rgba(121,192,255,.3); color: #79c0ff; text-decoration: none; }
+.mitre-pill:hover { background: rgba(121,192,255,.2); text-decoration: none; }
+.action-badge { padding: 1px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.action-immediate  { background: rgba(248,81,73,.2);  color: #f85149; border: 1px solid rgba(248,81,73,.3); }
+.action-short_term, .action-short-term { background: rgba(227,179,65,.2); color: #e3b341; border: 1px solid rgba(227,179,65,.3); }
+.action-long_term,  .action-long-term  { background: rgba(88,166,255,.15); color: #58a6ff; border: 1px solid rgba(88,166,255,.3); }
