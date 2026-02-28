@@ -7,7 +7,7 @@
 
 A unified security operations toolkit for threat analysis, incident response, and security investigations.
 
-vlair brings 12 specialized security tools under a single `vlair` command with smart auto-detection, pre-built investigation workflows, and actionable output.
+vlair brings 12 specialized security tools under a single `vlair` command with smart auto-detection, pre-built investigation workflows, actionable output, and a web dashboard with Claude-powered AI threat summaries.
 
 ## Installation
 
@@ -20,7 +20,8 @@ pip install -e .
 Or with optional dependencies:
 
 ```bash
-pip install -e ".[all]"      # All features (YARA, PCAP, Redis, etc.)
+pip install -e ".[all]"      # All features (YARA, PCAP, Redis, AI, etc.)
+pip install -e ".[ai]"       # Claude-powered AI threat summaries
 pip install -e ".[dev]"      # Development tools (pytest, black, etc.)
 ```
 
@@ -159,6 +160,9 @@ ABUSEIPDB_KEY=your_key
 
 # Redis (optional, falls back to in-memory cache)
 REDIS_URL=redis://localhost:6379/0
+
+# Anthropic (optional — enables AI Analysis in web dashboard)
+ANTHROPIC_API_KEY=sk-ant-your_key
 ```
 
 All tools work without API keys but provide limited results.
@@ -195,12 +199,24 @@ docker-compose run --rm vlair analyze /data/suspicious.eml
 
 ### Web dashboard
 
-A Flask-based web UI is available for browser-based analysis (experimental).
+A Flask-based web UI with a Vue 3 SPA frontend, JWT auth, TOTP MFA, RBAC, and Claude-powered AI threat summaries.
 
 ```bash
 pip install -r requirements-webapp.txt
-# Web dashboard is in development
+pip install "anthropic>=0.34.0"   # optional — enables AI Analysis button
+
+export VLAIR_SECRET_KEY=your-secret
+export ANTHROPIC_API_KEY=sk-ant-…  # optional
+flask --app src/vlair/webapp/app.py run
+# Visit http://localhost:5000
 ```
+
+Features:
+- All 12 tools accessible via browser with structured result views and charts
+- JWT authentication with optional TOTP MFA
+- RBAC (viewer / analyst / senior analyst / admin)
+- **AI Analysis** — click "AI Analysis" on any result to get a Claude-generated threat assessment: verdict, severity, MITRE ATT&CK mapping, key findings, and recommended actions
+- Audit log and user management (admin)
 
 ## Troubleshooting
 
