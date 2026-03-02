@@ -42,8 +42,7 @@ class AIResponseCache:
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)
 
         with sqlite3.connect(self.cache_path) as conn:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS ai_responses (
                     cache_key TEXT PRIMARY KEY,
                     response_json TEXT NOT NULL,
@@ -51,14 +50,11 @@ class AIResponseCache:
                     tokens_used INTEGER NOT NULL,
                     created_at INTEGER NOT NULL
                 )
-            """
-            )
-            conn.execute(
-                """
+            """)
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_created_at
                 ON ai_responses(created_at)
-            """
-            )
+            """)
             conn.commit()
 
     def get_cache_key(self, input_value: str, input_type: str, prompt_hash: str, model: str) -> str:

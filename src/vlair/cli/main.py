@@ -257,7 +257,9 @@ class InteractiveMenu:
     def browse_by_category(self):
         """Browse tools by category"""
         # Get all unique categories
-        categories = sorted(set(tool["category"] for tool in self.discovery.get_all_tools().values()))
+        categories = sorted(
+            set(tool["category"] for tool in self.discovery.get_all_tools().values())
+        )
 
         print("\n" + "=" * 70)
         print("  Tool Categories")
@@ -663,8 +665,13 @@ def main():
             print("  vlair analyze 44d88612...              # Auto-detect hash", file=sys.stderr)
             print("  vlair analyze malicious.com            # Auto-detect domain", file=sys.stderr)
             print("  vlair analyze 192.168.1.1              # Auto-detect IP", file=sys.stderr)
-            print("  vlair analyze suspicious.eml --ai      # Add Claude AI assessment", file=sys.stderr)
-            print("  vlair analyze hash123 --ai --depth thorough  # Deep AI analysis", file=sys.stderr)
+            print(
+                "  vlair analyze suspicious.eml --ai      # Add Claude AI assessment",
+                file=sys.stderr,
+            )
+            print(
+                "  vlair analyze hash123 --ai --depth thorough  # Deep AI analysis", file=sys.stderr
+            )
             sys.exit(1)
 
         try:
@@ -729,10 +736,15 @@ def main():
                         if not quiet:
                             print("[*] Running AI analysis...", file=sys.stderr)
                         _ioc_type = _AI_TYPE_MAP.get(str(result["type"]), "unknown")
-                        ai_result = _summarizer.summarize(input_value, _ioc_type, result["tool_results"], ai_depth)
+                        ai_result = _summarizer.summarize(
+                            input_value, _ioc_type, result["tool_results"], ai_depth
+                        )
                     else:
                         if not quiet:
-                            print("[!] AI unavailable: set ANTHROPIC_API_KEY to enable", file=sys.stderr)
+                            print(
+                                "[!] AI unavailable: set ANTHROPIC_API_KEY to enable",
+                                file=sys.stderr,
+                            )
                 except ImportError:
                     if not quiet:
                         print("[!] AI module unavailable (pip install -e '.[ai]')", file=sys.stderr)
@@ -870,7 +882,9 @@ def main():
                     print(f"Verdict: {verdict}")
                     if detections or total:
                         print(f"Detections: {detections}/{total}")
-                    malware_family = result.get("malware_family") or result.get("suggested_threat_label")
+                    malware_family = result.get("malware_family") or result.get(
+                        "suggested_threat_label"
+                    )
                     if malware_family:
                         print(f"Family: {malware_family}")
                     sources = result.get("sources", [])
@@ -1004,7 +1018,9 @@ def main():
                 from vlair.core.history import AnalysisHistory
 
                 history = AnalysisHistory()
-                verdict_val = result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
+                verdict_val = (
+                    result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
+                )
                 score_val = result.get("risk_score") if isinstance(result, dict) else None
                 history.record(
                     input_value=sys.argv[3] if len(sys.argv) > 3 else check_type,
@@ -1033,7 +1049,9 @@ def main():
         if len(sys.argv) < 3:
             print("Usage: vlair workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
             print("\nAvailable workflows:", file=sys.stderr)
-            print("  phishing-email     Comprehensive phishing email investigation", file=sys.stderr)
+            print(
+                "  phishing-email     Comprehensive phishing email investigation", file=sys.stderr
+            )
             print("  malware-triage     Quick malware analysis and triage", file=sys.stderr)
             print("  ioc-hunt           Bulk IOC threat hunting", file=sys.stderr)
             print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
@@ -1153,7 +1171,9 @@ def main():
             print("  status <id>              Check investigation status", file=sys.stderr)
             print("  list [--last 24h]        List recent investigations", file=sys.stderr)
             print("  results <id>             Get investigation results", file=sys.stderr)
-            print("  interactive              Start interactive investigation mode", file=sys.stderr)
+            print(
+                "  interactive              Start interactive investigation mode", file=sys.stderr
+            )
             print("\nExamples:", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --verbose", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --mock", file=sys.stderr)
@@ -1375,7 +1395,9 @@ def main():
         elif investigate_cmd == "results":
             # Get investigation results
             if len(sys.argv) < 4:
-                print("Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr)
+                print(
+                    "Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr
+                )
                 sys.exit(1)
 
             investigation_id = sys.argv[3]
@@ -1410,9 +1432,13 @@ def main():
                     print(f"\nSteps ({len(state.steps)}):")
                     for step in state.steps:
                         status_icon = (
-                            "[+]" if step.status.value == "completed" else "[-]" if step.status.value == "failed" else "[.]"
+                            "[+]"
+                            if step.status.value == "completed"
+                            else "[-]" if step.status.value == "failed" else "[.]"
                         )
-                        duration = f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
+                        duration = (
+                            f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
+                        )
                         print(f"  {status_icon} {step.name} {duration}")
                         if step.error:
                             print(f"      Error: {step.error}")

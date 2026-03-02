@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .prompts import build_prompt, get_system_prompt
 
-
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -109,7 +108,9 @@ class ThreatSummarizer:
     def _cache_key(self, ioc_value: str, ioc_type: str, tool_result: dict, depth: str) -> str:
         import json
 
-        raw = f"{ioc_value}|{ioc_type}|{json.dumps(tool_result, sort_keys=True, default=str)}|{depth}"
+        raw = (
+            f"{ioc_value}|{ioc_type}|{json.dumps(tool_result, sort_keys=True, default=str)}|{depth}"
+        )
         return hashlib.sha256(raw.encode()).hexdigest()
 
     def _get_cached(self, key: str) -> Optional[dict]:

@@ -88,7 +88,10 @@ class TestThreatSummarizerSummarize:
 
     def test_basic_hash_analysis(self, monkeypatch):
         s = self._summarizer_with_mock_client(monkeypatch)
-        tool_result = {"virustotal": {"detections": 45, "total": 70}, "malwarebazaar": {"signature": "Emotet"}}
+        tool_result = {
+            "virustotal": {"detections": 45, "total": 70},
+            "malwarebazaar": {"signature": "Emotet"},
+        }
         result = s.summarize("44d88612fea8a8f36de82e1278abb02f", "hash", tool_result)
 
         assert result["verdict"] == "MALICIOUS"
@@ -192,7 +195,13 @@ class TestThreatSummarizerCache:
 class TestPrompts:
     def test_system_prompt_has_required_sections(self):
         p = SECURITY_ANALYST_SYSTEM_PROMPT
-        for section in ("VERDICT", "SEVERITY", "KEY FINDINGS", "THREAT CONTEXT", "RECOMMENDED ACTIONS"):
+        for section in (
+            "VERDICT",
+            "SEVERITY",
+            "KEY FINDINGS",
+            "THREAT CONTEXT",
+            "RECOMMENDED ACTIONS",
+        ):
             assert section in p, f"Missing section: {section}"
 
     def test_specialized_prompts_by_type(self):
@@ -256,7 +265,12 @@ class TestFormatAIAssessment:
             "recommended_actions": [{"priority": "immediate", "action": "Isolate host"}],
             "mitre_attack": ["T1566.001"],
             "confidence_notes": "Strong signals",
-            "metadata": {"model": "claude-sonnet-4-6", "tokens_used": 750, "cached": False, "analysis_time_ms": 1200},
+            "metadata": {
+                "model": "claude-sonnet-4-6",
+                "tokens_used": 750,
+                "cached": False,
+                "analysis_time_ms": 1200,
+            },
         }
         output = fmt(ai)
         assert "MALICIOUS" in output
@@ -277,7 +291,12 @@ class TestFormatAIAssessment:
             "recommended_actions": [],
             "mitre_attack": [],
             "confidence_notes": "",
-            "metadata": {"model": "claude-sonnet-4-6", "tokens_used": 100, "cached": True, "analysis_time_ms": 5},
+            "metadata": {
+                "model": "claude-sonnet-4-6",
+                "tokens_used": 100,
+                "cached": True,
+                "analysis_time_ms": 5,
+            },
         }
         output = fmt(ai)
         assert "Cache: hit" in output
