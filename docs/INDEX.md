@@ -58,6 +58,8 @@ docs/             INDEX.md (this), CONTRIBUTING.md, ROADMAP.md, openspec/
 ```bash
 # Smart analysis (auto-detects type)
 vlair analyze <file|hash|domain|ip|url>  [--verbose] [--json] [--quiet]
+vlair analyze <input> --ai               # + Claude AI assessment
+vlair analyze <input> --ai --depth thorough  # deep analysis with SIEM queries
 
 # Quick single-indicator check
 vlair check hash <hash>
@@ -126,8 +128,9 @@ REDIS_URL=        # Optional; falls back to in-memory cache
 | Phishing investigation playbook | ✅ Done |
 | Flask API (all 12 tools) | ✅ Done |
 | Auth (JWT, TOTP MFA, RBAC, API keys, audit) | ✅ Done |
-| Web frontend (Vue.js 3) | ❌ Not started |
-| AI-powered analysis (Phase 6) | ❌ Not started |
+| Web frontend (Vue.js 3) | ✅ Done (Vue 3 CDN SPA) |
+| AI summaries — web API (`/api/ai/summarize`) | ✅ Done |
+| AI summaries — CLI (`vlair analyze --ai`) | ✅ Done |
 | Enterprise / SIEM integration (Phase 7+) | ❌ Not started |
 
 Operationalize spec: `docs/openspec/specs/operationalize.spec.md`

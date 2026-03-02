@@ -136,6 +136,9 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 - ✅ Verdict + severity + key findings + recommended actions
 - ✅ In-memory result caching (24h TTL)
 - ✅ "AI Analysis" button in all tool result panels
+- ✅ `vlair analyze <input> --ai` CLI flag — AI assessment in terminal output
+- ✅ `--depth quick|standard|thorough` — controls Claude response detail
+- ✅ AI result embedded in `--json` output as `ai_analysis` key
 - Natural language queries ("Show me malicious URLs from the last 24 hours")
 - Context-aware IOC extraction (reduce false positives)
 

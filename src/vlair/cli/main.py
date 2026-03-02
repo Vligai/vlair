@@ -27,6 +27,78 @@ import argparse
 
 from vlair.tools import get_tool_registry
 
+# ---------------------------------------------------------------------------
+# AI assessment formatter (used by the analyze command)
+# ---------------------------------------------------------------------------
+
+
+def _format_ai_assessment(ai: dict) -> str:
+    """Render a ThreatSummarizer result as a human-readable console block."""
+    lines = []
+    SEP = "=" * 66
+    lines.append("")
+    lines.append(SEP)
+    lines.append("                    AI SECURITY ASSESSMENT")
+    lines.append(SEP)
+
+    verdict = ai.get("verdict", "UNKNOWN")
+    severity = ai.get("severity", "INFO")
+    conf = ai.get("confidence", 0.0)
+    conf_pct = f"{int(conf * 100)}%" if conf else "N/A"
+    lines.append(f"VERDICT:  {verdict} ({conf_pct} confidence)")
+    lines.append(f"SEVERITY: {severity}")
+
+    findings = ai.get("key_findings", [])
+    if findings:
+        lines.append("")
+        lines.append("Key Findings:")
+        for f in findings:
+            lines.append(f"  \u2022 {f}")
+
+    ctx = ai.get("threat_context", "").strip()
+    if ctx:
+        lines.append("")
+        lines.append("Threat Context:")
+        for part in ctx.splitlines():
+            lines.append(f"  {part}")
+
+    actions = ai.get("recommended_actions", [])
+    if actions:
+        lines.append("")
+        lines.append("Recommended Actions:")
+        last_prio = None
+        for act in actions:
+            prio = act.get("priority", "").upper().replace("_", "-")
+            if prio != last_prio:
+                lines.append(f"  {prio}:")
+                last_prio = prio
+            lines.append(f"    \u2022 {act.get('action', '')}")
+
+    mitre = ai.get("mitre_attack", [])
+    if mitre:
+        lines.append("")
+        lines.append(f"MITRE ATT&CK: {', '.join(mitre)}")
+
+    notes = ai.get("confidence_notes", "").strip()
+    if notes:
+        lines.append("")
+        lines.append("Confidence Notes:")
+        for part in notes.splitlines():
+            lines.append(f"  {part}")
+
+    meta = ai.get("metadata", {})
+    elapsed_ms = meta.get("analysis_time_ms", 0)
+    tokens = meta.get("tokens_used", 0)
+    cached = meta.get("cached", False)
+    model = meta.get("model", "")
+    lines.append("")
+    lines.append(SEP)
+    cache_tag = " | Cache: hit" if cached else " | Cache: miss"
+    lines.append(f"AI: {model} | {elapsed_ms}ms | {tokens} tokens{cache_tag}")
+    lines.append(SEP)
+
+    return "\n".join(lines)
+
 
 class ToolDiscovery:
     """Automatically discover and catalog all available tools"""
@@ -185,9 +257,7 @@ class InteractiveMenu:
     def browse_by_category(self):
         """Browse tools by category"""
         # Get all unique categories
-        categories = sorted(
-            set(tool["category"] for tool in self.discovery.get_all_tools().values())
-        )
+        categories = sorted(set(tool["category"] for tool in self.discovery.get_all_tools().values()))
 
         print("\n" + "=" * 70)
         print("  Tool Categories")
@@ -365,8 +435,7 @@ class InteractiveMenu:
         print("\n" + "=" * 70)
         print("  Quick Start Guide")
         print("=" * 70)
-        print(
-            """
+        print("""
 1. Basic Usage:
 
    Interactive Mode:
@@ -418,8 +487,7 @@ class InteractiveMenu:
    - Multiple output formats (JSON, CSV, TXT)
    - Caching for improved performance
    - STIX 2.1 export support
-        """
-        )
+        """)
 
         input("\nPress Enter to continue...")
         self.show_main_menu()
@@ -427,8 +495,7 @@ class InteractiveMenu:
 
 def print_usage():
     """Print usage information"""
-    print(
-        """
+    print("""
 vlair - Security Operations Toolkit
 
 Quick Start:
@@ -496,8 +563,7 @@ Individual Tools:
     carve        File carving and extraction
 
 Documentation: https://github.com/Vligai/secops-helper
-    """
-    )
+    """)
 
 
 def main():
@@ -588,12 +654,17 @@ def main():
     elif sys.argv[1] == "analyze":
         # Smart analyze command - auto-detect and run appropriate tools
         if len(sys.argv) < 3:
-            print("Usage: vlair analyze <input> [--verbose] [--json] [--quiet]", file=sys.stderr)
+            print(
+                "Usage: vlair analyze <input> [--verbose] [--json] [--quiet] [--ai [--depth quick|standard|thorough]]",
+                file=sys.stderr,
+            )
             print("\nExamples:", file=sys.stderr)
-            print("  vlair analyze suspicious.eml     # Auto-detect email", file=sys.stderr)
-            print("  vlair analyze 44d88612...        # Auto-detect hash", file=sys.stderr)
-            print("  vlair analyze malicious.com      # Auto-detect domain", file=sys.stderr)
-            print("  vlair analyze 192.168.1.1        # Auto-detect IP", file=sys.stderr)
+            print("  vlair analyze suspicious.eml           # Auto-detect email", file=sys.stderr)
+            print("  vlair analyze 44d88612...              # Auto-detect hash", file=sys.stderr)
+            print("  vlair analyze malicious.com            # Auto-detect domain", file=sys.stderr)
+            print("  vlair analyze 192.168.1.1              # Auto-detect IP", file=sys.stderr)
+            print("  vlair analyze suspicious.eml --ai      # Add Claude AI assessment", file=sys.stderr)
+            print("  vlair analyze hash123 --ai --depth thorough  # Deep AI analysis", file=sys.stderr)
             sys.exit(1)
 
         try:
@@ -609,10 +680,12 @@ def main():
             verbose = "--verbose" in sys.argv or "-v" in sys.argv[3:]
             json_output = "--json" in sys.argv or "-j" in sys.argv
             quiet = "--quiet" in sys.argv or "-q" in sys.argv
+            ai_enabled = "--ai" in sys.argv
 
-            # Parse report arguments
+            # Parse report and AI arguments
             report_format = None
             output_path = None
+            ai_depth = "standard"
             args_list = sys.argv[3:]
             for i, arg in enumerate(args_list):
                 if arg == "--report":
@@ -623,10 +696,49 @@ def main():
                 if arg in ("--output", "-o"):
                     if i + 1 < len(args_list):
                         output_path = args_list[i + 1]
+                if arg == "--depth" and i + 1 < len(args_list):
+                    if args_list[i + 1] in ("quick", "standard", "thorough"):
+                        ai_depth = args_list[i + 1]
 
             # Run analysis
             analyzer = Analyzer(verbose=verbose)
             result = analyzer.analyze(input_value)
+
+            # Run AI analysis if requested
+            ai_result = None
+            if ai_enabled:
+                _AI_TYPE_MAP = {
+                    "hash_md5": "hash",
+                    "hash_sha1": "hash",
+                    "hash_sha256": "hash",
+                    "ip": "ip",
+                    "domain": "domain",
+                    "url": "url",
+                    "email": "email",
+                    "log": "log",
+                    "pcap": "pcap",
+                    "script": "script",
+                    "ioc_list": "ioc",
+                    "file": "hash",
+                }
+                try:
+                    from vlair.ai import ThreatSummarizer
+
+                    _summarizer = ThreatSummarizer()
+                    if _summarizer.is_available():
+                        if not quiet:
+                            print("[*] Running AI analysis...", file=sys.stderr)
+                        _ioc_type = _AI_TYPE_MAP.get(str(result["type"]), "unknown")
+                        ai_result = _summarizer.summarize(input_value, _ioc_type, result["tool_results"], ai_depth)
+                    else:
+                        if not quiet:
+                            print("[!] AI unavailable: set ANTHROPIC_API_KEY to enable", file=sys.stderr)
+                except ImportError:
+                    if not quiet:
+                        print("[!] AI module unavailable (pip install -e '.[ai]')", file=sys.stderr)
+                except Exception as _ai_err:
+                    if not quiet:
+                        print(f"[!] AI analysis failed: {_ai_err}", file=sys.stderr)
 
             # Format output
             reporter = Reporter()
@@ -634,7 +746,9 @@ def main():
             if quiet:
                 print(reporter.format_quiet(result["scorer"]))
             elif json_output:
-                print(
+                import json as _json
+
+                _json_data = _json.loads(
                     reporter.format_json(
                         result["input"],
                         result["type"],
@@ -643,6 +757,9 @@ def main():
                         result["tool_results"],
                     )
                 )
+                if ai_result is not None:
+                    _json_data["ai_analysis"] = ai_result
+                print(_json.dumps(_json_data, indent=2, default=str))
             elif verbose:
                 print(
                     reporter.format_verbose(
@@ -653,6 +770,8 @@ def main():
                         result["tool_results"],
                     )
                 )
+                if ai_result is not None:
+                    print(_format_ai_assessment(ai_result))
             else:
                 print(
                     reporter.format_console(
@@ -663,6 +782,8 @@ def main():
                         result["tool_results"],
                     )
                 )
+                if ai_result is not None:
+                    print(_format_ai_assessment(ai_result))
 
             # Generate report if requested
             if report_format:
@@ -749,9 +870,7 @@ def main():
                     print(f"Verdict: {verdict}")
                     if detections or total:
                         print(f"Detections: {detections}/{total}")
-                    malware_family = result.get("malware_family") or result.get(
-                        "suggested_threat_label"
-                    )
+                    malware_family = result.get("malware_family") or result.get("suggested_threat_label")
                     if malware_family:
                         print(f"Family: {malware_family}")
                     sources = result.get("sources", [])
@@ -885,9 +1004,7 @@ def main():
                 from vlair.core.history import AnalysisHistory
 
                 history = AnalysisHistory()
-                verdict_val = (
-                    result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
-                )
+                verdict_val = result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
                 score_val = result.get("risk_score") if isinstance(result, dict) else None
                 history.record(
                     input_value=sys.argv[3] if len(sys.argv) > 3 else check_type,
@@ -916,9 +1033,7 @@ def main():
         if len(sys.argv) < 3:
             print("Usage: vlair workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
             print("\nAvailable workflows:", file=sys.stderr)
-            print(
-                "  phishing-email     Comprehensive phishing email investigation", file=sys.stderr
-            )
+            print("  phishing-email     Comprehensive phishing email investigation", file=sys.stderr)
             print("  malware-triage     Quick malware analysis and triage", file=sys.stderr)
             print("  ioc-hunt           Bulk IOC threat hunting", file=sys.stderr)
             print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
@@ -1038,9 +1153,7 @@ def main():
             print("  status <id>              Check investigation status", file=sys.stderr)
             print("  list [--last 24h]        List recent investigations", file=sys.stderr)
             print("  results <id>             Get investigation results", file=sys.stderr)
-            print(
-                "  interactive              Start interactive investigation mode", file=sys.stderr
-            )
+            print("  interactive              Start interactive investigation mode", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --verbose", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --mock", file=sys.stderr)
@@ -1262,9 +1375,7 @@ def main():
         elif investigate_cmd == "results":
             # Get investigation results
             if len(sys.argv) < 4:
-                print(
-                    "Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr
-                )
+                print("Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr)
                 sys.exit(1)
 
             investigation_id = sys.argv[3]
@@ -1299,13 +1410,9 @@ def main():
                     print(f"\nSteps ({len(state.steps)}):")
                     for step in state.steps:
                         status_icon = (
-                            "[+]"
-                            if step.status.value == "completed"
-                            else "[-]" if step.status.value == "failed" else "[.]"
+                            "[+]" if step.status.value == "completed" else "[-]" if step.status.value == "failed" else "[.]"
                         )
-                        duration = (
-                            f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
-                        )
+                        duration = f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
                         print(f"  {status_icon} {step.name} {duration}")
                         if step.error:
                             print(f"      Error: {step.error}")
