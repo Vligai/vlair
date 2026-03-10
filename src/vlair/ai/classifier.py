@@ -8,7 +8,6 @@ results using rule-based heuristics.  No ML model is required.
 import re
 from typing import Any, Optional
 
-
 # ---------------------------------------------------------------------------
 # Family signature database
 # ---------------------------------------------------------------------------

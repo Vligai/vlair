@@ -74,7 +74,5 @@ class AnthropicProvider(AIProvider):
 
                 self._client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
             except ImportError as exc:
-                raise ImportError(
-                    "The 'anthropic' package is required. Install it with: pip install anthropic"
-                ) from exc
+                raise ImportError("The 'anthropic' package is required. Install it with: pip install anthropic") from exc
         return self._client

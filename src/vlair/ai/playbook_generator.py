@@ -10,7 +10,6 @@ import os
 import re
 from typing import Optional
 
-
 # ---------------------------------------------------------------------------
 # Built-in heuristic templates (used when AI is unavailable)
 # ---------------------------------------------------------------------------
@@ -97,7 +96,7 @@ _HEURISTIC_PLAYBOOKS: dict = {
         "siem_queries": {
             "splunk": 'index=email_logs (subject="*" OR from="*") | stats count by from, to, subject',
             "elastic": '{"query": {"match": {"email.from.address": "<SENDER_DOMAIN>"}}}',
-            "qradar": 'SELECT * FROM events WHERE "Email From" ILIKE \'%<SENDER_DOMAIN>%\'',
+            "qradar": "SELECT * FROM events WHERE \"Email From\" ILIKE '%<SENDER_DOMAIN>%'",
         },
         "containment_actions": [
             "Block sender domain in email security gateway",
@@ -483,8 +482,7 @@ class PlaybookGenerator:
         max_tokens = {"quick": 1000, "standard": 2000, "thorough": 3000}.get(depth, 2000)
 
         system_prompt = (
-            SECURITY_ANALYST_SYSTEM_PROMPT
-            + "\n\nYou are generating a structured incident response playbook. "
+            SECURITY_ANALYST_SYSTEM_PROMPT + "\n\nYou are generating a structured incident response playbook. "
             "Output valid JSON only. Do not include any explanation outside the JSON object."
         )
 

@@ -257,9 +257,7 @@ class InteractiveMenu:
     def browse_by_category(self):
         """Browse tools by category"""
         # Get all unique categories
-        categories = sorted(
-            set(tool["category"] for tool in self.discovery.get_all_tools().values())
-        )
+        categories = sorted(set(tool["category"] for tool in self.discovery.get_all_tools().values()))
 
         print("\n" + "=" * 70)
         print("  Tool Categories")
@@ -437,8 +435,7 @@ class InteractiveMenu:
         print("\n" + "=" * 70)
         print("  Quick Start Guide")
         print("=" * 70)
-        print(
-            """
+        print("""
 1. Basic Usage:
 
    Interactive Mode:
@@ -490,8 +487,7 @@ class InteractiveMenu:
    - Multiple output formats (JSON, CSV, TXT)
    - Caching for improved performance
    - STIX 2.1 export support
-        """
-        )
+        """)
 
         input("\nPress Enter to continue...")
         self.show_main_menu()
@@ -499,8 +495,7 @@ class InteractiveMenu:
 
 def print_usage():
     """Print usage information"""
-    print(
-        """
+    print("""
 vlair - Security Operations Toolkit
 
 Quick Start:
@@ -568,8 +563,7 @@ Individual Tools:
     carve        File carving and extraction
 
 Documentation: https://github.com/Vligai/secops-helper
-    """
-    )
+    """)
 
 
 def main():
@@ -667,8 +661,12 @@ def main():
 
             print("\nAI Usage Statistics")
             print("=" * 40)
-            print(f"Today:      {stats['today_requests']} requests, {stats['today_tokens']:,} tokens, ~${stats['cost_estimate_today']:.4f}")
-            print(f"This month: {stats['month_requests']} requests, {stats['month_tokens']:,} tokens, ~${stats['cost_estimate_month']:.4f}")
+            print(
+                f"Today:      {stats['today_requests']} requests, {stats['today_tokens']:,} tokens, ~${stats['cost_estimate_today']:.4f}"
+            )
+            print(
+                f"This month: {stats['month_requests']} requests, {stats['month_tokens']:,} tokens, ~${stats['cost_estimate_month']:.4f}"
+            )
             print(f"Cache hit rate: {stats['cache_hit_rate']}%")
 
             breakdown = stats.get("provider_breakdown", {})
@@ -786,7 +784,9 @@ def main():
 
             except Exception as _pb_err:
                 print(f"Error generating playbook: {_pb_err}", file=sys.stderr)
-                import traceback; traceback.print_exc()
+                import traceback
+
+                traceback.print_exc()
                 sys.exit(1)
 
         else:
@@ -888,9 +888,7 @@ def main():
                         if not quiet:
                             print("[*] Running AI analysis...", file=sys.stderr)
                         _ioc_type = _AI_TYPE_MAP.get(str(result["type"]), "unknown")
-                        ai_result = _summarizer.summarize(
-                            input_value, _ioc_type, result["tool_results"], ai_depth
-                        )
+                        ai_result = _summarizer.summarize(input_value, _ioc_type, result["tool_results"], ai_depth)
                     else:
                         if not quiet:
                             print(
@@ -955,7 +953,9 @@ def main():
                     from vlair.ai import AIReporter
 
                     ai_reporter = AIReporter()
-                    _ioc_type_for_report = _AI_TYPE_MAP.get(str(result.get("type", "")), "unknown") if "_AI_TYPE_MAP" in dir() else "unknown"
+                    _ioc_type_for_report = (
+                        _AI_TYPE_MAP.get(str(result.get("type", "")), "unknown") if "_AI_TYPE_MAP" in dir() else "unknown"
+                    )
                     md_content = ai_reporter.to_markdown(
                         ioc_value=input_value,
                         ioc_type=_ioc_type_for_report,
@@ -1050,9 +1050,7 @@ def main():
                     print(f"Verdict: {verdict}")
                     if detections or total:
                         print(f"Detections: {detections}/{total}")
-                    malware_family = result.get("malware_family") or result.get(
-                        "suggested_threat_label"
-                    )
+                    malware_family = result.get("malware_family") or result.get("suggested_threat_label")
                     if malware_family:
                         print(f"Family: {malware_family}")
                     sources = result.get("sources", [])
@@ -1186,9 +1184,7 @@ def main():
                 from vlair.core.history import AnalysisHistory
 
                 history = AnalysisHistory()
-                verdict_val = (
-                    result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
-                )
+                verdict_val = result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
                 score_val = result.get("risk_score") if isinstance(result, dict) else None
                 history.record(
                     input_value=sys.argv[3] if len(sys.argv) > 3 else check_type,
@@ -1217,9 +1213,7 @@ def main():
         if len(sys.argv) < 3:
             print("Usage: vlair workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
             print("\nAvailable workflows:", file=sys.stderr)
-            print(
-                "  phishing-email     Comprehensive phishing email investigation", file=sys.stderr
-            )
+            print("  phishing-email     Comprehensive phishing email investigation", file=sys.stderr)
             print("  malware-triage     Quick malware analysis and triage", file=sys.stderr)
             print("  ioc-hunt           Bulk IOC threat hunting", file=sys.stderr)
             print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
@@ -1339,9 +1333,7 @@ def main():
             print("  status <id>              Check investigation status", file=sys.stderr)
             print("  list [--last 24h]        List recent investigations", file=sys.stderr)
             print("  results <id>             Get investigation results", file=sys.stderr)
-            print(
-                "  interactive              Start interactive investigation mode", file=sys.stderr
-            )
+            print("  interactive              Start interactive investigation mode", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --verbose", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --mock", file=sys.stderr)
@@ -1563,9 +1555,7 @@ def main():
         elif investigate_cmd == "results":
             # Get investigation results
             if len(sys.argv) < 4:
-                print(
-                    "Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr
-                )
+                print("Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr)
                 sys.exit(1)
 
             investigation_id = sys.argv[3]
@@ -1600,13 +1590,9 @@ def main():
                     print(f"\nSteps ({len(state.steps)}):")
                     for step in state.steps:
                         status_icon = (
-                            "[+]"
-                            if step.status.value == "completed"
-                            else "[-]" if step.status.value == "failed" else "[.]"
+                            "[+]" if step.status.value == "completed" else "[-]" if step.status.value == "failed" else "[.]"
                         )
-                        duration = (
-                            f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
-                        )
+                        duration = f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
                         print(f"  {status_icon} {step.name} {duration}")
                         if step.error:
                             print(f"      Error: {step.error}")

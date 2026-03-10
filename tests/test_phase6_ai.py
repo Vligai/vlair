@@ -18,7 +18,6 @@ import time
 import unittest
 from unittest.mock import MagicMock, patch
 
-
 # ---------------------------------------------------------------------------
 # Helper: minimal VT-style tool result fixture
 # ---------------------------------------------------------------------------
@@ -549,9 +548,7 @@ class TestThreatSummarizerRefactored(unittest.TestCase):
         from vlair.ai.summarizer import ThreatSummarizer
 
         summarizer = ThreatSummarizer()
-        result = summarizer.summarize(
-            "44d88612abc", "hash", SAMPLE_HASH_RESULT, dry_run=True
-        )
+        result = summarizer.summarize("44d88612abc", "hash", SAMPLE_HASH_RESULT, dry_run=True)
         self.assertEqual(result["verdict"], "DRY_RUN")
         self.assertIn("DRY RUN", result["threat_context"])
         self.assertTrue(result["metadata"]["dry_run"])

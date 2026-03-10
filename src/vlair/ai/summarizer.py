@@ -220,9 +220,7 @@ class ThreatSummarizer:
     # ------------------------------------------------------------------
 
     def _cache_key(self, ioc_value: str, ioc_type: str, tool_result: dict, depth: str) -> str:
-        raw = (
-            f"{ioc_value}|{ioc_type}|{json.dumps(tool_result, sort_keys=True, default=str)}|{depth}"
-        )
+        raw = f"{ioc_value}|{ioc_type}|{json.dumps(tool_result, sort_keys=True, default=str)}|{depth}"
         return hashlib.sha256(raw.encode()).hexdigest()
 
     # ------------------------------------------------------------------
@@ -336,11 +334,7 @@ class ThreatSummarizer:
             am = re.search(pattern, content, re.IGNORECASE | re.DOTALL)
             if am:
                 text = am.group(1).strip()
-                items = [
-                    i.strip().lstrip("•-* ")
-                    for i in re.split(r"[\n•\-\*]", text)
-                    if i.strip().lstrip("•-* ")
-                ]
+                items = [i.strip().lstrip("•-* ") for i in re.split(r"[\n•\-\*]", text) if i.strip().lstrip("•-* ")]
                 for item in items[:3]:
                     if item:
                         actions.append({"priority": priority, "action": item})

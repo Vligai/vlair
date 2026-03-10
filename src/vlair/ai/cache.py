@@ -8,13 +8,12 @@ import time
 from pathlib import Path
 from typing import Optional
 
-
 # Cost estimates per 1 000 tokens (input + output averaged)
 # Source: approximate public pricing as of 2026-Q1
 _COST_PER_1K: dict = {
-    "anthropic": 0.009,   # claude-sonnet ~$0.003 in + $0.015 out → ~$0.009 blended
-    "openai": 0.02,       # gpt-4-turbo ~$0.01 in + $0.03 out → ~$0.02 blended
-    "ollama": 0.0,        # local — free
+    "anthropic": 0.009,  # claude-sonnet ~$0.003 in + $0.015 out → ~$0.009 blended
+    "openai": 0.02,  # gpt-4-turbo ~$0.01 in + $0.03 out → ~$0.02 blended
+    "ollama": 0.0,  # local — free
 }
 
 
@@ -58,8 +57,7 @@ class AIResponseCache:
         """Return the cached result dict if present and not expired, else None."""
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT result_json, tokens_used, provider, model, created_at "
-                "FROM cache WHERE key = ?",
+                "SELECT result_json, tokens_used, provider, model, created_at " "FROM cache WHERE key = ?",
                 (cache_key,),
             ).fetchone()
 
@@ -151,9 +149,7 @@ class AIResponseCache:
         else:
             cost_month = cost_today
 
-        provider_breakdown = {
-            pname: {"requests": cnt, "tokens": toks or 0} for pname, cnt, toks in provider_rows
-        }
+        provider_breakdown = {pname: {"requests": cnt, "tokens": toks or 0} for pname, cnt, toks in provider_rows}
 
         return {
             "today_requests": today_requests,
@@ -179,26 +175,22 @@ class AIResponseCache:
 
     def _init_db(self) -> None:
         with self._connect() as conn:
-            conn.execute(
-                """CREATE TABLE IF NOT EXISTS cache (
+            conn.execute("""CREATE TABLE IF NOT EXISTS cache (
                     key TEXT PRIMARY KEY,
                     result_json TEXT NOT NULL,
                     tokens_used INTEGER DEFAULT 0,
                     provider TEXT DEFAULT '',
                     model TEXT DEFAULT '',
                     created_at REAL NOT NULL
-                )"""
-            )
-            conn.execute(
-                """CREATE TABLE IF NOT EXISTS usage_log (
+                )""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS usage_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     request_time REAL NOT NULL,
                     cache_hit INTEGER NOT NULL DEFAULT 0,
                     tokens_used INTEGER DEFAULT 0,
                     provider TEXT DEFAULT '',
                     model TEXT DEFAULT ''
-                )"""
-            )
+                )""")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_time ON usage_log (request_time)")
 
     def _connect(self) -> sqlite3.Connection:
@@ -213,7 +205,6 @@ class AIResponseCache:
     def _log_request(self, cache_hit: bool, tokens_used: int, provider: str, model: str) -> None:
         with self._connect() as conn:
             conn.execute(
-                "INSERT INTO usage_log (request_time, cache_hit, tokens_used, provider, model) "
-                "VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO usage_log (request_time, cache_hit, tokens_used, provider, model) " "VALUES (?, ?, ?, ?, ?)",
                 (time.time(), int(cache_hit), tokens_used, provider, model),
             )

@@ -6,7 +6,6 @@ import hashlib
 from collections import defaultdict
 from typing import Any, Optional
 
-
 # ---------------------------------------------------------------------------
 # Known infrastructure / threat actor mapping (simplified)
 # ---------------------------------------------------------------------------
@@ -102,9 +101,7 @@ class IOCCorrelator:
         # Group related IOCs by relationship type
         related_iocs = self._group_related(relationships)
 
-        summary = self._summarize(
-            iocs, campaign_indicators, attribution, attr_confidence, relationships
-        )
+        summary = self._summarize(iocs, campaign_indicators, attribution, attr_confidence, relationships)
 
         return {
             "campaign_indicators": campaign_indicators,
@@ -265,13 +262,9 @@ class IOCCorrelator:
         if relationships:
             parts.append(f"Found {len(relationships)} pairwise relationship(s).")
         if campaign_indicators:
-            parts.append(
-                f"Shared campaign indicators: {', '.join(campaign_indicators[:5])}."
-            )
+            parts.append(f"Shared campaign indicators: {', '.join(campaign_indicators[:5])}.")
         if attribution:
-            parts.append(
-                f"Possible attribution: {attribution} (confidence {int(attr_confidence * 100)}%)."
-            )
+            parts.append(f"Possible attribution: {attribution} (confidence {int(attr_confidence * 100)}%).")
         else:
             parts.append("No threat actor attribution established.")
         return " ".join(parts)

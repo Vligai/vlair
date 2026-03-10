@@ -83,7 +83,5 @@ class OpenAIProvider(AIProvider):
 
                 self._client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             except ImportError as exc:
-                raise ImportError(
-                    "The 'openai' package is required. Install it with: pip install openai"
-                ) from exc
+                raise ImportError("The 'openai' package is required. Install it with: pip install openai") from exc
         return self._client
