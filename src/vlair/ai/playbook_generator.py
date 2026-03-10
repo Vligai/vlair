@@ -482,7 +482,8 @@ class PlaybookGenerator:
         max_tokens = {"quick": 1000, "standard": 2000, "thorough": 3000}.get(depth, 2000)
 
         system_prompt = (
-            SECURITY_ANALYST_SYSTEM_PROMPT + "\n\nYou are generating a structured incident response playbook. "
+            SECURITY_ANALYST_SYSTEM_PROMPT
+            + "\n\nYou are generating a structured incident response playbook. "
             "Output valid JSON only. Do not include any explanation outside the JSON object."
         )
 
@@ -554,7 +555,10 @@ class PlaybookGenerator:
                         "step": 1,
                         "title": "Triage",
                         "time": "0-15 min",
-                        "actions": ["Confirm incident and collect initial evidence", "Assign severity and owner"],
+                        "actions": [
+                            "Confirm incident and collect initial evidence",
+                            "Assign severity and owner",
+                        ],
                     },
                     {
                         "step": 2,
@@ -578,7 +582,11 @@ class PlaybookGenerator:
                         "step": 5,
                         "title": "Post-Incident",
                         "time": "1-7 days",
-                        "actions": ["Write incident report", "Update detection rules", "Lessons learned review"],
+                        "actions": [
+                            "Write incident report",
+                            "Update detection rules",
+                            "Lessons learned review",
+                        ],
                     },
                 ],
                 "siem_queries": {},

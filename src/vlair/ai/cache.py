@@ -57,7 +57,8 @@ class AIResponseCache:
         """Return the cached result dict if present and not expired, else None."""
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT result_json, tokens_used, provider, model, created_at " "FROM cache WHERE key = ?",
+                "SELECT result_json, tokens_used, provider, model, created_at "
+                "FROM cache WHERE key = ?",
                 (cache_key,),
             ).fetchone()
 
@@ -85,7 +86,14 @@ class AIResponseCache:
             conn.execute(
                 "INSERT OR REPLACE INTO cache (key, result_json, tokens_used, provider, model, created_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
-                (cache_key, json.dumps(result, default=str), tokens_used, provider, model, time.time()),
+                (
+                    cache_key,
+                    json.dumps(result, default=str),
+                    tokens_used,
+                    provider,
+                    model,
+                    time.time(),
+                ),
             )
         self._log_request(cache_hit=False, tokens_used=tokens_used, provider=provider, model=model)
 
@@ -149,7 +157,9 @@ class AIResponseCache:
         else:
             cost_month = cost_today
 
-        provider_breakdown = {pname: {"requests": cnt, "tokens": toks or 0} for pname, cnt, toks in provider_rows}
+        provider_breakdown = {
+            pname: {"requests": cnt, "tokens": toks or 0} for pname, cnt, toks in provider_rows
+        }
 
         return {
             "today_requests": today_requests,
@@ -205,6 +215,7 @@ class AIResponseCache:
     def _log_request(self, cache_hit: bool, tokens_used: int, provider: str, model: str) -> None:
         with self._connect() as conn:
             conn.execute(
-                "INSERT INTO usage_log (request_time, cache_hit, tokens_used, provider, model) " "VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO usage_log (request_time, cache_hit, tokens_used, provider, model) "
+                "VALUES (?, ?, ?, ?, ?)",
                 (time.time(), int(cache_hit), tokens_used, provider, model),
             )

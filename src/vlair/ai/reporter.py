@@ -120,7 +120,9 @@ class AIReporter:
         total_engines = tool_result.get("total_engines")
         if detections is not None and total_engines is not None:
             lines.append(f"- **AV Detections:** {detections}/{total_engines}")
-        malware_family = tool_result.get("malware_family") or tool_result.get("suggested_threat_label")
+        malware_family = tool_result.get("malware_family") or tool_result.get(
+            "suggested_threat_label"
+        )
         if malware_family:
             lines.append(f"- **Malware Family:** {malware_family}")
         categories = tool_result.get("categories", [])

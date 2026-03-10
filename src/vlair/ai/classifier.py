@@ -15,7 +15,12 @@ from typing import Any, Optional
 FAMILY_SIGNATURES: dict = {
     "emotet": {
         "tags": ["emotet", "heodo", "geodo", "mealybug"],
-        "behaviors": ["scheduled task", "registry run key", "lateral movement", "credential stealing"],
+        "behaviors": [
+            "scheduled task",
+            "registry run key",
+            "lateral movement",
+            "credential stealing",
+        ],
         "vt_labels": ["emotet", "heodo", "geodo"],
         "severity": "critical",
         "category": "banking_trojan_loader",

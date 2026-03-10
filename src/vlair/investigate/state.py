@@ -56,8 +56,7 @@ class InvestigationStateManager:
             cursor = conn.cursor()
 
             # Main investigations table
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS investigations (
                     id TEXT PRIMARY KEY,
                     type TEXT NOT NULL,
@@ -72,12 +71,10 @@ class InvestigationStateManager:
                     completed_at TEXT,
                     error TEXT
                 )
-            """
-            )
+            """)
 
             # Investigation steps table
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS investigation_steps (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     investigation_id TEXT NOT NULL,
@@ -91,12 +88,10 @@ class InvestigationStateManager:
                     step_order INTEGER NOT NULL,
                     FOREIGN KEY (investigation_id) REFERENCES investigations(id)
                 )
-            """
-            )
+            """)
 
             # Remediation actions table
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS remediation_actions (
                     id TEXT PRIMARY KEY,
                     investigation_id TEXT NOT NULL,
@@ -113,34 +108,25 @@ class InvestigationStateManager:
                     result TEXT,
                     FOREIGN KEY (investigation_id) REFERENCES investigations(id)
                 )
-            """
-            )
+            """)
 
             # Create indexes for common queries
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_investigations_status
                 ON investigations(status)
-            """
-            )
-            cursor.execute(
-                """
+            """)
+            cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_investigations_created
                 ON investigations(created_at)
-            """
-            )
-            cursor.execute(
-                """
+            """)
+            cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_steps_investigation
                 ON investigation_steps(investigation_id)
-            """
-            )
-            cursor.execute(
-                """
+            """)
+            cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_remediation_investigation
                 ON remediation_actions(investigation_id)
-            """
-            )
+            """)
 
             conn.commit()
             conn.close()
@@ -453,56 +439,46 @@ class InvestigationStateManager:
             total = cursor.fetchone()[0]
 
             # Status breakdown
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT status, COUNT(*) as count
                 FROM investigations
                 GROUP BY status
-            """
-            )
+            """)
             status_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
             # Type breakdown
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT type, COUNT(*) as count
                 FROM investigations
                 GROUP BY type
                 ORDER BY count DESC
-            """
-            )
+            """)
             type_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
             # Verdict breakdown
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT verdict, COUNT(*) as count
                 FROM investigations
                 WHERE status = 'completed'
                 GROUP BY verdict
-            """
-            )
+            """)
             verdict_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
             # Last investigation
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT id, created_at FROM investigations
                 ORDER BY created_at DESC LIMIT 1
-            """
-            )
+            """)
             last_row = cursor.fetchone()
             last_investigation = (
                 {"id": last_row[0], "created_at": last_row[1]} if last_row else None
             )
 
             # Average risk score for completed investigations
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT AVG(risk_score) FROM investigations
                 WHERE status = 'completed' AND risk_score > 0
-            """
-            )
+            """)
             avg_risk = cursor.fetchone()[0]
 
             conn.close()

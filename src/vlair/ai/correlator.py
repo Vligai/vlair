@@ -101,7 +101,9 @@ class IOCCorrelator:
         # Group related IOCs by relationship type
         related_iocs = self._group_related(relationships)
 
-        summary = self._summarize(iocs, campaign_indicators, attribution, attr_confidence, relationships)
+        summary = self._summarize(
+            iocs, campaign_indicators, attribution, attr_confidence, relationships
+        )
 
         return {
             "campaign_indicators": campaign_indicators,
@@ -179,9 +181,15 @@ class IOCCorrelator:
         relationships = []
         for i in range(len(iocs)):
             for j in range(i + 1, len(iocs)):
-                common_tags = set(ioc_signals[i].get("tags", [])) & set(ioc_signals[j].get("tags", []))
-                common_asns = set(ioc_signals[i].get("asns", [])) & set(ioc_signals[j].get("asns", []))
-                common_regs = set(ioc_signals[i].get("registrars", [])) & set(ioc_signals[j].get("registrars", []))
+                common_tags = set(ioc_signals[i].get("tags", [])) & set(
+                    ioc_signals[j].get("tags", [])
+                )
+                common_asns = set(ioc_signals[i].get("asns", [])) & set(
+                    ioc_signals[j].get("asns", [])
+                )
+                common_regs = set(ioc_signals[i].get("registrars", [])) & set(
+                    ioc_signals[j].get("registrars", [])
+                )
 
                 if common_tags or common_asns or common_regs:
                     rel_types = []
@@ -229,7 +237,9 @@ class IOCCorrelator:
 
         return best_actor, confidence
 
-    def _calculate_confidence(self, n_iocs: int, n_campaign_indicators: int, attr_confidence: float) -> float:
+    def _calculate_confidence(
+        self, n_iocs: int, n_campaign_indicators: int, attr_confidence: float
+    ) -> float:
         """Compute overall correlation confidence."""
         base = 0.0
         if n_iocs >= 2:
@@ -264,7 +274,9 @@ class IOCCorrelator:
         if campaign_indicators:
             parts.append(f"Shared campaign indicators: {', '.join(campaign_indicators[:5])}.")
         if attribution:
-            parts.append(f"Possible attribution: {attribution} (confidence {int(attr_confidence * 100)}%).")
+            parts.append(
+                f"Possible attribution: {attribution} (confidence {int(attr_confidence * 100)}%)."
+            )
         else:
             parts.append("No threat actor attribution established.")
         return " ".join(parts)

@@ -191,7 +191,13 @@ class TestAIResponseCache(unittest.TestCase):
 
     def test_set_and_get(self):
         cache = self._make_cache()
-        cache.set("key1", {"verdict": "MALICIOUS"}, tokens_used=100, provider="anthropic", model="claude-sonnet-4-6")
+        cache.set(
+            "key1",
+            {"verdict": "MALICIOUS"},
+            tokens_used=100,
+            provider="anthropic",
+            model="claude-sonnet-4-6",
+        )
         result = cache.get("key1")
         self.assertIsNotNone(result)
         self.assertEqual(result["verdict"], "MALICIOUS")
@@ -500,7 +506,12 @@ class TestPlaybookGenerator(unittest.TestCase):
             "incident_type": "phishing",
             "severity": "HIGH",
             "steps": [
-                {"step": 1, "title": "Triage", "time": "0-5 min", "actions": ["Check email headers"]},
+                {
+                    "step": 1,
+                    "title": "Triage",
+                    "time": "0-5 min",
+                    "actions": ["Check email headers"],
+                },
             ],
             "siem_queries": {"splunk": "index=email ..."},
             "containment_actions": ["Block sender"],
@@ -601,7 +612,9 @@ class TestThreatSummarizerRefactored(unittest.TestCase):
     def test_is_unavailable_when_provider_not_configured(self):
         from vlair.ai.summarizer import ThreatSummarizer
 
-        env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY")}
+        env = {
+            k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY")
+        }
         with patch.dict(os.environ, env, clear=True):
             summarizer = ThreatSummarizer()
             # Reset lazy provider
