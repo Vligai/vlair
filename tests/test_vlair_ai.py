@@ -1,6 +1,6 @@
 """
 Tests for vlair.ai — ThreatSummarizer and prompt helpers.
-All tests mock the Anthropic API; no real API key is required.
+All tests mock the AI provider; no real API key is required.
 """
 
 import json
@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from vlair.ai import ThreatSummarizer, SummaryConfig
 from vlair.ai.prompts import build_prompt, get_system_prompt, SECURITY_ANALYST_SYSTEM_PROMPT
+from vlair.ai.providers.base import AIResponse
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -39,22 +40,21 @@ CONFIDENCE NOTES: HIGH confidence — multiple corroborating sources.
 """.strip()
 
 
-def _make_mock_client(response_text: str = MOCK_CLAUDE_RESPONSE):
-    """Return a mock Anthropic client that returns response_text."""
-    mock_usage = MagicMock()
-    mock_usage.input_tokens = 500
-    mock_usage.output_tokens = 250
-
-    mock_content = MagicMock()
-    mock_content.text = response_text
-
-    mock_message = MagicMock()
-    mock_message.usage = mock_usage
-    mock_message.content = [mock_content]
-
-    mock_client = MagicMock()
-    mock_client.messages.create.return_value = mock_message
-    return mock_client
+def _make_mock_provider(response_text: str = MOCK_CLAUDE_RESPONSE):
+    """Return a mock AI provider whose analyze() returns an AIResponse."""
+    mock_provider = MagicMock()
+    mock_provider.is_available.return_value = True
+    mock_provider.name = "anthropic"
+    mock_provider.model = "claude-sonnet-4-6"
+    mock_provider.analyze.return_value = AIResponse(
+        content=response_text,
+        confidence=0.92,
+        tokens_used=750,
+        model="claude-sonnet-4-6",
+        cached=False,
+        provider="anthropic",
+    )
+    return mock_provider
 
 
 # ---------------------------------------------------------------------------
@@ -70,24 +70,25 @@ class TestThreatSummarizerAvailability:
 
     def test_unavailable_when_key_missing(self, monkeypatch):
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         s = ThreatSummarizer()
         assert s.is_available() is False
 
 
 # ---------------------------------------------------------------------------
-# ThreatSummarizer.summarize — mocked API
+# ThreatSummarizer.summarize — mocked provider
 # ---------------------------------------------------------------------------
 
 
 class TestThreatSummarizerSummarize:
-    def _summarizer_with_mock_client(self, monkeypatch) -> ThreatSummarizer:
+    def _summarizer_with_mock_provider(self, monkeypatch) -> ThreatSummarizer:
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
         s = ThreatSummarizer(SummaryConfig(use_cache=False))
-        s._client = _make_mock_client()
+        s._provider = _make_mock_provider()
         return s
 
     def test_basic_hash_analysis(self, monkeypatch):
-        s = self._summarizer_with_mock_client(monkeypatch)
+        s = self._summarizer_with_mock_provider(monkeypatch)
         tool_result = {
             "virustotal": {"detections": 45, "total": 70},
             "malwarebazaar": {"signature": "Emotet"},
@@ -104,18 +105,18 @@ class TestThreatSummarizerSummarize:
         assert result["metadata"]["tokens_used"] == 750
 
     def test_depth_quick_limits_tokens(self, monkeypatch):
-        s = self._summarizer_with_mock_client(monkeypatch)
+        s = self._summarizer_with_mock_provider(monkeypatch)
         # Just verify quick depth path doesn't crash
         result = s.summarize("evil.com", "domain", {"risk_score": 80}, depth="quick")
         assert "verdict" in result
 
     def test_depth_thorough(self, monkeypatch):
-        s = self._summarizer_with_mock_client(monkeypatch)
+        s = self._summarizer_with_mock_provider(monkeypatch)
         result = s.summarize("evil.com", "domain", {"risk_score": 80}, depth="thorough")
         assert "verdict" in result
 
     def test_metadata_present(self, monkeypatch):
-        s = self._summarizer_with_mock_client(monkeypatch)
+        s = self._summarizer_with_mock_provider(monkeypatch)
         result = s.summarize("1.2.3.4", "ip", {})
         assert "metadata" in result
         assert "model" in result["metadata"]
@@ -125,7 +126,7 @@ class TestThreatSummarizerSummarize:
     def test_unknown_verdict_fallback(self, monkeypatch):
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
         s = ThreatSummarizer(SummaryConfig(use_cache=False))
-        s._client = _make_mock_client("No structured data here at all.")
+        s._provider = _make_mock_provider("No structured data here at all.")
         result = s.summarize("test", "hash", {})
         # Should default to UNKNOWN without crashing
         assert result["verdict"] == "UNKNOWN"
@@ -136,55 +137,58 @@ class TestThreatSummarizerSummarize:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(autouse=False)
-def clear_ai_cache():
-    """Clear the module-level _CACHE between cache tests."""
-    from vlair.ai.summarizer import _CACHE
+def _make_simple_cache():
+    """Return a MagicMock that behaves like an in-memory AIResponseCache."""
+    store = {}
+    cache = MagicMock()
+    cache.get.side_effect = lambda k: store.get(k)
 
-    _CACHE.clear()
-    yield
-    _CACHE.clear()
+    def _set(k, v, **kwargs):
+        store[k] = v
+
+    cache.set.side_effect = _set
+    return cache, store
 
 
 class TestThreatSummarizerCache:
-    def test_cache_hit_on_second_call(self, monkeypatch, clear_ai_cache):
+    def test_cache_hit_on_second_call(self, monkeypatch):
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
         s = ThreatSummarizer(SummaryConfig(use_cache=True))
-        s._client = _make_mock_client()
+        s._provider = _make_mock_provider()
+        s._cache, _ = _make_simple_cache()
 
         tool_result = {"score": 90}
         result1 = s.summarize("evil.com", "domain", tool_result)
-        # Second call — must hit cache (client.messages.create called only once)
+        # Second call — must hit cache (provider.analyze called only once)
         result2 = s.summarize("evil.com", "domain", tool_result)
 
         assert result2["metadata"]["cached"] is True
-        assert s._client.messages.create.call_count == 1
+        assert s._provider.analyze.call_count == 1
 
-    def test_different_inputs_not_cached(self, monkeypatch, clear_ai_cache):
+    def test_different_inputs_not_cached(self, monkeypatch):
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
         s = ThreatSummarizer(SummaryConfig(use_cache=True))
-        s._client = _make_mock_client()
+        s._provider = _make_mock_provider()
+        s._cache, _ = _make_simple_cache()
 
         s.summarize("evil.com-unique1", "domain", {"score": 90})
         s.summarize("other.com-unique1", "domain", {"score": 90})
 
-        assert s._client.messages.create.call_count == 2
+        assert s._provider.analyze.call_count == 2
 
-    def test_cache_ttl_expiry(self, monkeypatch, clear_ai_cache):
+    def test_cache_ttl_expiry(self, monkeypatch):
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
-        config = SummaryConfig(use_cache=True, cache_ttl_seconds=1)
-        s = ThreatSummarizer(config)
-        s._client = _make_mock_client()
+        s = ThreatSummarizer(SummaryConfig(use_cache=True, cache_ttl_seconds=1))
+        s._provider = _make_mock_provider()
+        mock_cache, store = _make_simple_cache()
+        s._cache = mock_cache
 
         s.summarize("expiry-test.com", "domain", {"score": 90})
-        # Expire cache by back-dating the entry
-        from vlair.ai.summarizer import _CACHE
-
-        for k in list(_CACHE.keys()):
-            _CACHE[k] = (time.time() - 10, _CACHE[k][1])
+        # Simulate TTL expiry by clearing the store (cache miss on next call)
+        store.clear()
 
         s.summarize("expiry-test.com", "domain", {"score": 90})
-        assert s._client.messages.create.call_count == 2
+        assert s._provider.analyze.call_count == 2
 
 
 # ---------------------------------------------------------------------------
