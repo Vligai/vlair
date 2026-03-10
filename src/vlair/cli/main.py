@@ -657,25 +657,159 @@ def main():
                 print(f"  [{status}] {tool_id:12s} - {tool['name']}")
                 print(f"      {tool['description']}\n")
 
+    elif sys.argv[1] == "ai-stats":
+        # AI usage statistics dashboard
+        try:
+            from vlair.ai.cache import AIResponseCache
+
+            cache = AIResponseCache()
+            stats = cache.get_stats()
+
+            print("\nAI Usage Statistics")
+            print("=" * 40)
+            print(f"Today:      {stats['today_requests']} requests, {stats['today_tokens']:,} tokens, ~${stats['cost_estimate_today']:.4f}")
+            print(f"This month: {stats['month_requests']} requests, {stats['month_tokens']:,} tokens, ~${stats['cost_estimate_month']:.4f}")
+            print(f"Cache hit rate: {stats['cache_hit_rate']}%")
+
+            breakdown = stats.get("provider_breakdown", {})
+            if breakdown:
+                print("\nProvider breakdown (today, non-cached):")
+                for pname, pdata in breakdown.items():
+                    print(f"  {pname}: {pdata['requests']} requests, {pdata['tokens']:,} tokens")
+            else:
+                provider = os.getenv("VLAIR_AI_PROVIDER", "anthropic")
+                print(f"\nProvider: {provider}")
+
+            print()
+        except Exception as _stats_err:
+            print(f"Error fetching AI stats: {_stats_err}", file=sys.stderr)
+            sys.exit(1)
+
+    elif sys.argv[1] == "ai":
+        # AI subcommand dispatcher
+        if len(sys.argv) < 3 or sys.argv[2] in ("--help", "-h", "help"):
+            print("Usage: vlair ai <subcommand> [options]", file=sys.stderr)
+            print("\nSubcommands:", file=sys.stderr)
+            print("  playbook <type>   Generate an incident response playbook", file=sys.stderr)
+            print("\nPlaybook types:", file=sys.stderr)
+            print("  phishing, ransomware, c2, data_exfil, generic", file=sys.stderr)
+            print("\nOptions:", file=sys.stderr)
+            print("  --context <str>          Context string for the incident", file=sys.stderr)
+            print("  --depth quick|standard|thorough", file=sys.stderr)
+            print("  --json                   Machine-readable JSON output", file=sys.stderr)
+            print("  --output/-o <path>       Save to file", file=sys.stderr)
+            print("\nExamples:", file=sys.stderr)
+            print("  vlair ai playbook phishing", file=sys.stderr)
+            print("  vlair ai playbook ransomware --depth thorough", file=sys.stderr)
+            print("  vlair ai playbook c2 --json --output playbook.json", file=sys.stderr)
+            sys.exit(0)
+
+        ai_subcmd = sys.argv[2]
+
+        if ai_subcmd == "playbook":
+            if len(sys.argv) < 4:
+                print("Usage: vlair ai playbook <incident-type> [options]", file=sys.stderr)
+                print("Types: phishing, ransomware, c2, data_exfil", file=sys.stderr)
+                sys.exit(1)
+
+            incident_type = sys.argv[3]
+            args_list = sys.argv[4:]
+            json_output = "--json" in args_list or "-j" in args_list
+            output_path = None
+            context_str = None
+            ai_depth = "standard"
+
+            for i, arg in enumerate(args_list):
+                if arg in ("--output", "-o") and i + 1 < len(args_list):
+                    output_path = args_list[i + 1]
+                if arg == "--context" and i + 1 < len(args_list):
+                    context_str = args_list[i + 1]
+                if arg == "--depth" and i + 1 < len(args_list):
+                    if args_list[i + 1] in ("quick", "standard", "thorough"):
+                        ai_depth = args_list[i + 1]
+
+            context = {}
+            if context_str:
+                context["description"] = context_str
+
+            try:
+                from vlair.ai import PlaybookGenerator
+
+                gen = PlaybookGenerator()
+                playbook = gen.generate(incident_type, context=context, depth=ai_depth)
+
+                if json_output:
+                    playbook_str = json.dumps(playbook, indent=2, default=str)
+                    if output_path:
+                        Path(output_path).write_text(playbook_str, encoding="utf-8")
+                        print(f"Playbook saved to: {output_path}")
+                    else:
+                        print(playbook_str)
+                else:
+                    # Human-readable output
+                    print(f"\n{'='*66}")
+                    print(f"  {playbook.get('title', 'Incident Response Playbook')}")
+                    print(f"{'='*66}")
+                    print(f"Severity: {playbook.get('severity', 'HIGH')}")
+                    print()
+
+                    for step in playbook.get("steps", []):
+                        print(f"Step {step.get('step', '?')}: {step.get('title', '')}  [{step.get('time', '')}]")
+                        for action in step.get("actions", []):
+                            print(f"  - {action}")
+                        print()
+
+                    siem = playbook.get("siem_queries", {})
+                    if siem:
+                        print("SIEM Queries:")
+                        for platform, query in siem.items():
+                            print(f"  [{platform}] {query}")
+                        print()
+
+                    contain = playbook.get("containment_actions", [])
+                    if contain:
+                        print("Containment:")
+                        for action in contain:
+                            print(f"  - {action}")
+                        print()
+
+                    if output_path:
+                        # Save markdown version
+                        lines = [f"# {playbook.get('title', 'Playbook')}\n"]
+                        for step in playbook.get("steps", []):
+                            lines.append(f"## Step {step.get('step')}: {step.get('title')} ({step.get('time', '')})\n")
+                            for action in step.get("actions", []):
+                                lines.append(f"- {action}")
+                            lines.append("")
+                        Path(output_path).write_text("\n".join(lines), encoding="utf-8")
+                        print(f"Playbook saved to: {output_path}")
+
+            except Exception as _pb_err:
+                print(f"Error generating playbook: {_pb_err}", file=sys.stderr)
+                import traceback; traceback.print_exc()
+                sys.exit(1)
+
+        else:
+            print(f"Unknown ai subcommand: {ai_subcmd}", file=sys.stderr)
+            print("Use 'vlair ai --help' for help", file=sys.stderr)
+            sys.exit(1)
+
     elif sys.argv[1] == "analyze":
         # Smart analyze command - auto-detect and run appropriate tools
         if len(sys.argv) < 3:
             print(
-                "Usage: vlair analyze <input> [--verbose] [--json] [--quiet] [--ai [--depth quick|standard|thorough]]",
+                "Usage: vlair analyze <input> [--verbose] [--json] [--quiet] [--ai [--depth quick|standard|thorough]] [--dry-run] [--report ai-markdown]",
                 file=sys.stderr,
             )
             print("\nExamples:", file=sys.stderr)
-            print("  vlair analyze suspicious.eml           # Auto-detect email", file=sys.stderr)
-            print("  vlair analyze 44d88612...              # Auto-detect hash", file=sys.stderr)
-            print("  vlair analyze malicious.com            # Auto-detect domain", file=sys.stderr)
-            print("  vlair analyze 192.168.1.1              # Auto-detect IP", file=sys.stderr)
-            print(
-                "  vlair analyze suspicious.eml --ai      # Add Claude AI assessment",
-                file=sys.stderr,
-            )
-            print(
-                "  vlair analyze hash123 --ai --depth thorough  # Deep AI analysis", file=sys.stderr
-            )
+            print("  vlair analyze suspicious.eml                   # Auto-detect email", file=sys.stderr)
+            print("  vlair analyze 44d88612...                      # Auto-detect hash", file=sys.stderr)
+            print("  vlair analyze malicious.com                    # Auto-detect domain", file=sys.stderr)
+            print("  vlair analyze 192.168.1.1                      # Auto-detect IP", file=sys.stderr)
+            print("  vlair analyze suspicious.eml --ai              # Add AI assessment", file=sys.stderr)
+            print("  vlair analyze hash123 --ai --depth thorough    # Deep AI analysis", file=sys.stderr)
+            print("  vlair analyze hash123 --ai --dry-run           # Preview AI data", file=sys.stderr)
+            print("  vlair analyze hash123 --ai --report ai-markdown # AI Markdown report", file=sys.stderr)
             sys.exit(1)
 
         try:
@@ -692,6 +826,7 @@ def main():
             json_output = "--json" in sys.argv or "-j" in sys.argv
             quiet = "--quiet" in sys.argv or "-q" in sys.argv
             ai_enabled = "--ai" in sys.argv
+            dry_run = "--dry-run" in sys.argv
 
             # Parse report and AI arguments
             report_format = None
@@ -700,7 +835,7 @@ def main():
             args_list = sys.argv[3:]
             for i, arg in enumerate(args_list):
                 if arg == "--report":
-                    if i + 1 < len(args_list) and args_list[i + 1] in ("html", "markdown", "md"):
+                    if i + 1 < len(args_list) and args_list[i + 1] in ("html", "markdown", "md", "ai-markdown"):
                         report_format = args_list[i + 1]
                     else:
                         report_format = "html"
@@ -710,6 +845,10 @@ def main():
                 if arg == "--depth" and i + 1 < len(args_list):
                     if args_list[i + 1] in ("quick", "standard", "thorough"):
                         ai_depth = args_list[i + 1]
+
+            # If --dry-run without --ai, enable --ai implicitly
+            if dry_run and not ai_enabled:
+                ai_enabled = True
 
             # Run analysis
             analyzer = Analyzer(verbose=verbose)
@@ -736,7 +875,16 @@ def main():
                     from vlair.ai import ThreatSummarizer
 
                     _summarizer = ThreatSummarizer()
-                    if _summarizer.is_available():
+
+                    if dry_run:
+                        # Show what would be sent without calling AI
+                        _ioc_type = _AI_TYPE_MAP.get(str(result["type"]), "unknown")
+                        ai_result = _summarizer.summarize(
+                            input_value, _ioc_type, result["tool_results"], ai_depth, dry_run=True
+                        )
+                        print(ai_result["threat_context"])
+                        sys.exit(0)
+                    elif _summarizer.is_available():
                         if not quiet:
                             print("[*] Running AI analysis...", file=sys.stderr)
                         _ioc_type = _AI_TYPE_MAP.get(str(result["type"]), "unknown")
@@ -746,7 +894,7 @@ def main():
                     else:
                         if not quiet:
                             print(
-                                "[!] AI unavailable: set ANTHROPIC_API_KEY to enable",
+                                "[!] AI unavailable: set ANTHROPIC_API_KEY (or OPENAI_API_KEY / configure Ollama) to enable",
                                 file=sys.stderr,
                             )
                 except ImportError:
@@ -802,7 +950,23 @@ def main():
                     print(_format_ai_assessment(ai_result))
 
             # Generate report if requested
-            if report_format:
+            if report_format == "ai-markdown" and ai_result is not None:
+                try:
+                    from vlair.ai import AIReporter
+
+                    ai_reporter = AIReporter()
+                    _ioc_type_for_report = _AI_TYPE_MAP.get(str(result.get("type", "")), "unknown") if "_AI_TYPE_MAP" in dir() else "unknown"
+                    md_content = ai_reporter.to_markdown(
+                        ioc_value=input_value,
+                        ioc_type=_ioc_type_for_report,
+                        tool_result=result.get("tool_results", {}),
+                        ai_result=ai_result,
+                    )
+                    report_path = ai_reporter.save(md_content, "markdown", output_path)
+                    print(f"\nAI Markdown report saved to: {report_path}", file=sys.stderr)
+                except Exception as _rpt_err:
+                    print(f"[!] Failed to generate AI Markdown report: {_rpt_err}", file=sys.stderr)
+            elif report_format and report_format != "ai-markdown":
                 from vlair.core.report_generator import ReportGenerator
 
                 generator = ReportGenerator()

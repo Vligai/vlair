@@ -1,8 +1,14 @@
 """
 vlair AI Analysis — ThreatSummarizer: Claude-powered threat intelligence summaries.
+
+Updated in Phase 6.1 to support:
+  - Provider abstraction (anthropic / openai / ollama)
+  - Persistent SQLite cache via AIResponseCache
+  - dry_run parameter to preview data sent to AI
 """
 
 import hashlib
+import json
 import os
 import re
 import time
@@ -24,13 +30,14 @@ class SummaryConfig:
     temperature: float = 0.2
     use_cache: bool = True
     cache_ttl_seconds: int = 86400  # 24 hours
+    provider: str = "anthropic"  # anthropic | openai | ollama
 
 
 # ---------------------------------------------------------------------------
-# In-memory cache  (key → (timestamp, result_dict))
+# Legacy in-memory cache (kept for backward compatibility when use_cache=False)
 # ---------------------------------------------------------------------------
 
-_CACHE: Dict[str, Tuple[float, dict]] = {}
+_LEGACY_CACHE: Dict[str, Tuple[float, dict]] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -40,7 +47,10 @@ _CACHE: Dict[str, Tuple[float, dict]] = {}
 
 class ThreatSummarizer:
     """
-    Calls Claude to generate structured threat assessments from vlair tool results.
+    Calls an AI provider to generate structured threat assessments from vlair tool results.
+
+    Supports Anthropic (default), OpenAI, and Ollama via the provider abstraction layer.
+    Responses are cached in a persistent SQLite database under ~/.vlair/ai_cache.db.
 
     Usage::
 
@@ -51,15 +61,20 @@ class ThreatSummarizer:
 
     def __init__(self, config: Optional[SummaryConfig] = None) -> None:
         self.config = config or SummaryConfig()
-        self._client = None  # lazy-initialised
+        self._provider = None  # lazy-initialised
+        self._cache: Optional[Any] = None  # lazy-initialised (AIResponseCache)
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
     def is_available(self) -> bool:
-        """Return True if ANTHROPIC_API_KEY is set."""
-        return bool(os.getenv("ANTHROPIC_API_KEY"))
+        """Return True if the configured AI provider is available."""
+        try:
+            provider = self._get_provider()
+            return provider.is_available()
+        except Exception:
+            return False
 
     def summarize(
         self,
@@ -67,6 +82,7 @@ class ThreatSummarizer:
         ioc_type: str,
         tool_result: dict,
         depth: Optional[str] = None,
+        dry_run: bool = False,
     ) -> dict:
         """
         Generate a structured AI threat summary.
@@ -76,6 +92,7 @@ class ThreatSummarizer:
             ioc_type:    Analysis type: hash|domain|ip|url|email|log|pcap|cert|script|ioc
             tool_result: Parsed JSON result from a vlair tool endpoint
             depth:       Override config depth: quick|standard|thorough
+            dry_run:     If True, return a preview of what would be sent without calling AI
 
         Returns:
             Dict with verdict, severity, key_findings, threat_context,
@@ -83,50 +100,136 @@ class ThreatSummarizer:
         """
         effective_depth = depth or self.config.depth
 
+        # Dry-run mode: return description of data that would be sent
+        if dry_run:
+            from .privacy import get_dry_run_summary  # noqa: PLC0415
+
+            summary = get_dry_run_summary(ioc_value, ioc_type, tool_result)
+            return {
+                "verdict": "DRY_RUN",
+                "severity": "INFO",
+                "confidence": 0.0,
+                "key_findings": ["Dry-run mode: no AI call was made."],
+                "threat_context": summary,
+                "recommended_actions": [],
+                "mitre_attack": [],
+                "confidence_notes": "",
+                "metadata": {
+                    "model": self.config.model,
+                    "tokens_used": 0,
+                    "cached": False,
+                    "analysis_time_ms": 0,
+                    "dry_run": True,
+                },
+            }
+
         cache_key = self._cache_key(ioc_value, ioc_type, tool_result, effective_depth)
 
         if self.config.use_cache:
-            cached = self._get_cached(cache_key)
+            cached = self._cache_get(cache_key)
             if cached is not None:
                 cached["metadata"]["cached"] = True
                 return cached
 
-        result = self._call_claude(ioc_value, ioc_type, tool_result, effective_depth, cache_key)
+        result = self._call_provider(ioc_value, ioc_type, tool_result, effective_depth, cache_key)
         return result
 
     # ------------------------------------------------------------------
-    # Private helpers
+    # Private helpers — provider
     # ------------------------------------------------------------------
 
-    def _get_client(self):
-        if self._client is None:
-            import anthropic  # noqa: PLC0415
+    def _get_provider(self):
+        if self._provider is not None:
+            return self._provider
 
-            self._client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        return self._client
+        provider_name = self.config.provider or os.getenv("VLAIR_AI_PROVIDER", "anthropic")
+
+        try:
+            if provider_name == "anthropic":
+                from .providers.anthropic import AnthropicProvider  # noqa: PLC0415
+
+                p = AnthropicProvider(model=self.config.model, temperature=self.config.temperature)
+            elif provider_name == "openai":
+                from .providers.openai import OpenAIProvider  # noqa: PLC0415
+
+                p = OpenAIProvider(temperature=self.config.temperature)
+            elif provider_name == "ollama":
+                from .providers.ollama import OllamaProvider  # noqa: PLC0415
+
+                p = OllamaProvider()
+            else:
+                # Default to Anthropic
+                from .providers.anthropic import AnthropicProvider  # noqa: PLC0415
+
+                p = AnthropicProvider(model=self.config.model, temperature=self.config.temperature)
+        except ImportError:
+            # If provider package not installed, fall back
+            from .providers.anthropic import AnthropicProvider  # noqa: PLC0415
+
+            p = AnthropicProvider(model=self.config.model, temperature=self.config.temperature)
+
+        self._provider = p
+        return p
+
+    # ------------------------------------------------------------------
+    # Private helpers — persistent cache
+    # ------------------------------------------------------------------
+
+    def _get_cache(self):
+        if self._cache is None:
+            try:
+                from .cache import AIResponseCache  # noqa: PLC0415
+
+                self._cache = AIResponseCache(ttl_hours=self.config.cache_ttl_seconds // 3600)
+            except Exception:
+                self._cache = None
+        return self._cache
+
+    def _cache_get(self, key: str) -> Optional[dict]:
+        """Try persistent cache first, then fall back to legacy in-memory cache."""
+        cache = self._get_cache()
+        if cache is not None:
+            return cache.get(key)
+
+        # Legacy fallback
+        entry = _LEGACY_CACHE.get(key)
+        if entry is None:
+            return None
+        ts, result = entry
+        if time.time() - ts > self.config.cache_ttl_seconds:
+            del _LEGACY_CACHE[key]
+            return None
+        return dict(result)
+
+    def _cache_set(self, key: str, result: dict, tokens_used: int = 0) -> None:
+        """Store in persistent cache; also update legacy in-memory cache as fallback."""
+        cache = self._get_cache()
+        if cache is not None:
+            try:
+                provider_name = str(getattr(self._provider, "name", "anthropic")) if self._provider else "anthropic"
+                model_name = str(getattr(self._provider, "model", self.config.model)) if self._provider else self.config.model
+                cache.set(key, result, tokens_used=tokens_used, provider=provider_name, model=model_name)
+            except Exception:
+                # Fallback to legacy cache if SQLite write fails
+                pass
+        # Always keep in-memory copy too
+        _LEGACY_CACHE[key] = (time.time(), result)
+
+    # ------------------------------------------------------------------
+    # Private helpers — cache key
+    # ------------------------------------------------------------------
 
     def _cache_key(self, ioc_value: str, ioc_type: str, tool_result: dict, depth: str) -> str:
-        import json
-
         raw = (
             f"{ioc_value}|{ioc_type}|{json.dumps(tool_result, sort_keys=True, default=str)}|{depth}"
         )
         return hashlib.sha256(raw.encode()).hexdigest()
 
-    def _get_cached(self, key: str) -> Optional[dict]:
-        entry = _CACHE.get(key)
-        if entry is None:
-            return None
-        ts, result = entry
-        if time.time() - ts > self.config.cache_ttl_seconds:
-            del _CACHE[key]
-            return None
-        return dict(result)  # shallow copy
+    # ------------------------------------------------------------------
+    # Private helpers — AI call
+    # ------------------------------------------------------------------
 
-    def _set_cached(self, key: str, result: dict) -> None:
-        _CACHE[key] = (time.time(), result)
-
-    def _call_claude(
+    def _call_provider(
         self,
         ioc_value: str,
         ioc_type: str,
@@ -145,35 +248,34 @@ class ThreatSummarizer:
         system_prompt = get_system_prompt(ioc_type)
         user_message = build_prompt(ioc_value, ioc_type, tool_result, depth)
 
-        client = self._get_client()
-        response = client.messages.create(
-            model=self.config.model,
-            max_tokens=max_tokens,
-            temperature=self.config.temperature,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-        )
+        provider = self._get_provider()
+        response = provider.analyze(system_prompt, user_message, max_tokens=max_tokens)
 
         elapsed_ms = int((time.time() - t_start) * 1000)
-        tokens_used = response.usage.input_tokens + response.usage.output_tokens
-        content = response.content[0].text if response.content else ""
+        tokens_used = response.tokens_used
+        content = response.content
 
         parsed = self._parse_response(content)
         parsed["metadata"] = {
-            "model": self.config.model,
+            "model": response.model or self.config.model,
+            "provider": response.provider or self.config.provider,
             "tokens_used": tokens_used,
             "cached": False,
             "analysis_time_ms": elapsed_ms,
         }
 
         if self.config.use_cache:
-            self._set_cached(cache_key, parsed)
+            self._cache_set(cache_key, parsed, tokens_used=tokens_used)
 
         return parsed
 
+    # ------------------------------------------------------------------
+    # Private helpers — response parser (unchanged from v1)
+    # ------------------------------------------------------------------
+
     def _parse_response(self, content: str) -> dict:
         """
-        Extract structured fields from Claude's free-text response.
+        Extract structured fields from the AI's free-text response.
         All fields fall back gracefully if missing.
         """
         result: Dict[str, Any] = {
@@ -202,7 +304,7 @@ class ThreatSummarizer:
         if m:
             result["severity"] = m.group(1).upper()
 
-        # KEY FINDINGS — bullet points after "KEY FINDINGS:"
+        # KEY FINDINGS
         kf_match = re.search(
             r"KEY FINDINGS\s*:(.*?)(?:THREAT CONTEXT|RECOMMENDED ACTIONS|MITRE|CONFIDENCE NOTES|$)",
             content,
@@ -211,7 +313,6 @@ class ThreatSummarizer:
         if kf_match:
             block = kf_match.group(1)
             bullets = re.findall(r"[•\-\*]\s*(.+)", block)
-            # Also pick up numbered bullets like "1. ..."
             if not bullets:
                 bullets = re.findall(r"\d+\.\s+(.+)", block)
             result["key_findings"] = [b.strip() for b in bullets[:5] if b.strip()]
@@ -235,20 +336,18 @@ class ThreatSummarizer:
             am = re.search(pattern, content, re.IGNORECASE | re.DOTALL)
             if am:
                 text = am.group(1).strip()
-                # Split on newlines/bullets to get individual action items
                 items = [
                     i.strip().lstrip("•-* ")
                     for i in re.split(r"[\n•\-\*]", text)
                     if i.strip().lstrip("•-* ")
                 ]
-                for item in items[:3]:  # cap at 3 per priority
+                for item in items[:3]:
                     if item:
                         actions.append({"priority": priority, "action": item})
         result["recommended_actions"] = actions
 
         # MITRE ATT&CK technique IDs
         mitre_ids = re.findall(r"\bT[AS]?\d{4}(?:\.\d{3})?\b", content)
-        # deduplicate while preserving order
         seen: set = set()
         unique_mitre: List[str] = []
         for tid in mitre_ids:
