@@ -185,22 +185,26 @@ class AIResponseCache:
 
     def _init_db(self) -> None:
         with self._connect() as conn:
-            conn.execute("""CREATE TABLE IF NOT EXISTS cache (
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS cache (
                     key TEXT PRIMARY KEY,
                     result_json TEXT NOT NULL,
                     tokens_used INTEGER DEFAULT 0,
                     provider TEXT DEFAULT '',
                     model TEXT DEFAULT '',
                     created_at REAL NOT NULL
-                )""")
-            conn.execute("""CREATE TABLE IF NOT EXISTS usage_log (
+                )"""
+            )
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS usage_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     request_time REAL NOT NULL,
                     cache_hit INTEGER NOT NULL DEFAULT 0,
                     tokens_used INTEGER DEFAULT 0,
                     provider TEXT DEFAULT '',
                     model TEXT DEFAULT ''
-                )""")
+                )"""
+            )
             conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_time ON usage_log (request_time)")
 
     def _connect(self) -> sqlite3.Connection:
