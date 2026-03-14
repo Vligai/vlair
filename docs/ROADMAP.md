@@ -1,8 +1,8 @@
 # vlair - Roadmap & Future Enhancements
 
-**Last Updated:** February 26, 2026
+**Last Updated:** March 13, 2026
 **Current Version:** 5.0.0
-**Status:** Phase 5 in progress (API complete, frontend pending)
+**Status:** Phase 6.1–6.4 complete; 6.5 in progress
 
 ---
 
@@ -40,9 +40,9 @@
 
 ---
 
-## Phase 5: Web Interface (Q1 2026)
+## Phase 5: Web Interface ✅ Complete
 
-**Overall Status:** ✅ Complete — API, auth, and Vue 3 SPA all done
+**Overall Status:** Complete — API, auth, and Vue 3 SPA all done
 
 ### 5.1 Web API — All 12 Tools ✅ Complete
 
@@ -127,7 +127,7 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 ## Phase 6: AI-Powered Analysis (Q2 2026)
 
-**Status:** ✅ Complete (6.1–6.4 core features done; 6.5 planned)
+**Status:** 6.1–6.4 complete; 6.5 in progress
 **Priority:** HIGH
 
 ### 6.1 AI-Assisted IOC Analysis ✅ Complete
@@ -172,21 +172,98 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 **Module:** `src/vlair/ai/correlator.py`
 
-### 6.5 Conversational Security Assistant
-- Slack/Teams bot integration
-- Interactive investigation follow-up questions
+### 6.5 Conversational Security Assistant (In Progress)
+
+Self-hosted chat interface embedded in the web UI — no Slack/Teams account required.
+
+**Goals:**
+- Works out of the box on any self-hosted vlair instance
+- Natural language queries against your own investigation history and tool results
+- Follow-up questions on any analysis without re-running tools
 - Security concept explainer for junior analysts
+
+**Components:**
+
+#### Chat UI (Vue SPA)
+- Persistent chat panel embedded in the web interface
+- Conversation history stored per-user in SQLite (`~/.vlair/chat.db`)
+- Markdown rendering for AI responses
+- Code blocks with copy buttons for SIEM queries / regex / YARA rules
+- Session continuity — resume conversations across page reloads
+
+#### Backend — `/api/chat` WebSocket endpoint
+- WebSocket (`ws://`) for streaming AI responses token-by-token
+- Conversation context window management (last N turns + tool results)
+- Tool result injection — "here's what the hash lookup found, what does it mean?"
+- Rate limiting per user (configurable, default 20 req/hour)
+
+#### Natural Language Capabilities
+- Query investigation history: "show me all phishing cases from last week"
+- Explain results: "what does this YARA hit mean for triage priority?"
+- Generate artifacts: "write a Splunk query to hunt for this C2 IP"
+- Summarize multiple results: "compare these two hash lookups"
+- Fallback to static playbook templates when AI is unavailable
+
+#### CLI companion
+- `vlair chat` — interactive terminal chat session (no browser required)
+- `vlair ask "what is this IOC?"` — single-shot question with context from last `vlair analyze` run
+
+**API endpoints:**
+```
+WS     /api/chat/ws                - WebSocket streaming chat
+POST   /api/chat/message           - Single-turn REST fallback
+GET    /api/chat/history           - Retrieve conversation history
+DELETE /api/chat/history           - Clear conversation history
+```
+
+**Storage:** SQLite (`~/.vlair/chat.db`) — same pattern as investigation history, no external deps
+
+**Configuration:**
+```
+VLAIR_CHAT_MAX_TURNS      Context window in turns (default: 20)
+VLAIR_CHAT_RATE_LIMIT     Requests per hour per user (default: 20)
+VLAIR_CHAT_STREAM         Enable streaming responses (default: true)
+```
 
 ---
 
-## Phase 7: Enterprise Features (Q3 2026)
+## Phase 7: Integrations & Reporting (Q3 2026)
 
 **Status:** Planned
+**Focus:** Connect vlair to the tools analysts already use; make output shareable
 
-- Multi-tenancy with isolated data per organization
-- SIEM integrations (Splunk, ELK, MISP, Webhooks/syslog CEF)
-- Report generation engine (executive PDF, technical HTML, compliance)
-- Advanced caching (multi-tier: browser/CDN/Redis/DB)
+### 7.1 SIEM Integrations
+- **Splunk** — push findings as notable events, pull raw search results into vlair
+- **Elastic/OpenSearch** — index investigation results, query via vlair CLI
+- **Syslog / CEF** — forward alerts to any SIEM over UDP/TCP syslog
+- **Webhooks** — POST findings to any URL (generic integration for SOAR tools)
+- **MISP** — push IOCs as MISP events, pull threat intel from your MISP instance
+
+All integrations are optional and configured via `.env` / environment variables. No cloud account required.
+
+```
+VLAIR_SPLUNK_URL          Splunk HEC endpoint
+VLAIR_SPLUNK_TOKEN        Splunk HEC token
+VLAIR_ELASTIC_URL         Elasticsearch URL
+VLAIR_MISP_URL            MISP instance URL
+VLAIR_MISP_KEY            MISP API key
+VLAIR_WEBHOOK_URL         Generic webhook endpoint
+```
+
+### 7.2 Report Generation
+- **HTML report** — self-contained single-file report (no CDN deps, works offline)
+- **Markdown report** — suitable for paste into Confluence, Notion, GitHub Issues
+- **PDF export** — via headless Chromium or WeasyPrint (optional dep)
+- **`vlair report generate <investigation-id>`** — generate report from stored investigation
+- **`vlair report open`** — open last report in default browser
+- Templates: Executive Summary, Technical Deep-Dive, IOC Digest
+
+### 7.3 Caching Layer
+- **Redis** (optional) — shared cache for multi-user deployments; falls back to SQLite if unavailable
+- **SQLite** (default) — zero-config, works for single-user or small team installs
+- Cache scopes: API responses (VT, AbuseIPDB), AI summaries, SIEM query results
+- `vlair cache stats` — hit rate, size, oldest entry
+- `vlair cache clear [--scope api|ai|siem]` — selective purge
 
 ---
 
@@ -201,31 +278,31 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 ---
 
-## Phase 9: Mobile & API Ecosystem (Q1 2027)
+## Phase 9: Ecosystem & Automation (Q1 2027)
 
 **Status:** Future
 
-- iOS/Android app (React Native) — quick IOC lookups, push alerts
-- Public RESTful API with rate limiting, GraphQL, WebSocket
-- SDK libraries (Python, JavaScript, Go)
+- Public RESTful API with rate limiting
+- SDK libraries (Python, JavaScript, Go) for automation scripts
+- n8n / Zapier / Make.com integration nodes
+- iOS/Android quick-lookup companion app
 
 ---
 
 ## Implementation Priorities
 
-### Now (Phase 5 remaining)
-- [ ] Build Vue.js 3 frontend (5.3)
-
-### Q2 2026 (Phase 6)
-- [ ] AI-assisted IOC analysis and summarization
-- [ ] Malware classification ML models
-- [ ] Automated playbook generation
-- [ ] Conversational assistant (Slack/Teams bot)
+### Now (Phase 6.5)
+- [ ] WebSocket chat endpoint (`/api/chat/ws`)
+- [ ] Chat history SQLite store (`chat.db`)
+- [ ] Vue SPA chat panel with streaming
+- [ ] `vlair chat` / `vlair ask` CLI commands
+- [ ] Context injection from last tool result
 
 ### Q3 2026 (Phase 7)
-- [ ] Multi-tenancy
-- [ ] SIEM integrations
-- [ ] Report generation engine
+- [ ] SIEM push integrations (Splunk HEC, Elastic, syslog/CEF)
+- [ ] MISP IOC sync
+- [ ] Report generation (HTML + Markdown; PDF optional)
+- [ ] Redis cache with SQLite fallback
 
 ### Q4 2026 (Phase 8)
 - [ ] Threat actor tracking
@@ -238,15 +315,17 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 | Layer | Current | Target (Phase 7+) |
 |-------|---------|-------------------|
-| Backend | Python 3.9–3.11, Flask | Python 3.12+, Flask + FastAPI |
-| Database | SQLite | PostgreSQL 16+ + Neo4j (graph) |
-| Cache | Redis (optional) | Multi-tier (browser/CDN/Redis/DB) |
-| Frontend | None (API-only) | Vue.js 3 + TypeScript + Vite |
-| AI/ML | — | Claude API, scikit-learn, PyTorch |
+| Backend | Python 3.9–3.11, Flask | Python 3.12+, Flask + async endpoints |
+| Database | SQLite | SQLite (default) + PostgreSQL (optional, large installs) |
+| Cache | Redis (optional) + SQLite | Redis (optional) + SQLite fallback |
+| Frontend | Vue.js 3 CDN SPA | Vue.js 3 CDN SPA + WebSocket chat |
+| AI/ML | Claude API, OpenAI, Ollama | Same — provider abstraction maintained |
 | Testing | pytest, 32 test files, >80% coverage | 500+ tests, >85% coverage |
-| CI/CD | GitHub Actions | GitHub Actions + ArgoCD |
-| Deployment | Docker, docker-compose | Kubernetes (prod), Docker Compose (dev) |
-| Monitoring | — | Prometheus, Grafana, Sentry |
+| CI/CD | GitHub Actions | GitHub Actions |
+| Deployment | Docker, docker-compose | Docker Compose (primary); single-binary option planned |
+| Monitoring | — | Optional Prometheus endpoint + log file |
+
+**Self-hosting philosophy:** vlair should run on a single machine with `docker-compose up` or `pip install && vlair serve`. No managed cloud services required. SQLite is the default for everything; Redis and PostgreSQL are optional scale-up paths.
 
 ---
 
@@ -254,16 +333,16 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 ### Performance
 - API latency: p95 < 500ms
-- Uptime: 99.9% availability
+- Chat streaming: first token < 2s
 
 ### AI (Phase 6)
 - Threat summary accuracy: >90% (human evaluation)
 - Malware classification: >95% on test set
 - False positive reduction: 50% vs baseline
 
-### Adoption (long-term)
-- 1,000 active users by EOY 2026
-- 10 enterprise customers
+### Adoption
+- Self-hosted installs: 500+ by EOY 2026
+- Active GitHub contributors: 10+
 
 ---
 
@@ -271,22 +350,21 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 | Risk | Mitigation |
 |------|-----------|
-| AI API costs | Caching, prompt optimization, rate limiting |
-| Scalability | Horizontal scaling, DB sharding |
-| Model accuracy | Continuous retraining, human-in-the-loop |
-| API rate limits | Multi-source redundancy, premium tiers |
-| Compliance | GDPR/SOC 2 from day one, regular audits |
+| AI API costs | Caching, `--dry-run`, Ollama local fallback |
+| Model accuracy | Heuristic fallbacks, human-review prompts |
+| API rate limits | Multi-source redundancy, per-user rate limiting |
+| Self-host complexity | Single docker-compose.yml, sane defaults, no required cloud deps |
 
 ---
 
 ## Long-Term Vision (2027+)
 
-**Mission:** De facto open-source security operations platform
+**Mission:** The go-to open-source security operations toolkit that any analyst can self-host in minutes
 
-1. AI handles 80% of L1 SOC analyst tasks
-2. Real-time global threat sharing across users
-3. Predictive defense — forecast attacks before they happen
-4. Enterprise SaaS offering alongside open-source
+1. AI handles 80% of L1 triage tasks
+2. Pluggable integrations for any SIEM/SOAR/ticketing system
+3. Active community of playbooks and YARA rules
+4. Works fully offline with local LLMs (Ollama)
 
 ---
 
@@ -295,11 +373,11 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 1. ✅ ~~Complete web API endpoints~~ (all 13 endpoints done)
 2. ✅ ~~Implement authentication & RBAC~~ (JWT, TOTP MFA, RBAC, audit log)
 3. ✅ ~~Build Vue.js 3 frontend~~ (Phase 5.3 complete — Vue 3 CDN SPA)
-4. ✅ ~~Begin AI integration~~ (Phase 6.1 — Claude summaries in all tool panels)
-5. Continue Phase 6: natural language queries, ML malware classification
+4. ✅ ~~Begin AI integration~~ (Phase 6.1–6.4 complete)
+5. **Now:** Phase 6.5 — embedded WebSocket chat UI + `vlair chat` CLI
 
 ---
 
 **Document Maintainer:** Vligai
-**Last Updated:** February 26, 2026
-**Next Review:** May 1, 2026
+**Last Updated:** March 13, 2026
+**Next Review:** June 1, 2026
