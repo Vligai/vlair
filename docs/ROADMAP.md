@@ -174,55 +174,67 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 ### 6.5 Conversational Security Assistant (In Progress)
 
-Self-hosted chat interface embedded in the web UI — no Slack/Teams account required.
+Slack and Microsoft Teams bot that brings vlair's AI analysis directly into the channels analysts already work in.
 
 **Goals:**
-- Works out of the box on any self-hosted vlair instance
-- Natural language queries against your own investigation history and tool results
-- Follow-up questions on any analysis without re-running tools
+- Run vlair tools and get AI summaries without leaving Slack/Teams
+- Follow-up questions on any analysis result in-thread
 - Security concept explainer for junior analysts
+- Works with any vlair instance (self-hosted or otherwise) via webhook
 
 **Components:**
 
-#### Chat UI (Vue SPA)
-- Persistent chat panel embedded in the web interface
-- Conversation history stored per-user in SQLite (`~/.vlair/chat.db`)
-- Markdown rendering for AI responses
-- Code blocks with copy buttons for SIEM queries / regex / YARA rules
-- Session continuity — resume conversations across page reloads
+#### Slack Bot
 
-#### Backend — `/api/chat` WebSocket endpoint
-- WebSocket (`ws://`) for streaming AI responses token-by-token
-- Conversation context window management (last N turns + tool results)
-- Tool result injection — "here's what the hash lookup found, what does it mean?"
+**@mention commands (primary interface)** — work in any channel or thread:
+- `@vlair analyze <hash|domain|ip|url>` — auto-detects type, runs tool, posts summary
+- `@vlair investigate <free text>` — natural language; extracts IOCs from the message/thread and kicks off an investigation
+- `@vlair workflow phishing` — starts phishing workflow using attachments or URLs in the current thread
+- `@vlair explain <term or finding>` — security concept explainer, replies in-thread
+- `@vlair ask <question>` — free-form AI question with context from the thread above
+- `@vlair summary` — summarizes all findings posted in the current thread
+
+Thread-awareness: when triggered inside a thread, vlair reads the full thread history as context before responding.
+
+**Slash commands (utility / DM-friendly):**
+- `/vlair status` — show API key health, cache stats, recent investigations
+- `/vlair help` — list available commands
+
+**Interactive elements:**
+- Buttons on every result card: "Deeper Analysis", "Generate SIEM Query", "Export IOCs"
+- Overflow menu: "Open in web UI", "Share to channel", "Create investigation"
+
+#### Microsoft Teams Bot
+- Same command surface as the Slack bot via Teams messaging extensions
+- Adaptive Cards for structured result display (verdict badge, risk score, key findings)
+- `/vlair` command in any channel or DM
+
+#### Backend — Bot Webhook Server
+- Lightweight Flask handler in `src/vlair/integrations/slack.py` / `teams.py`
+- Verifies request signatures (Slack signing secret / Teams HMAC)
+- Routes commands to existing vlair tools and AI layer
+- Stores per-channel conversation context in SQLite (`~/.vlair/bot.db`)
 - Rate limiting per user (configurable, default 20 req/hour)
 
 #### Natural Language Capabilities
-- Query investigation history: "show me all phishing cases from last week"
 - Explain results: "what does this YARA hit mean for triage priority?"
 - Generate artifacts: "write a Splunk query to hunt for this C2 IP"
 - Summarize multiple results: "compare these two hash lookups"
 - Fallback to static playbook templates when AI is unavailable
 
-#### CLI companion
-- `vlair chat` — interactive terminal chat session (no browser required)
-- `vlair ask "what is this IOC?"` — single-shot question with context from last `vlair analyze` run
-
-**API endpoints:**
-```
-WS     /api/chat/ws                - WebSocket streaming chat
-POST   /api/chat/message           - Single-turn REST fallback
-GET    /api/chat/history           - Retrieve conversation history
-DELETE /api/chat/history           - Clear conversation history
-```
-
-**Storage:** SQLite (`~/.vlair/chat.db`) — same pattern as investigation history, no external deps
-
 **Configuration:**
 ```
-VLAIR_CHAT_MAX_TURNS      Context window in turns (default: 20)
-VLAIR_CHAT_RATE_LIMIT     Requests per hour per user (default: 20)
-VLAIR_CHAT_STREAM         Enable streaming responses (default: true)
+VLAIR_SLACK_BOT_TOKEN       Slack bot OAuth token
+VLAIR_SLACK_SIGNING_SECRET  Slack signing secret (for request verification)
+VLAIR_TEAMS_APP_ID          Teams app ID
+VLAIR_TEAMS_APP_PASSWORD    Teams app password
+VLAIR_BOT_RATE_LIMIT        Requests per hour per user (default: 20)
+```
+
+**Running the bot server:**
+```bash
+vlair bot slack    # Start Slack event listener on port 3000
+vlair bot teams    # Start Teams bot on port 3978
 ```
 
 ---
@@ -292,11 +304,11 @@ VLAIR_WEBHOOK_URL         Generic webhook endpoint
 ## Implementation Priorities
 
 ### Now (Phase 6.5)
-- [ ] WebSocket chat endpoint (`/api/chat/ws`)
-- [ ] Chat history SQLite store (`chat.db`)
-- [ ] Vue SPA chat panel with streaming
-- [ ] `vlair chat` / `vlair ask` CLI commands
-- [ ] Context injection from last tool result
+- [ ] Slack bot command handler (`/vlair analyze`, `/vlair ask`, `/vlair workflow`)
+- [ ] Teams bot with Adaptive Cards
+- [ ] Bot webhook server (`vlair bot slack|teams`)
+- [ ] Per-channel conversation context (SQLite `bot.db`)
+- [ ] Interactive buttons / follow-up thread replies
 
 ### Q3 2026 (Phase 7)
 - [ ] SIEM push integrations (Splunk HEC, Elastic, syslog/CEF)
@@ -374,7 +386,7 @@ VLAIR_WEBHOOK_URL         Generic webhook endpoint
 2. ✅ ~~Implement authentication & RBAC~~ (JWT, TOTP MFA, RBAC, audit log)
 3. ✅ ~~Build Vue.js 3 frontend~~ (Phase 5.3 complete — Vue 3 CDN SPA)
 4. ✅ ~~Begin AI integration~~ (Phase 6.1–6.4 complete)
-5. **Now:** Phase 6.5 — embedded WebSocket chat UI + `vlair chat` CLI
+5. **Now:** Phase 6.5 — Slack/Teams bot (`vlair bot slack|teams`)
 
 ---
 
