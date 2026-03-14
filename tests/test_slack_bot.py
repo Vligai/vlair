@@ -60,6 +60,7 @@ def slack_bot(tmp_db):
 
 @pytest.fixture()
 def slack_app(slack_bot):
+    pytest.importorskip("flask")
     from vlair.integrations.slack import create_slack_app
 
     app = create_slack_app(slack_bot)
@@ -81,6 +82,7 @@ def teams_bot(tmp_db):
 
 @pytest.fixture()
 def teams_app(teams_bot):
+    pytest.importorskip("flask")
     from vlair.integrations.teams import create_teams_app
 
     app = create_teams_app(teams_bot)
