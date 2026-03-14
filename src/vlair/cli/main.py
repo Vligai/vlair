@@ -1813,6 +1813,51 @@ def main():
         print("  [+] Report generation (HTML/Markdown)")
         print()
 
+    elif sys.argv[1] == "bot":
+        if len(sys.argv) < 3 or sys.argv[2] in ("--help", "-h", "help"):
+            print("Usage: vlair bot <platform> [--port PORT] [--debug]")
+            print("\nPlatforms:")
+            print("  slack    Start Slack bot webhook server (default port: 3000)")
+            print("  teams    Start Teams bot webhook server (default port: 3978)")
+            print("\nEnvironment variables:")
+            print("  Slack: VLAIR_SLACK_BOT_TOKEN, VLAIR_SLACK_SIGNING_SECRET")
+            print("  Teams: VLAIR_TEAMS_APP_ID, VLAIR_TEAMS_APP_PASSWORD")
+            print("  Both:  VLAIR_BOT_RATE_LIMIT (default: 20 req/user/hour)")
+            print("\nExamples:")
+            print("  vlair bot slack")
+            print("  vlair bot slack --port 8080")
+            print("  vlair bot teams --port 3978 --debug")
+            sys.exit(0)
+
+        platform = sys.argv[2].lower()
+        bot_args = sys.argv[3:]
+
+        port = None
+        debug = "--debug" in bot_args
+        for i, arg in enumerate(bot_args):
+            if arg == "--port" and i + 1 < len(bot_args):
+                port = int(bot_args[i + 1])
+
+        try:
+            if platform == "slack":
+                from vlair.integrations.slack import run_slack_bot
+
+                run_slack_bot(port=port or 3000, debug=debug)
+            elif platform == "teams":
+                from vlair.integrations.teams import run_teams_bot
+
+                run_teams_bot(port=port or 3978, debug=debug)
+            else:
+                print(f"Unknown platform: {platform}. Use 'slack' or 'teams'.", file=sys.stderr)
+                sys.exit(1)
+        except ImportError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            print("Install Flask: pip install flask", file=sys.stderr)
+            sys.exit(1)
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+
     else:
         # Run a tool
         tool_id = sys.argv[1]

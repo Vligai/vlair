@@ -2,7 +2,7 @@
 
 **Last Updated:** March 13, 2026
 **Current Version:** 5.0.0
-**Status:** Phase 6.1–6.4 complete; 6.5 in progress
+**Status:** Phase 6.1–6.5 complete
 
 ---
 
@@ -127,7 +127,7 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 ## Phase 6: AI-Powered Analysis (Q2 2026)
 
-**Status:** 6.1–6.4 complete; 6.5 in progress
+**Status:** 6.1–6.5 complete
 **Priority:** HIGH
 
 ### 6.1 AI-Assisted IOC Analysis ✅ Complete
@@ -172,7 +172,7 @@ ANTHROPIC_API_KEY        Anthropic API key (required for /api/ai/summarize)
 
 **Module:** `src/vlair/ai/correlator.py`
 
-### 6.5 Conversational Security Assistant (In Progress)
+### 6.5 Conversational Security Assistant ✅ Complete
 
 Slack and Microsoft Teams bot that brings vlair's AI analysis directly into the channels analysts already work in.
 
@@ -303,12 +303,12 @@ VLAIR_WEBHOOK_URL         Generic webhook endpoint
 
 ## Implementation Priorities
 
-### Now (Phase 6.5)
-- [ ] Slack bot command handler (`/vlair analyze`, `/vlair ask`, `/vlair workflow`)
-- [ ] Teams bot with Adaptive Cards
-- [ ] Bot webhook server (`vlair bot slack|teams`)
-- [ ] Per-channel conversation context (SQLite `bot.db`)
-- [ ] Interactive buttons / follow-up thread replies
+### Now (Phase 6.5) ✅ Complete
+- [x] Slack bot command handler (`/vlair analyze`, `/vlair ask`, `/vlair workflow`)
+- [x] Teams bot with Adaptive Cards
+- [x] Bot webhook server (`vlair bot slack|teams`)
+- [x] Per-channel conversation context (SQLite `bot.db`)
+- [x] Interactive buttons / follow-up thread replies
 
 ### Q3 2026 (Phase 7)
 - [ ] SIEM push integrations (Splunk HEC, Elastic, syslog/CEF)
