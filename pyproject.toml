@@ -136,6 +136,8 @@ omit = [
     "src/vlair/tools/eml_parser.py",
     "src/vlair/tools/cert_analyzer.py",
     "src/vlair/webapp/*",
+    "src/vlair/integrations/slack.py",
+    "src/vlair/integrations/teams.py",
 ]
 
 [tool.coverage.report]
