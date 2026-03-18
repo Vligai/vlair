@@ -272,6 +272,8 @@ class ThreatSummarizer:
             "tokens_used": tokens_used,
             "cached": False,
             "analysis_time_ms": elapsed_ms,
+            "cache_read_tokens": response.cache_read_tokens,
+            "cache_creation_tokens": response.cache_creation_tokens,
         }
 
         if self.config.use_cache:

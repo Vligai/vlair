@@ -17,6 +17,8 @@ class AIResponse:
     model: str = ""
     cached: bool = False
     provider: str = ""
+    cache_read_tokens: int = 0
+    cache_creation_tokens: int = 0
 
 
 class AIProvider(ABC):

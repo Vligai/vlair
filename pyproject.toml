@@ -64,6 +64,7 @@ cert = [
 ]
 ai = [
     "anthropic>=0.34.0",
+    "beskar",  # Token optimization — install locally: pip install -e /path/to/beskar
 ]
 bot = [
     "flask>=2.3.0",

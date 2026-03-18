@@ -1,5 +1,8 @@
 """
 vlair AI Providers — Anthropic Claude implementation.
+
+Uses BeskarClient when available for automatic prompt caching and token metrics.
+Falls back to plain anthropic.Anthropic if beskar is not installed.
 """
 
 import os
@@ -14,6 +17,10 @@ class AnthropicProvider(AIProvider):
     """
     AI provider backed by Anthropic's Claude API.
 
+    When ``beskar`` is installed, wraps the client in BeskarClient to enable:
+    - Prompt caching (cache_control on system prompts ≥ 1024 tokens)
+    - Per-call token metrics and estimated cost/savings tracking
+
     Requires the ANTHROPIC_API_KEY environment variable.
     The ``anthropic`` Python package is imported lazily so that the rest of
     vlair works even when the package is not installed.
@@ -23,6 +30,7 @@ class AnthropicProvider(AIProvider):
         self._model = model or os.getenv("ANTHROPIC_MODEL", _DEFAULT_MODEL)
         self.temperature = temperature
         self._client = None  # lazy-initialised
+        self._using_beskar = False
 
     # ------------------------------------------------------------------
     # AIProvider interface
@@ -53,7 +61,10 @@ class AnthropicProvider(AIProvider):
         )
 
         content = response.content[0].text if response.content else ""
-        tokens_used = response.usage.input_tokens + response.usage.output_tokens
+        usage = response.usage
+        tokens_used = usage.input_tokens + usage.output_tokens
+        cache_read = getattr(usage, "cache_read_input_tokens", 0) or 0
+        cache_creation = getattr(usage, "cache_creation_input_tokens", 0) or 0
 
         return AIResponse(
             content=content,
@@ -61,20 +72,47 @@ class AnthropicProvider(AIProvider):
             model=self._model,
             cached=False,
             provider=self.name,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
         )
+
+    def get_metrics(self):
+        """Return cumulative BeskarClient token metrics, or None if not using beskar."""
+        if self._using_beskar and self._client is not None:
+            return self._client.metrics.summary()
+        return None
 
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
 
     def _get_client(self):
-        if self._client is None:
+        if self._client is not None:
+            return self._client
+
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+
+        try:
+            from beskar import BeskarClient  # noqa: PLC0415
+            from beskar.types import BeskarConfig, CacheConfig, MetricsConfig  # noqa: PLC0415
+
+            self._client = BeskarClient(
+                BeskarConfig(
+                    api_key=api_key,
+                    cache=CacheConfig(),
+                    metrics=MetricsConfig(),
+                )
+            )
+            self._using_beskar = True
+        except ImportError:
             try:
                 import anthropic  # noqa: PLC0415
 
-                self._client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+                self._client = anthropic.Anthropic(api_key=api_key)
+                self._using_beskar = False
             except ImportError as exc:
                 raise ImportError(
                     "The 'anthropic' package is required. Install it with: pip install anthropic"
                 ) from exc
+
         return self._client
