@@ -96,10 +96,57 @@ vlair status         # API keys, cache, history
 ## Configuration (.env)
 
 ```
-VT_API_KEY=       # VirusTotal (4 req/min free) — eml, hash, intel, url
-ABUSEIPDB_KEY=    # AbuseIPDB (free tier) — intel
-REDIS_URL=        # Optional; falls back to in-memory cache
+VT_API_KEY=            # VirusTotal (4 req/min free) — eml, hash, intel, url
+ABUSEIPDB_KEY=         # AbuseIPDB (free tier) — intel
+REDIS_URL=             # Optional; falls back to in-memory cache
+
+# AI summaries (vlair analyze --ai)
+ANTHROPIC_API_KEY=     # Required for Claude-powered threat summaries
+VLAIR_AI_PROVIDER=     # anthropic (default) | openai | ollama
+ANTHROPIC_MODEL=       # Override model (default: claude-sonnet-4-6)
 ```
+
+---
+
+## AI / Token Optimization (Beskar)
+
+vlair's `AnthropicProvider` wraps [`beskar`](https://github.com/Vligai/beskar) when installed — a token optimization layer for the Anthropic SDK.
+
+**What it does:**
+- **Prompt caching** — attaches `cache_control: ephemeral` to the large, stable system prompts used per IOC type. Repeated analyses of the same type (e.g., multiple hashes in one session) cut input costs by ~90% on the cached portion.
+- **Token metrics** — tracks cumulative `cache_hit_rate`, `estimated_cost_usd`, and `estimated_savings_usd` across all AI calls in a session.
+
+**Install beskar** (local checkout):
+```bash
+pip install -e /path/to/beskar
+pip install -e ".[ai]"
+```
+
+**Access metrics programmatically:**
+```python
+from vlair.ai.providers.anthropic import AnthropicProvider
+provider = AnthropicProvider()
+provider.analyze(system_prompt, user_message)
+metrics = provider.get_metrics()  # MetricsSummary or None if beskar not installed
+# MetricsSummary.cache_hit_rate, .estimated_cost_usd, .estimated_savings_usd
+```
+
+**AI response metadata** — each `ThreatSummarizer.summarize()` result now includes:
+```json
+"metadata": {
+  "tokens_used": 542,
+  "cache_read_tokens": 480,
+  "cache_creation_tokens": 0,
+  ...
+}
+```
+
+Beskar is **optional** — if not installed, `AnthropicProvider` falls back transparently to plain `anthropic.Anthropic`.
+
+**Key files:**
+- `src/vlair/ai/providers/anthropic.py` — BeskarClient integration + `get_metrics()`
+- `src/vlair/ai/providers/base.py` — `AIResponse.cache_read_tokens` / `cache_creation_tokens`
+- `src/vlair/ai/summarizer.py` — cache token counts in response metadata
 
 ---
 
@@ -131,6 +178,7 @@ REDIS_URL=        # Optional; falls back to in-memory cache
 | Web frontend (Vue.js 3) | ✅ Done (Vue 3 CDN SPA) |
 | AI summaries — web API (`/api/ai/summarize`) | ✅ Done |
 | AI summaries — CLI (`vlair analyze --ai`) | ✅ Done |
+| Beskar token optimization (prompt caching + metrics) | ✅ Done |
 | Enterprise / SIEM integration (Phase 7+) | ❌ Not started |
 
 Operationalize spec: `docs/openspec/specs/operationalize.spec.md`

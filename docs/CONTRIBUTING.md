@@ -67,6 +67,23 @@ ABUSEIPDB_KEY=your_abuseipdb_api_key
 
 **Note:** Tests use mocked APIs and don't require real API keys.
 
+### Optional: AI dependencies
+
+To enable Claude-powered threat summaries and token optimization:
+
+```bash
+# 1. Install beskar (local checkout — token optimization for the Anthropic SDK)
+pip install -e /path/to/beskar
+
+# 2. Install vlair's AI extras
+pip install -e ".[ai]"
+
+# 3. Add to .env
+ANTHROPIC_API_KEY=your_key_here
+```
+
+`beskar` is optional. If not installed, `AnthropicProvider` falls back to plain `anthropic.Anthropic` automatically. See `docs/INDEX.md` — "AI / Token Optimization" for full details.
+
 ## Code Quality
 
 We use several tools to maintain code quality:
