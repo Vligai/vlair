@@ -89,7 +89,7 @@ def create_app() -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__, template_folder="templates", static_folder="static")
 
-    app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
+    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
     app.config["UPLOAD_FOLDER"] = tempfile.gettempdir()
     secret = os.getenv("VLAIR_SECRET_KEY", "change-me-in-production")
     if secret == "change-me-in-production" and os.getenv("FLASK_ENV") == "production":
@@ -133,7 +133,7 @@ def create_app() -> Flask:
     # Error handlers
     @app.errorhandler(413)
     def too_large(_err):
-        return jsonify({"error": "File too large. Maximum size is 50 MB"}), 413
+        return jsonify({"error": "File too large. Maximum size is 16 MB"}), 413
 
     @app.errorhandler(404)
     def not_found(_err):
@@ -176,6 +176,31 @@ def _save_upload(file, label: str) -> str:
     path = os.path.join(tempfile.gettempdir(), filename)
     file.save(path)
     return path
+
+
+# Directories that user-supplied paths are allowed to reference
+_SAFE_PATH_ROOTS = [
+    Path(tempfile.gettempdir()).resolve(),
+    Path.home() / ".vlair",
+]
+
+
+def _validate_path(user_path: str) -> str:
+    """
+    Resolve a user-supplied path and ensure it falls within an allowed
+    directory.  Returns the resolved path string or raises ValueError.
+    """
+    resolved = Path(user_path).resolve()
+    for safe_root in _SAFE_PATH_ROOTS:
+        try:
+            resolved.relative_to(safe_root)
+            return str(resolved)
+        except ValueError:
+            continue
+    raise ValueError(
+        f"Path '{user_path}' is outside allowed directories. "
+        "Upload the file or place it in ~/.vlair/ instead."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -455,6 +480,11 @@ def _register_tool_routes(app: Flask) -> None:
             rules_path = request.form.get("rules_path") or (
                 (request.get_json(silent=True) or {}).get("rules_path")
             )
+            if rules_path:
+                try:
+                    rules_path = _validate_path(rules_path)
+                except ValueError as path_err:
+                    return jsonify({"error": str(path_err)}), 400
             temp_path = None
 
             if "file" in request.files:
@@ -465,7 +495,10 @@ def _register_tool_routes(app: Flask) -> None:
                 file_path = (request.get_json(silent=True) or {}).get("file_path")
                 if not file_path:
                     return jsonify({"error": "No file provided"}), 400
-                temp_path = file_path
+                try:
+                    temp_path = _validate_path(file_path)
+                except ValueError as path_err:
+                    return jsonify({"error": str(path_err)}), 400
                 _cleanup = False
             else:
                 _cleanup = True

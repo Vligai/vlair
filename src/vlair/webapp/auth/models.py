@@ -279,15 +279,22 @@ def get_mfa_secret(user_id: int) -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 
+def _hash_api_key(raw_key: str, salt: str) -> str:
+    """Hash an API key with a per-key salt using PBKDF2."""
+    dk = hashlib.pbkdf2_hmac("sha256", raw_key.encode(), salt.encode(), 100_000)
+    return dk.hex()
+
+
 def create_api_key(user_id: int, name: str, expires_at: Optional[str] = None) -> str:
     """
-    Generate a new API key, store only its hash.
+    Generate a new API key, store only its salted hash.
     Returns the *plaintext* key (shown once, never again).
     Format: ``vlair_<32 random hex chars>``
     """
     raw_key = f"vlair_{secrets.token_hex(32)}"
     key_prefix = raw_key[:12]  # "vlair_XXXXXX" – safe to store/display
-    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+    salt = secrets.token_hex(16)
+    key_hash = f"{salt}${_hash_api_key(raw_key, salt)}"
     now = datetime.utcnow().isoformat()
     with _connect() as conn:
         conn.execute(
@@ -304,29 +311,45 @@ def lookup_api_key(raw_key: str) -> Optional[Dict]:
     """
     Validate a raw API key. Returns {user_id, key_id, name} or None.
     Updates ``last_used`` timestamp on hit.
+
+    Supports both legacy (unsalted SHA256) and new (salted PBKDF2) key hashes.
     """
-    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     with _connect() as conn:
-        row = conn.execute(
+        rows = conn.execute(
             """
-            SELECT k.id, k.user_id, k.name, k.is_active, k.expires_at
+            SELECT k.id, k.user_id, k.name, k.is_active, k.expires_at, k.key_hash
             FROM api_keys k
-            WHERE k.key_hash = ?
+            WHERE k.key_prefix = ? AND k.is_active = 1
             """,
-            (key_hash,),
-        ).fetchone()
-        if row is None:
-            return None
-        if not row["is_active"]:
-            return None
+            (raw_key[:12],),
+        ).fetchall()
+
+    for row in rows:
+        stored_hash = row["key_hash"]
+        if "$" in stored_hash:
+            # New salted format: salt$hash
+            salt, expected = stored_hash.split("$", 1)
+            if not secrets.compare_digest(_hash_api_key(raw_key, salt), expected):
+                continue
+        else:
+            # Legacy unsalted SHA256 format
+            if not secrets.compare_digest(
+                hashlib.sha256(raw_key.encode()).hexdigest(), stored_hash
+            ):
+                continue
+
+        # Match found — check expiration
         if row["expires_at"]:
             if datetime.utcnow().isoformat() > row["expires_at"]:
                 return None
-        conn.execute(
-            "UPDATE api_keys SET last_used = ? WHERE id = ?",
-            (datetime.utcnow().isoformat(), row["id"]),
-        )
-    return {"user_id": row["user_id"], "key_id": row["id"], "name": row["name"]}
+        with _connect() as conn:
+            conn.execute(
+                "UPDATE api_keys SET last_used = ? WHERE id = ?",
+                (datetime.utcnow().isoformat(), row["id"]),
+            )
+        return {"user_id": row["user_id"], "key_id": row["id"], "name": row["name"]}
+
+    return None
 
 
 def list_api_keys(user_id: int) -> List[Dict]:

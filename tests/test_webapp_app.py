@@ -43,7 +43,7 @@ class TestAppCreation:
 
         app = create_app()
         assert app is not None
-        assert app.config["MAX_CONTENT_LENGTH"] == 50 * 1024 * 1024
+        assert app.config["MAX_CONTENT_LENGTH"] == 16 * 1024 * 1024
 
     def test_create_app_has_blueprints(self):
         """Test app has registered blueprints."""

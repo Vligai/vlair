@@ -26,6 +26,9 @@ GET  /api/admin/audit            - query audit log (ADMIN / SENIOR_ANALYST)
 """
 
 import os
+import time
+import threading
+from collections import defaultdict
 from flask import Blueprint, request, jsonify, g
 
 from vlair.webapp.auth.models import (
@@ -69,6 +72,38 @@ OPEN_REGISTRATION = os.getenv("VLAIR_OPEN_REGISTRATION", "true").lower() == "tru
 
 
 # ---------------------------------------------------------------------------
+# Simple in-memory rate limiter for auth endpoints
+# ---------------------------------------------------------------------------
+
+_rate_limit_store: dict = defaultdict(list)
+_rate_limit_lock = threading.Lock()
+
+# Max attempts per IP within the window
+_AUTH_RATE_LIMIT = int(os.getenv("VLAIR_AUTH_RATE_LIMIT", "10"))
+_AUTH_RATE_WINDOW = int(os.getenv("VLAIR_AUTH_RATE_WINDOW", "300"))  # 5 min
+
+
+def _check_rate_limit(ip: str) -> bool:
+    """Return True if the IP is within rate limits, False if exceeded."""
+    now = time.time()
+    cutoff = now - _AUTH_RATE_WINDOW
+    with _rate_limit_lock:
+        attempts = _rate_limit_store[ip]
+        # Prune old entries
+        _rate_limit_store[ip] = [t for t in attempts if t > cutoff]
+        if len(_rate_limit_store[ip]) >= _AUTH_RATE_LIMIT:
+            return False
+        _rate_limit_store[ip].append(now)
+        return True
+
+
+def reset_rate_limits() -> None:
+    """Clear all rate limit state. Intended for testing."""
+    with _rate_limit_lock:
+        _rate_limit_store.clear()
+
+
+# ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
 
@@ -83,6 +118,9 @@ def register():
 
     Requires ADMIN auth if VLAIR_OPEN_REGISTRATION=false.
     """
+    if not _check_rate_limit(request.remote_addr):
+        return jsonify({"error": "Too many requests. Try again later."}), 429
+
     if not OPEN_REGISTRATION:
         # Require existing admin token
         from vlair.webapp.auth.decorators import _resolve_user
@@ -126,6 +164,9 @@ def login():
 
     Body: {"username": str, "password": str, "totp_code": str (if MFA enabled)}
     """
+    if not _check_rate_limit(request.remote_addr):
+        return jsonify({"error": "Too many requests. Try again later."}), 429
+
     data = request.get_json(force=True) or {}
     username = (data.get("username") or "").strip()
     password = data.get("password") or ""
@@ -182,6 +223,9 @@ def login():
 @auth_bp.post("/refresh")
 def refresh():
     """Exchange a valid refresh token for a new access token."""
+    if not _check_rate_limit(request.remote_addr):
+        return jsonify({"error": "Too many requests. Try again later."}), 429
+
     data = request.get_json(force=True) or {}
     refresh_token = data.get("refresh_token", "")
     payload = verify_refresh_token(refresh_token)

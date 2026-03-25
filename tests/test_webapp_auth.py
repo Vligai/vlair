@@ -852,7 +852,9 @@ class TestAuthRoutes:
         os.environ["VLAIR_OPEN_REGISTRATION"] = "true"
 
         from vlair.webapp.app import create_app
+        from vlair.webapp.auth.routes import reset_rate_limits
 
+        reset_rate_limits()
         self.app = create_app()
         self.app.config["TESTING"] = True
         self.client = self.app.test_client()
@@ -1157,7 +1159,9 @@ class TestAdminRoutes:
 
         from vlair.webapp.app import create_app
         from vlair.webapp.auth.models import create_user, Role
+        from vlair.webapp.auth.routes import reset_rate_limits
 
+        reset_rate_limits()
         self.app = create_app()
         self.app.config["TESTING"] = True
         self.client = self.app.test_client()
