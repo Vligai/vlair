@@ -12,6 +12,7 @@ PUT  /api/auth/me/password       - change own password
 POST /api/auth/mfa/setup         - initiate TOTP setup (returns secret + QR URI)
 POST /api/auth/mfa/verify        - confirm TOTP code and enable MFA
 DELETE /api/auth/mfa             - disable MFA (requires password confirmation)
+POST /api/auth/mfa/backup-codes  - regenerate backup codes (requires password confirmation)
 
 POST /api/auth/keys              - create API key
 GET  /api/auth/keys              - list own API keys
@@ -50,6 +51,10 @@ from vlair.webapp.auth.models import (
     enable_mfa,
     disable_mfa,
     get_mfa_secret,
+    generate_backup_codes,
+    verify_backup_code,
+    get_backup_code_count,
+    delete_backup_codes,
     get_audit_log,
     log_action,
 )
@@ -190,7 +195,12 @@ def login():
         if not totp_code:
             return jsonify({"error": "TOTP code required", "mfa_required": True}), 200
         secret = get_mfa_secret(user["id"])
-        if not secret or not verify_totp(secret, totp_code):
+        totp_ok = secret and verify_totp(secret, totp_code)
+        backup_ok = False
+        if not totp_ok:
+            # Try as a one-time backup code
+            backup_ok = verify_backup_code(user["id"], totp_code)
+        if not totp_ok and not backup_ok:
             log_action(
                 "login_mfa_failed",
                 user_id=user["id"],
@@ -199,6 +209,15 @@ def login():
                 status_code=401,
             )
             return jsonify({"error": "Invalid TOTP code"}), 401
+        if backup_ok:
+            remaining = get_backup_code_count(user["id"])
+            log_action(
+                "login_backup_code",
+                user_id=user["id"],
+                username=user["username"],
+                ip_address=request.remote_addr,
+                detail=f"backup_codes_remaining={remaining}",
+            )
 
     access_token = create_access_token(user["id"], user["role"])
     refresh_token = create_refresh_token(user["id"])
@@ -367,13 +386,20 @@ def mfa_verify():
         return jsonify({"error": "Invalid TOTP code"}), 400
 
     enable_mfa(g.current_user["id"])
+    backup_codes = generate_backup_codes(g.current_user["id"])
     log_action(
         "mfa_enabled",
         user_id=g.current_user["id"],
         username=g.current_user["username"],
         ip_address=request.remote_addr,
     )
-    return jsonify({"message": "MFA enabled successfully"})
+    return jsonify(
+        {
+            "message": "MFA enabled successfully",
+            "backup_codes": backup_codes,
+            "backup_codes_message": "Save these backup codes in a safe place. Each code can only be used once. They will not be shown again.",
+        }
+    )
 
 
 @auth_bp.delete("/mfa")
@@ -391,6 +417,7 @@ def mfa_disable():
         return jsonify({"error": "Password confirmation failed"}), 401
 
     disable_mfa(g.current_user["id"])
+    delete_backup_codes(g.current_user["id"])
     log_action(
         "mfa_disabled",
         user_id=g.current_user["id"],
@@ -398,6 +425,45 @@ def mfa_disable():
         ip_address=request.remote_addr,
     )
     return jsonify({"message": "MFA disabled"})
+
+
+@auth_bp.post("/mfa/backup-codes")
+@require_auth
+def mfa_regenerate_backup_codes():
+    """
+    Regenerate MFA backup codes.  Requires password confirmation.
+
+    Body: {"password": str}
+
+    Replaces any existing unused codes with a fresh set of 10.
+    The plaintext codes are returned ONCE and not stored.
+    """
+    data = request.get_json(force=True) or {}
+    password = data.get("password", "")
+
+    if not password:
+        return jsonify({"error": "password is required"}), 400
+
+    if not authenticate_user(g.current_user["username"], password):
+        return jsonify({"error": "Password confirmation failed"}), 401
+
+    user = get_user_by_id(g.current_user["id"])
+    if not user or not user["mfa_enabled"]:
+        return jsonify({"error": "MFA is not enabled on this account"}), 400
+
+    codes = generate_backup_codes(g.current_user["id"])
+    log_action(
+        "backup_codes_regenerated",
+        user_id=g.current_user["id"],
+        username=g.current_user["username"],
+        ip_address=request.remote_addr,
+    )
+    return jsonify(
+        {
+            "message": "Backup codes regenerated. Save these codes - they will not be shown again.",
+            "backup_codes": codes,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -2,9 +2,10 @@
 Authentication data models backed by SQLite.
 
 Schema:
-  users      - accounts with roles and MFA settings
-  api_keys   - hashed API keys per user
-  audit_log  - immutable record of every authenticated action
+  users        - accounts with roles and MFA settings
+  api_keys     - hashed API keys per user
+  backup_codes - one-time MFA recovery codes per user
+  audit_log    - immutable record of every authenticated action
 """
 
 import os
@@ -124,6 +125,15 @@ def init_db() -> None:
                 expires_at  TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS backup_codes (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                code_hash   TEXT    NOT NULL,
+                used_at     TEXT,
+                created_at  TEXT    NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_backup_codes_user ON backup_codes(user_id);
             CREATE INDEX IF NOT EXISTS idx_revoked_tokens_user ON revoked_tokens(user_id);
             CREATE INDEX IF NOT EXISTS idx_api_keys_hash    ON api_keys(key_hash);
             CREATE INDEX IF NOT EXISTS idx_audit_user       ON audit_log(user_id);
@@ -272,6 +282,94 @@ def get_mfa_secret(user_id: int) -> Optional[str]:
     with _connect() as conn:
         row = conn.execute("SELECT mfa_secret FROM users WHERE id = ?", (user_id,)).fetchone()
     return row["mfa_secret"] if row else None
+
+
+# ---------------------------------------------------------------------------
+# Backup codes (MFA recovery)
+# ---------------------------------------------------------------------------
+
+
+def generate_backup_codes(user_id: int, count: int = 10) -> List[str]:
+    """
+    Generate one-time MFA backup codes for a user.
+
+    Deletes any existing unused codes first, then creates ``count`` new
+    random 8-digit numeric codes.  Each code is hashed with PBKDF2 +
+    per-code salt (same pattern as ``_hash_api_key``).
+
+    Returns the plaintext codes (shown once to the user, never again).
+    """
+    now = datetime.utcnow().isoformat()
+
+    with _connect() as conn:
+        # Remove existing unused codes
+        conn.execute(
+            "DELETE FROM backup_codes WHERE user_id = ? AND used_at IS NULL",
+            (user_id,),
+        )
+
+    if count <= 0:
+        return []
+
+    plaintext_codes: List[str] = []
+    with _connect() as conn:
+        for _ in range(count):
+            code = f"{secrets.randbelow(10**8):08d}"
+            salt = secrets.token_hex(16)
+            code_hash = f"{salt}${_hash_api_key(code, salt)}"
+            conn.execute(
+                "INSERT INTO backup_codes (user_id, code_hash, created_at) VALUES (?, ?, ?)",
+                (user_id, code_hash, now),
+            )
+            plaintext_codes.append(code)
+
+    return plaintext_codes
+
+
+def verify_backup_code(user_id: int, code: str) -> bool:
+    """
+    Verify a one-time backup code for MFA recovery.
+
+    Checks all unused codes for the user with constant-time comparison.
+    If a match is found the code is marked as used (``used_at`` set) so
+    it cannot be reused.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT id, code_hash FROM backup_codes WHERE user_id = ? AND used_at IS NULL",
+            (user_id,),
+        ).fetchall()
+
+    for row in rows:
+        stored = row["code_hash"]
+        if "$" not in stored:
+            continue
+        salt, expected = stored.split("$", 1)
+        if secrets.compare_digest(_hash_api_key(code, salt), expected):
+            with _connect() as conn:
+                conn.execute(
+                    "UPDATE backup_codes SET used_at = ? WHERE id = ?",
+                    (datetime.utcnow().isoformat(), row["id"]),
+                )
+            return True
+
+    return False
+
+
+def get_backup_code_count(user_id: int) -> int:
+    """Return the number of unused backup codes remaining for a user."""
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM backup_codes WHERE user_id = ? AND used_at IS NULL",
+            (user_id,),
+        ).fetchone()
+    return row["cnt"] if row else 0
+
+
+def delete_backup_codes(user_id: int) -> None:
+    """Delete all backup codes (used and unused) for a user."""
+    with _connect() as conn:
+        conn.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
 
 
 # ---------------------------------------------------------------------------

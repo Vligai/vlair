@@ -64,6 +64,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from vlair.webapp.auth import Role, init_db, require_auth, require_role
 from vlair.webapp.auth.routes import auth_bp, admin_bp
+from vlair.webapp.tasks import get_task_manager
 from vlair.ai.summarizer import ThreatSummarizer, SummaryConfig
 
 # ---------------------------------------------------------------------------
@@ -802,6 +803,110 @@ def _register_tool_routes(app: Flask) -> None:
         summarizer = _get_summarizer()
         return jsonify({"available": summarizer.is_available(), "model": summarizer.config.model})
 
+    # ------------------------------------------------------------------
+    # Background Task Queue
+    # ------------------------------------------------------------------
+    @app.post("/api/tasks/<tool>")
+    @require_role(Role.ANALYST)
+    def submit_task(tool):
+        """Submit a long-running tool job for background execution.
+
+        Supported tools: yara, pcap.
+        Returns 202 with a task_id and poll URL.
+        """
+        if tool not in ("yara", "pcap"):
+            return jsonify({"error": f"Unsupported tool '{tool}'. Use 'yara' or 'pcap'."}), 400
+
+        try:
+            if tool == "yara":
+                rules_path = request.form.get("rules_path") or (
+                    (request.get_json(silent=True) or {}).get("rules_path")
+                )
+                if rules_path:
+                    try:
+                        rules_path = _validate_path(rules_path)
+                    except ValueError as path_err:
+                        return jsonify({"error": str(path_err)}), 400
+
+                temp_path = None
+                _cleanup = True
+
+                if "file" in request.files:
+                    f = request.files["file"]
+                    temp_path = _save_upload(f, "sample")
+                else:
+                    file_path = (request.get_json(silent=True) or {}).get("file_path")
+                    if not file_path:
+                        return jsonify({"error": "No file provided"}), 400
+                    try:
+                        temp_path = _validate_path(file_path)
+                    except ValueError as path_err:
+                        return jsonify({"error": str(path_err)}), 400
+                    _cleanup = False
+
+                # Capture values for closure (no Flask request context)
+                _rules = rules_path
+                _target = temp_path
+                _do_cleanup = _cleanup
+
+                def _run_yara():
+                    from vlair.tools.yara_scanner import YaraScanner
+
+                    try:
+                        scanner = YaraScanner(rules_path=_rules)
+                        return scanner.scan_file(_target)
+                    finally:
+                        if _do_cleanup and os.path.exists(_target):
+                            os.remove(_target)
+
+                task_id = get_task_manager().submit("yara", _run_yara)
+
+            else:  # pcap
+                if "file" not in request.files:
+                    return jsonify({"error": "No file provided"}), 400
+                f = request.files["file"]
+                if not f or not _allowed(f.filename, "pcap"):
+                    return jsonify({"error": "Invalid file type. Expected .pcap or .pcapng"}), 400
+                _target = _save_upload(f, "pcap")
+
+                def _run_pcap():
+                    from vlair.tools.pcap_analyzer import PCAPAnalyzer
+
+                    try:
+                        analyzer = PCAPAnalyzer()
+                        return analyzer.analyze(_target)
+                    finally:
+                        if os.path.exists(_target):
+                            os.remove(_target)
+
+                task_id = get_task_manager().submit("pcap", _run_pcap)
+
+            return (
+                jsonify(
+                    {
+                        "task_id": task_id,
+                        "status": "pending",
+                        "poll_url": f"/api/tasks/{task_id}",
+                    }
+                ),
+                202,
+            )
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 500
+
+    @app.get("/api/tasks/<task_id>")
+    @require_role(Role.ANALYST)
+    def get_task_status(task_id):
+        """Poll the status of a background task."""
+        status = get_task_manager().get_status(task_id)
+        if status is None:
+            return jsonify({"error": "Task not found"}), 404
+
+        resp = jsonify(status)
+        if status["status"] in ("pending", "running"):
+            resp.headers["Retry-After"] = "2"
+        return resp
+
 
 # ---------------------------------------------------------------------------
 # Utility / informational routes
@@ -959,6 +1064,18 @@ def _register_utility_routes(app: Flask) -> None:
                         "method": "GET",
                         "role": "authenticated",
                         "description": "AI analysis availability and model info",
+                    },
+                    {
+                        "path": "/api/tasks/<tool>",
+                        "method": "POST",
+                        "role": "analyst",
+                        "description": "Submit background task (yara, pcap)",
+                    },
+                    {
+                        "path": "/api/tasks/<task_id>",
+                        "method": "GET",
+                        "role": "analyst",
+                        "description": "Poll background task status",
                     },
                 ]
             }
