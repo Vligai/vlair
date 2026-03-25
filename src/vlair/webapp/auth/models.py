@@ -117,6 +117,14 @@ def init_db() -> None:
                 timestamp   TEXT    NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS revoked_tokens (
+                jti         TEXT PRIMARY KEY,
+                user_id     INTEGER NOT NULL,
+                revoked_at  TEXT NOT NULL,
+                expires_at  TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_revoked_tokens_user ON revoked_tokens(user_id);
             CREATE INDEX IF NOT EXISTS idx_api_keys_hash    ON api_keys(key_hash);
             CREATE INDEX IF NOT EXISTS idx_audit_user       ON audit_log(user_id);
             CREATE INDEX IF NOT EXISTS idx_audit_timestamp  ON audit_log(timestamp);
@@ -212,6 +220,7 @@ def update_user_role(user_id: int, role: Role) -> None:
 def deactivate_user(user_id: int) -> None:
     with _connect() as conn:
         conn.execute("UPDATE users SET is_active = 0 WHERE id = ?", (user_id,))
+    revoke_all_user_tokens(user_id)
 
 
 def activate_user(user_id: int) -> None:
@@ -340,6 +349,53 @@ def revoke_api_key(key_id: int, user_id: int) -> bool:
             (key_id, user_id),
         )
     return result.rowcount > 0
+
+
+# ---------------------------------------------------------------------------
+# Token revocation
+# ---------------------------------------------------------------------------
+
+
+def revoke_token(jti: str, user_id: int, expires_at: str) -> None:
+    """Add a JWT ID to the revocation list."""
+    now = datetime.utcnow().isoformat()
+    try:
+        with _connect() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO revoked_tokens (jti, user_id, revoked_at, expires_at) VALUES (?, ?, ?, ?)",
+                (jti, user_id, now, expires_at),
+            )
+    except Exception:
+        pass  # best-effort; auth check still validates is_active
+
+
+def is_token_revoked(jti: str) -> bool:
+    """Check if a token has been explicitly revoked."""
+    with _connect() as conn:
+        row = conn.execute("SELECT 1 FROM revoked_tokens WHERE jti = ?", (jti,)).fetchone()
+    return row is not None
+
+
+def revoke_all_user_tokens(user_id: int) -> None:
+    """Revoke all tokens for a user (e.g. on deactivation)."""
+    now = datetime.utcnow().isoformat()
+    try:
+        with _connect() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO revoked_tokens (jti, user_id, revoked_at, expires_at) "
+                "SELECT '__all_before_' || ?, ?, ?, datetime(?, '+7 days')",
+                (now, user_id, now, now),
+            )
+    except Exception:
+        pass
+
+
+def cleanup_expired_revocations() -> int:
+    """Remove revocation entries for tokens that have already expired. Returns count removed."""
+    now = datetime.utcnow().isoformat()
+    with _connect() as conn:
+        result = conn.execute("DELETE FROM revoked_tokens WHERE expires_at < ?", (now,))
+    return result.rowcount
 
 
 # ---------------------------------------------------------------------------

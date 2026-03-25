@@ -91,7 +91,13 @@ def create_app() -> Flask:
 
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
     app.config["UPLOAD_FOLDER"] = tempfile.gettempdir()
-    app.config["SECRET_KEY"] = os.getenv("VLAIR_SECRET_KEY", "change-me-in-production")
+    secret = os.getenv("VLAIR_SECRET_KEY", "change-me-in-production")
+    if secret == "change-me-in-production" and os.getenv("FLASK_ENV") == "production":
+        raise RuntimeError(
+            "VLAIR_SECRET_KEY environment variable must be set in production. "
+            'Generate one with: python -c "import secrets; print(secrets.token_hex(32))"'
+        )
+    app.config["SECRET_KEY"] = secret
 
     # Initialize database
     init_db()
@@ -105,6 +111,24 @@ def create_app() -> Flask:
 
     # Register utility routes
     _register_utility_routes(app)
+
+    # Security headers
+    @app.after_request
+    def _set_security_headers(response):
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data:; "
+            "connect-src 'self'"
+        )
+        if request.is_secure:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
 
     # Error handlers
     @app.errorhandler(413)
