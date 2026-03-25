@@ -64,6 +64,7 @@ cert = [
 ]
 ai = [
     "anthropic>=0.34.0",
+    "openai>=1.0.0,<2.0.0",
 ]
 bot = [
     "flask>=2.3.0",
@@ -77,6 +78,7 @@ all = [
     "tqdm>=4.66.0",
     "cryptography>=41.0.0",
     "anthropic>=0.34.0",
+    "openai>=1.0.0,<2.0.0",
     "flask>=2.3.0",
     "slack-sdk>=3.27.0",
 ]
