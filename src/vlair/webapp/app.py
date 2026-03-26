@@ -47,12 +47,13 @@ Endpoint                Role Required
 import os
 import sys
 import json
+import uuid
 import tempfile
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
-from flask import Flask, jsonify, request, send_from_directory, render_template
+from flask import Flask, g, jsonify, request, send_from_directory, render_template
 from werkzeug.utils import secure_filename
 
 # ---------------------------------------------------------------------------
@@ -113,6 +114,11 @@ def create_app() -> Flask:
     # Register utility routes
     _register_utility_routes(app)
 
+    # Request ID tracing
+    @app.before_request
+    def _set_request_id():
+        g.request_id = request.headers.get("X-Request-ID", uuid.uuid4().hex[:12])
+
     # Security headers
     @app.after_request
     def _set_security_headers(response):
@@ -127,6 +133,7 @@ def create_app() -> Flask:
             "img-src 'self' data:; "
             "connect-src 'self'"
         )
+        response.headers["X-Request-ID"] = g.get("request_id", "")
         if request.is_secure:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response

@@ -115,6 +115,7 @@ def init_db() -> None:
                 user_agent  TEXT,
                 status_code INTEGER,
                 detail      TEXT,
+                request_id  TEXT,
                 timestamp   TEXT    NOT NULL
             );
 
@@ -534,6 +535,7 @@ def log_action(
     user_agent: Optional[str] = None,
     status_code: Optional[int] = None,
     detail: Optional[str] = None,
+    request_id: Optional[str] = None,
 ) -> None:
     """Write a single audit record. Fire-and-forget; never raises."""
     try:
@@ -543,8 +545,8 @@ def log_action(
                 """
                 INSERT INTO audit_log
                   (user_id, username, action, resource, ip_address,
-                   user_agent, status_code, detail, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   user_agent, status_code, detail, request_id, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     user_id,
@@ -555,11 +557,84 @@ def log_action(
                     user_agent,
                     status_code,
                     detail,
+                    request_id,
                     now,
                 ),
             )
     except Exception:
         pass  # audit failures must not break the request
+
+
+def rotate_audit_logs(keep_days: int = 90) -> dict:
+    """Archive and remove audit log entries older than keep_days.
+
+    Exports old entries to a gzipped JSON file in ~/.vlair/audit_archive/,
+    then deletes them from the database.
+
+    Returns: {"archived_count": int, "archive_path": str or None}
+    """
+    import gzip
+    from datetime import timedelta
+
+    cutoff = (datetime.utcnow() - timedelta(days=keep_days)).isoformat()
+
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM audit_log WHERE timestamp < ? ORDER BY timestamp ASC",
+            (cutoff,),
+        ).fetchall()
+
+    if not rows:
+        return {"archived_count": 0, "archive_path": None}
+
+    records = [dict(r) for r in rows]
+
+    archive_dir = Path.home() / ".vlair" / "audit_archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"audit_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json.gz"
+    archive_path = archive_dir / filename
+
+    with gzip.open(str(archive_path), "wt", encoding="utf-8") as f:
+        import json as _json
+
+        _json.dump(records, f, indent=2)
+
+    # Delete archived records from the database
+    ids = [r["id"] for r in records]
+    with _connect() as conn:
+        # SQLite has a limit on variables; delete in batches
+        batch_size = 500
+        for i in range(0, len(ids), batch_size):
+            batch = ids[i : i + batch_size]
+            placeholders = ",".join("?" for _ in batch)
+            conn.execute(f"DELETE FROM audit_log WHERE id IN ({placeholders})", batch)
+
+    return {"archived_count": len(records), "archive_path": str(archive_path)}
+
+
+def get_audit_stats() -> dict:
+    """Return audit log statistics: total_entries, oldest_entry, newest_entry, size_by_action."""
+    with _connect() as conn:
+        total_row = conn.execute("SELECT COUNT(*) AS cnt FROM audit_log").fetchone()
+        total = total_row["cnt"] if total_row else 0
+
+        oldest_row = conn.execute("SELECT MIN(timestamp) AS ts FROM audit_log").fetchone()
+        oldest = oldest_row["ts"] if oldest_row else None
+
+        newest_row = conn.execute("SELECT MAX(timestamp) AS ts FROM audit_log").fetchone()
+        newest = newest_row["ts"] if newest_row else None
+
+        action_rows = conn.execute(
+            "SELECT action, COUNT(*) AS cnt FROM audit_log GROUP BY action ORDER BY cnt DESC"
+        ).fetchall()
+        size_by_action = {r["action"]: r["cnt"] for r in action_rows}
+
+    return {
+        "total_entries": total,
+        "oldest_entry": oldest,
+        "newest_entry": newest,
+        "size_by_action": size_by_action,
+    }
 
 
 def get_audit_log(

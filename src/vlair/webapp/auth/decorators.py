@@ -108,6 +108,7 @@ def _write_audit(status_code: int = 200) -> None:
         ip_address=request.remote_addr,
         user_agent=request.headers.get("User-Agent"),
         status_code=status_code,
+        request_id=g.get("request_id"),
     )
 
 
