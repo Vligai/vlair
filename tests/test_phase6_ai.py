@@ -300,6 +300,18 @@ class TestPrivacy(unittest.TestCase):
         self.assertEqual(result["analysis"]["raw_content"], "[REDACTED]")
         self.assertEqual(result["analysis"]["score"], 85)
 
+    def test_redact_private_ips_in_list(self):
+        from vlair.ai.privacy import sanitize_tool_result
+
+        result = sanitize_tool_result(
+            {"ip_list": ["192.168.1.1", "8.8.8.8", "10.0.0.5", "1.1.1.1"]}
+        )
+        # Private IPs should be removed, public kept
+        self.assertNotIn("192.168.1.1", result["ip_list"])
+        self.assertNotIn("10.0.0.5", result["ip_list"])
+        self.assertIn("8.8.8.8", result["ip_list"])
+        self.assertIn("1.1.1.1", result["ip_list"])
+
     def test_dry_run_summary_format(self):
         from vlair.ai.privacy import get_dry_run_summary
 
@@ -308,6 +320,14 @@ class TestPrivacy(unittest.TestCase):
         self.assertIn("44d88612abc", summary)
         self.assertIn("hash", summary)
         self.assertIn("bytes", summary)
+
+    def test_dry_run_summary_truncation(self):
+        from vlair.ai.privacy import get_dry_run_summary
+
+        # Create a large result that exceeds the 500-char preview
+        large_result = {"data": "x" * 1000}
+        summary = get_dry_run_summary("test", "hash", large_result)
+        self.assertIn("truncated", summary)
 
 
 # ===========================================================================
@@ -552,6 +572,35 @@ class TestPlaybookGenerator(unittest.TestCase):
 # ===========================================================================
 # ThreatSummarizer — dry_run and provider abstraction
 # ===========================================================================
+
+
+class TestThreatSummarizerCostEstimate(unittest.TestCase):
+    def test_estimate_cost_returns_expected_keys(self):
+        from vlair.ai.summarizer import ThreatSummarizer
+
+        summarizer = ThreatSummarizer()
+        estimate = summarizer.estimate_cost(SAMPLE_HASH_RESULT, depth="standard")
+        self.assertIn("provider", estimate)
+        self.assertIn("estimated_input_tokens", estimate)
+        self.assertIn("estimated_output_tokens", estimate)
+        self.assertIn("estimated_cost_usd", estimate)
+        self.assertEqual(estimate["estimated_output_tokens"], 1500)
+        self.assertGreater(estimate["estimated_input_tokens"], 0)
+        self.assertGreater(estimate["estimated_cost_usd"], 0)
+
+    def test_estimate_cost_depth_quick(self):
+        from vlair.ai.summarizer import ThreatSummarizer
+
+        summarizer = ThreatSummarizer()
+        estimate = summarizer.estimate_cost(SAMPLE_HASH_RESULT, depth="quick")
+        self.assertEqual(estimate["estimated_output_tokens"], 500)
+
+    def test_estimate_cost_depth_thorough(self):
+        from vlair.ai.summarizer import ThreatSummarizer
+
+        summarizer = ThreatSummarizer()
+        estimate = summarizer.estimate_cost(SAMPLE_HASH_RESULT, depth="thorough")
+        self.assertEqual(estimate["estimated_output_tokens"], 3000)
 
 
 class TestThreatSummarizerRefactored(unittest.TestCase):

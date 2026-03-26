@@ -282,6 +282,17 @@ class TestHistoryErrorHandling:
         history.record(input_value="test", input_type="hash", command="check")
         assert history.get_recent() == []
 
+    def test_invalid_db_path_stats_graceful(self):
+        """Test that get_stats returns empty dict on invalid DB"""
+        history = AnalysisHistory(db_path="/nonexistent/path/db.sqlite")
+        stats = history.get_stats()
+        assert stats["total_analyses"] == 0
+
+    def test_invalid_db_path_clear_graceful(self):
+        """Test that clear doesn't crash on invalid DB"""
+        history = AnalysisHistory(db_path="/nonexistent/path/db.sqlite")
+        history.clear()  # Should not raise
+
     def test_record_with_special_characters(self):
         """Test recording with special characters in input"""
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:

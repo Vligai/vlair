@@ -26,7 +26,8 @@ from typing import Optional, Dict
 # Configuration
 # -----------------------------------------------------------------------
 
-SECRET_KEY: str = os.getenv("VLAIR_SECRET_KEY", "change-me-in-production")
+_DEFAULT_SECRET = "change-me-in-production"
+SECRET_KEY: str = os.getenv("VLAIR_SECRET_KEY", _DEFAULT_SECRET)
 ACCESS_TOKEN_TTL: int = int(os.getenv("VLAIR_ACCESS_TTL", "900"))  # 15 min
 REFRESH_TOKEN_TTL: int = int(os.getenv("VLAIR_REFRESH_TTL", "604800"))  # 7 days
 
@@ -85,6 +86,13 @@ except ImportError:
 # -----------------------------------------------------------------------
 
 
+def _generate_jti() -> str:
+    """Generate a unique JWT ID."""
+    import secrets as _secrets
+
+    return _secrets.token_hex(16)
+
+
 def create_access_token(user_id: int, role: str) -> str:
     """Return a signed JWT access token valid for ACCESS_TOKEN_TTL seconds."""
     now = int(time.time())
@@ -92,6 +100,7 @@ def create_access_token(user_id: int, role: str) -> str:
         "sub": user_id,
         "role": role,
         "type": "access",
+        "jti": _generate_jti(),
         "iat": now,
         "exp": now + ACCESS_TOKEN_TTL,
     }
@@ -104,6 +113,7 @@ def create_refresh_token(user_id: int) -> str:
     payload = {
         "sub": user_id,
         "type": "refresh",
+        "jti": _generate_jti(),
         "iat": now,
         "exp": now + REFRESH_TOKEN_TTL,
     }

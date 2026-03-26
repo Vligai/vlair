@@ -1,0 +1,24 @@
+schema: spec-driven
+
+context: |
+  Project: vlair — security operations CLI toolkit (Python 3.9+)
+  Tech stack: Python, Flask, SQLite, Vue 3 (CDN SPA), AI providers (Anthropic/OpenAI/Ollama)
+  Package layout: src/vlair/ with tools/, core/, cli/, workflows/, investigate/, webapp/, ai/, integrations/, common/
+  Entry point: pyproject.toml → vlair CLI
+  Formatter: black (line-length 127), linter: flake8
+  Tests: pytest, 75% coverage target, mock all external APIs
+  Design philosophy: modular, CLI-first, security-first, minimal deps, JSON output
+  Target users: SOC analysts, incident responders, threat intel analysts
+
+rules:
+  proposal:
+    - Keep proposals under 500 words
+    - Always include a "Non-goals" section
+    - Reference existing specs by capability name when relevant
+  tasks:
+    - Break tasks into chunks of max 2 hours
+    - Each task should be independently testable
+    - Include a test task for each implementation task
+  design:
+    - Reference existing patterns in the codebase (tool registry, provider abstraction, connector framework)
+    - Always consider CLI, webapp, and bot surfaces

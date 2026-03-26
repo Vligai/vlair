@@ -2,9 +2,10 @@
 Authentication data models backed by SQLite.
 
 Schema:
-  users      - accounts with roles and MFA settings
-  api_keys   - hashed API keys per user
-  audit_log  - immutable record of every authenticated action
+  users        - accounts with roles and MFA settings
+  api_keys     - hashed API keys per user
+  backup_codes - one-time MFA recovery codes per user
+  audit_log    - immutable record of every authenticated action
 """
 
 import os
@@ -114,9 +115,27 @@ def init_db() -> None:
                 user_agent  TEXT,
                 status_code INTEGER,
                 detail      TEXT,
+                request_id  TEXT,
                 timestamp   TEXT    NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS revoked_tokens (
+                jti         TEXT PRIMARY KEY,
+                user_id     INTEGER NOT NULL,
+                revoked_at  TEXT NOT NULL,
+                expires_at  TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS backup_codes (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                code_hash   TEXT    NOT NULL,
+                used_at     TEXT,
+                created_at  TEXT    NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_backup_codes_user ON backup_codes(user_id);
+            CREATE INDEX IF NOT EXISTS idx_revoked_tokens_user ON revoked_tokens(user_id);
             CREATE INDEX IF NOT EXISTS idx_api_keys_hash    ON api_keys(key_hash);
             CREATE INDEX IF NOT EXISTS idx_audit_user       ON audit_log(user_id);
             CREATE INDEX IF NOT EXISTS idx_audit_timestamp  ON audit_log(timestamp);
@@ -212,6 +231,7 @@ def update_user_role(user_id: int, role: Role) -> None:
 def deactivate_user(user_id: int) -> None:
     with _connect() as conn:
         conn.execute("UPDATE users SET is_active = 0 WHERE id = ?", (user_id,))
+    revoke_all_user_tokens(user_id)
 
 
 def activate_user(user_id: int) -> None:
@@ -266,19 +286,114 @@ def get_mfa_secret(user_id: int) -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
+# Backup codes (MFA recovery)
+# ---------------------------------------------------------------------------
+
+
+def generate_backup_codes(user_id: int, count: int = 10) -> List[str]:
+    """
+    Generate one-time MFA backup codes for a user.
+
+    Deletes any existing unused codes first, then creates ``count`` new
+    random 8-digit numeric codes.  Each code is hashed with PBKDF2 +
+    per-code salt (same pattern as ``_hash_api_key``).
+
+    Returns the plaintext codes (shown once to the user, never again).
+    """
+    now = datetime.utcnow().isoformat()
+
+    with _connect() as conn:
+        # Remove existing unused codes
+        conn.execute(
+            "DELETE FROM backup_codes WHERE user_id = ? AND used_at IS NULL",
+            (user_id,),
+        )
+
+    if count <= 0:
+        return []
+
+    plaintext_codes: List[str] = []
+    with _connect() as conn:
+        for _ in range(count):
+            code = f"{secrets.randbelow(10**8):08d}"
+            salt = secrets.token_hex(16)
+            code_hash = f"{salt}${_hash_api_key(code, salt)}"
+            conn.execute(
+                "INSERT INTO backup_codes (user_id, code_hash, created_at) VALUES (?, ?, ?)",
+                (user_id, code_hash, now),
+            )
+            plaintext_codes.append(code)
+
+    return plaintext_codes
+
+
+def verify_backup_code(user_id: int, code: str) -> bool:
+    """
+    Verify a one-time backup code for MFA recovery.
+
+    Checks all unused codes for the user with constant-time comparison.
+    If a match is found the code is marked as used (``used_at`` set) so
+    it cannot be reused.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT id, code_hash FROM backup_codes WHERE user_id = ? AND used_at IS NULL",
+            (user_id,),
+        ).fetchall()
+
+    for row in rows:
+        stored = row["code_hash"]
+        if "$" not in stored:
+            continue
+        salt, expected = stored.split("$", 1)
+        if secrets.compare_digest(_hash_api_key(code, salt), expected):
+            with _connect() as conn:
+                conn.execute(
+                    "UPDATE backup_codes SET used_at = ? WHERE id = ?",
+                    (datetime.utcnow().isoformat(), row["id"]),
+                )
+            return True
+
+    return False
+
+
+def get_backup_code_count(user_id: int) -> int:
+    """Return the number of unused backup codes remaining for a user."""
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM backup_codes WHERE user_id = ? AND used_at IS NULL",
+            (user_id,),
+        ).fetchone()
+    return row["cnt"] if row else 0
+
+
+def delete_backup_codes(user_id: int) -> None:
+    """Delete all backup codes (used and unused) for a user."""
+    with _connect() as conn:
+        conn.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
+
+
+# ---------------------------------------------------------------------------
 # API keys
 # ---------------------------------------------------------------------------
 
 
+def _hash_api_key(raw_key: str, salt: str) -> str:
+    """Hash an API key with a per-key salt using PBKDF2."""
+    dk = hashlib.pbkdf2_hmac("sha256", raw_key.encode(), salt.encode(), 100_000)
+    return dk.hex()
+
+
 def create_api_key(user_id: int, name: str, expires_at: Optional[str] = None) -> str:
     """
-    Generate a new API key, store only its hash.
+    Generate a new API key, store only its salted hash.
     Returns the *plaintext* key (shown once, never again).
     Format: ``vlair_<32 random hex chars>``
     """
     raw_key = f"vlair_{secrets.token_hex(32)}"
     key_prefix = raw_key[:12]  # "vlair_XXXXXX" – safe to store/display
-    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+    salt = secrets.token_hex(16)
+    key_hash = f"{salt}${_hash_api_key(raw_key, salt)}"
     now = datetime.utcnow().isoformat()
     with _connect() as conn:
         conn.execute(
@@ -295,29 +410,45 @@ def lookup_api_key(raw_key: str) -> Optional[Dict]:
     """
     Validate a raw API key. Returns {user_id, key_id, name} or None.
     Updates ``last_used`` timestamp on hit.
+
+    Supports both legacy (unsalted SHA256) and new (salted PBKDF2) key hashes.
     """
-    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     with _connect() as conn:
-        row = conn.execute(
+        rows = conn.execute(
             """
-            SELECT k.id, k.user_id, k.name, k.is_active, k.expires_at
+            SELECT k.id, k.user_id, k.name, k.is_active, k.expires_at, k.key_hash
             FROM api_keys k
-            WHERE k.key_hash = ?
+            WHERE k.key_prefix = ? AND k.is_active = 1
             """,
-            (key_hash,),
-        ).fetchone()
-        if row is None:
-            return None
-        if not row["is_active"]:
-            return None
+            (raw_key[:12],),
+        ).fetchall()
+
+    for row in rows:
+        stored_hash = row["key_hash"]
+        if "$" in stored_hash:
+            # New salted format: salt$hash
+            salt, expected = stored_hash.split("$", 1)
+            if not secrets.compare_digest(_hash_api_key(raw_key, salt), expected):
+                continue
+        else:
+            # Legacy unsalted SHA256 format
+            if not secrets.compare_digest(
+                hashlib.sha256(raw_key.encode()).hexdigest(), stored_hash
+            ):
+                continue
+
+        # Match found — check expiration
         if row["expires_at"]:
             if datetime.utcnow().isoformat() > row["expires_at"]:
                 return None
-        conn.execute(
-            "UPDATE api_keys SET last_used = ? WHERE id = ?",
-            (datetime.utcnow().isoformat(), row["id"]),
-        )
-    return {"user_id": row["user_id"], "key_id": row["id"], "name": row["name"]}
+        with _connect() as conn:
+            conn.execute(
+                "UPDATE api_keys SET last_used = ? WHERE id = ?",
+                (datetime.utcnow().isoformat(), row["id"]),
+            )
+        return {"user_id": row["user_id"], "key_id": row["id"], "name": row["name"]}
+
+    return None
 
 
 def list_api_keys(user_id: int) -> List[Dict]:
@@ -343,6 +474,53 @@ def revoke_api_key(key_id: int, user_id: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Token revocation
+# ---------------------------------------------------------------------------
+
+
+def revoke_token(jti: str, user_id: int, expires_at: str) -> None:
+    """Add a JWT ID to the revocation list."""
+    now = datetime.utcnow().isoformat()
+    try:
+        with _connect() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO revoked_tokens (jti, user_id, revoked_at, expires_at) VALUES (?, ?, ?, ?)",
+                (jti, user_id, now, expires_at),
+            )
+    except Exception:
+        pass  # best-effort; auth check still validates is_active
+
+
+def is_token_revoked(jti: str) -> bool:
+    """Check if a token has been explicitly revoked."""
+    with _connect() as conn:
+        row = conn.execute("SELECT 1 FROM revoked_tokens WHERE jti = ?", (jti,)).fetchone()
+    return row is not None
+
+
+def revoke_all_user_tokens(user_id: int) -> None:
+    """Revoke all tokens for a user (e.g. on deactivation)."""
+    now = datetime.utcnow().isoformat()
+    try:
+        with _connect() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO revoked_tokens (jti, user_id, revoked_at, expires_at) "
+                "SELECT '__all_before_' || ?, ?, ?, datetime(?, '+7 days')",
+                (now, user_id, now, now),
+            )
+    except Exception:
+        pass
+
+
+def cleanup_expired_revocations() -> int:
+    """Remove revocation entries for tokens that have already expired. Returns count removed."""
+    now = datetime.utcnow().isoformat()
+    with _connect() as conn:
+        result = conn.execute("DELETE FROM revoked_tokens WHERE expires_at < ?", (now,))
+    return result.rowcount
+
+
+# ---------------------------------------------------------------------------
 # Audit log
 # ---------------------------------------------------------------------------
 
@@ -357,6 +535,7 @@ def log_action(
     user_agent: Optional[str] = None,
     status_code: Optional[int] = None,
     detail: Optional[str] = None,
+    request_id: Optional[str] = None,
 ) -> None:
     """Write a single audit record. Fire-and-forget; never raises."""
     try:
@@ -366,8 +545,8 @@ def log_action(
                 """
                 INSERT INTO audit_log
                   (user_id, username, action, resource, ip_address,
-                   user_agent, status_code, detail, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   user_agent, status_code, detail, request_id, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     user_id,
@@ -378,11 +557,84 @@ def log_action(
                     user_agent,
                     status_code,
                     detail,
+                    request_id,
                     now,
                 ),
             )
     except Exception:
         pass  # audit failures must not break the request
+
+
+def rotate_audit_logs(keep_days: int = 90) -> dict:
+    """Archive and remove audit log entries older than keep_days.
+
+    Exports old entries to a gzipped JSON file in ~/.vlair/audit_archive/,
+    then deletes them from the database.
+
+    Returns: {"archived_count": int, "archive_path": str or None}
+    """
+    import gzip
+    from datetime import timedelta
+
+    cutoff = (datetime.utcnow() - timedelta(days=keep_days)).isoformat()
+
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM audit_log WHERE timestamp < ? ORDER BY timestamp ASC",
+            (cutoff,),
+        ).fetchall()
+
+    if not rows:
+        return {"archived_count": 0, "archive_path": None}
+
+    records = [dict(r) for r in rows]
+
+    archive_dir = Path.home() / ".vlair" / "audit_archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"audit_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json.gz"
+    archive_path = archive_dir / filename
+
+    with gzip.open(str(archive_path), "wt", encoding="utf-8") as f:
+        import json as _json
+
+        _json.dump(records, f, indent=2)
+
+    # Delete archived records from the database
+    ids = [r["id"] for r in records]
+    with _connect() as conn:
+        # SQLite has a limit on variables; delete in batches
+        batch_size = 500
+        for i in range(0, len(ids), batch_size):
+            batch = ids[i : i + batch_size]
+            placeholders = ",".join("?" for _ in batch)
+            conn.execute(f"DELETE FROM audit_log WHERE id IN ({placeholders})", batch)
+
+    return {"archived_count": len(records), "archive_path": str(archive_path)}
+
+
+def get_audit_stats() -> dict:
+    """Return audit log statistics: total_entries, oldest_entry, newest_entry, size_by_action."""
+    with _connect() as conn:
+        total_row = conn.execute("SELECT COUNT(*) AS cnt FROM audit_log").fetchone()
+        total = total_row["cnt"] if total_row else 0
+
+        oldest_row = conn.execute("SELECT MIN(timestamp) AS ts FROM audit_log").fetchone()
+        oldest = oldest_row["ts"] if oldest_row else None
+
+        newest_row = conn.execute("SELECT MAX(timestamp) AS ts FROM audit_log").fetchone()
+        newest = newest_row["ts"] if newest_row else None
+
+        action_rows = conn.execute(
+            "SELECT action, COUNT(*) AS cnt FROM audit_log GROUP BY action ORDER BY cnt DESC"
+        ).fetchall()
+        size_by_action = {r["action"]: r["cnt"] for r in action_rows}
+
+    return {
+        "total_entries": total,
+        "oldest_entry": oldest,
+        "newest_entry": newest,
+        "size_by_action": size_by_action,
+    }
 
 
 def get_audit_log(

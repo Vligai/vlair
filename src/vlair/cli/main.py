@@ -517,6 +517,7 @@ Usage:
     vlair analyze <input>      Smart analysis (auto-detect input type)
     vlair workflow <name> <input>  Run pre-built investigation workflow
     vlair investigate <cmd>    Automated investigation commands
+    vlair audit <cmd>          Audit log management (stats, rotate)
     vlair status               Show API key and tool status
     vlair                     Tool browser (interactive menu)
     vlair list                 List all available tools
@@ -923,9 +924,22 @@ def main():
                         print(ai_result["threat_context"])
                         sys.exit(0)
                     elif _summarizer.is_available():
+                        _ioc_type = _AI_TYPE_MAP.get(str(result["type"]), "unknown")
+                        if not quiet and not json_output:
+                            try:
+                                _estimate = _summarizer.estimate_cost(
+                                    result["tool_results"], depth=ai_depth
+                                )
+                                print(
+                                    f"[AI] Estimated cost: ${_estimate['estimated_cost_usd']:.4f} "
+                                    f"({_estimate['estimated_input_tokens']}+{_estimate['estimated_output_tokens']} tokens, "
+                                    f"{_estimate['provider']})",
+                                    file=sys.stderr,
+                                )
+                            except Exception:
+                                pass
                         if not quiet:
                             print("[*] Running AI analysis...", file=sys.stderr)
-                        _ioc_type = _AI_TYPE_MAP.get(str(result["type"]), "unknown")
                         ai_result = _summarizer.summarize(
                             input_value, _ioc_type, result["tool_results"], ai_depth
                         )
@@ -1812,6 +1826,77 @@ def main():
         print("  [+] Interactive investigation mode")
         print("  [+] Report generation (HTML/Markdown)")
         print()
+
+    elif sys.argv[1] == "audit":
+        # Audit log management commands
+        if len(sys.argv) < 3 or sys.argv[2] in ("--help", "-h", "help"):
+            print("Usage: vlair audit <command> [options]")
+            print("\nCommands:")
+            print("  stats              Show audit log statistics")
+            print("  rotate [--days N]  Archive and remove old entries (default: 90 days)")
+            print("\nExamples:")
+            print("  vlair audit stats")
+            print("  vlair audit rotate")
+            print("  vlair audit rotate --days 30")
+            sys.exit(0)
+
+        audit_cmd = sys.argv[2]
+
+        if audit_cmd == "stats":
+            try:
+                from vlair.webapp.auth.models import get_audit_stats, init_db
+
+                init_db()
+                stats = get_audit_stats()
+
+                print("\nAudit Log Statistics")
+                print("=" * 50)
+                print(f"  Total entries:  {stats['total_entries']}")
+                print(f"  Oldest entry:   {stats['oldest_entry'] or 'N/A'}")
+                print(f"  Newest entry:   {stats['newest_entry'] or 'N/A'}")
+
+                if stats["size_by_action"]:
+                    print("\n  Entries by action:")
+                    for action, count in stats["size_by_action"].items():
+                        print(f"    {action:30s}  {count}")
+                else:
+                    print("\n  No entries recorded yet.")
+                print()
+            except Exception as e:
+                print(f"Error reading audit stats: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        elif audit_cmd == "rotate":
+            keep_days = 90
+            args_list = sys.argv[3:]
+            for i, arg in enumerate(args_list):
+                if arg == "--days" and i + 1 < len(args_list):
+                    try:
+                        keep_days = int(args_list[i + 1])
+                    except ValueError:
+                        print("Error: --days must be an integer", file=sys.stderr)
+                        sys.exit(1)
+
+            try:
+                from vlair.webapp.auth.models import rotate_audit_logs, init_db
+
+                init_db()
+                print(f"Rotating audit logs older than {keep_days} days...")
+                result = rotate_audit_logs(keep_days=keep_days)
+
+                if result["archived_count"] == 0:
+                    print("No entries to archive.")
+                else:
+                    print(f"Archived {result['archived_count']} entries.")
+                    print(f"Archive file: {result['archive_path']}")
+            except Exception as e:
+                print(f"Error rotating audit logs: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        else:
+            print(f"Unknown audit command: {audit_cmd}", file=sys.stderr)
+            print("Use 'vlair audit' for help", file=sys.stderr)
+            sys.exit(1)
 
     elif sys.argv[1] == "bot":
         if len(sys.argv) < 3 or sys.argv[2] in ("--help", "-h", "help"):

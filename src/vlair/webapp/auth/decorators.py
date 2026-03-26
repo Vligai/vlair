@@ -34,6 +34,7 @@ from vlair.webapp.auth.models import (
     get_user_by_id,
     lookup_api_key,
     log_action,
+    is_token_revoked,
 )
 from vlair.webapp.auth.utils import verify_access_token
 
@@ -72,6 +73,9 @@ def _resolve_user():
         payload = verify_access_token(cred)
         if payload is None:
             return jsonify({"error": "Invalid or expired token"}), 401
+        jti = payload.get("jti")
+        if jti and is_token_revoked(jti):
+            return jsonify({"error": "Token has been revoked"}), 401
         user = get_user_by_id(int(payload["sub"]))
         if user is None or not user["is_active"]:
             return jsonify({"error": "Account not found or disabled"}), 401
@@ -104,6 +108,7 @@ def _write_audit(status_code: int = 200) -> None:
         ip_address=request.remote_addr,
         user_agent=request.headers.get("User-Agent"),
         status_code=status_code,
+        request_id=g.get("request_id"),
     )
 
 

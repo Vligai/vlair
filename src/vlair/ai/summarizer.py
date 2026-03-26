@@ -76,6 +76,38 @@ class ThreatSummarizer:
         except Exception:
             return False
 
+    def estimate_cost(self, tool_result: dict, depth: str = "standard") -> dict:
+        """Estimate cost before making an AI call.
+
+        Returns dict with: provider, model, estimated_input_tokens,
+        estimated_output_tokens, estimated_cost_usd
+        """
+        from .cache import _COST_PER_1K  # noqa: PLC0415
+        from .prompts import get_system_prompt  # noqa: PLC0415
+
+        # Estimate input tokens: serialized tool_result + system prompt, chars / 4
+        system_prompt = get_system_prompt("unknown")
+        serialized = json.dumps(tool_result, default=str)
+        input_chars = len(serialized) + len(system_prompt)
+        estimated_input_tokens = input_chars // 4
+
+        # Estimate output tokens based on depth
+        depth_output_map = {"quick": 500, "standard": 1500, "thorough": 3000}
+        estimated_output_tokens = depth_output_map.get(depth, 1500)
+
+        # Look up cost rate
+        provider_name = self.config.provider or "anthropic"
+        rate = _COST_PER_1K.get(provider_name, 0.009)
+        estimated_cost = (estimated_input_tokens + estimated_output_tokens) / 1000 * rate
+
+        return {
+            "provider": provider_name,
+            "model": self.config.model,
+            "estimated_input_tokens": estimated_input_tokens,
+            "estimated_output_tokens": estimated_output_tokens,
+            "estimated_cost_usd": round(estimated_cost, 6),
+        }
+
     def summarize(
         self,
         ioc_value: str,
