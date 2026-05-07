@@ -54,6 +54,7 @@ from datetime import datetime
 from typing import Optional
 
 from flask import Flask, g, jsonify, request, send_from_directory, render_template
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 # ---------------------------------------------------------------------------
@@ -124,7 +125,6 @@ def create_app() -> Flask:
     def _set_security_headers(response):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
@@ -150,6 +150,10 @@ def create_app() -> Flask:
     @app.errorhandler(500)
     def internal(_err):
         return jsonify({"error": "Internal server error"}), 500
+
+    # Trust one upstream proxy hop (Nginx/Caddy/cloud LB) so that
+    # request.is_secure reflects the original client's protocol and HSTS fires.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     return app
 

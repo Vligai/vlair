@@ -26,6 +26,18 @@ Production deployment guide covering secrets, networking, database, and operatio
 - The app sets `Strict-Transport-Security` automatically when `request.is_secure` is true.
 - Redirect all HTTP traffic to HTTPS at the proxy level.
 
+### Reverse proxy configuration (required for HSTS)
+
+The app uses `werkzeug.middleware.proxy_fix.ProxyFix(x_proto=1, x_host=1)`, which trusts **exactly one** upstream proxy hop. This is required for `request.is_secure` to reflect the original client's protocol when Flask is behind a TLS-terminating proxy.
+
+If your deployment adds more proxy layers (e.g., a cloud load balancer in front of Nginx), increment the hop count in `create_app()` accordingly:
+
+```python
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=2, x_host=2)  # two hops
+```
+
+**Do not set `x_proto` higher than the actual number of trusted proxy hops** — over-trusting allows clients to spoof `X-Forwarded-Proto`.
+
 ### Example Nginx snippet
 
 ```nginx
