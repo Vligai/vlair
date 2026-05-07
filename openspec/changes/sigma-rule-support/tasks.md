@@ -39,10 +39,10 @@
 
 ## 6. Workflow integration
 
-- [ ] 6.1 `workflows/log_investigation.py` adds a "sigma_evaluation" step before the existing pattern step
-- [ ] 6.2 Step uses the bundled pack; honors `--sigma` flag override
-- [ ] 6.3 Workflow report (markdown/html) renders Sigma matches with rule links
-- [ ] 6.4 Tests: workflow runs end-to-end on a fixture log file
+- [x] 6.1 `workflows/log_investigation.py` adds a "sigma_evaluation" step before the existing pattern step
+- [x] 6.2 Step uses the bundled pack; honors `--sigma` flag override
+- [x] 6.3 Workflow report (markdown/html) renders Sigma matches with rule links
+- [x] 6.4 Tests: workflow runs end-to-end on a fixture log file
 
 ## 7. Webapp
 

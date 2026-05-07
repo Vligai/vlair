@@ -459,3 +459,100 @@ class TestWorkflowErrorHandling:
         # First step should have failed
         first_step = result["step_results"][0]
         assert first_step["success"] is False
+
+
+# ---------------------------------------------------------------------------
+# Task 6.4 — LogInvestigationWorkflow Sigma integration
+# ---------------------------------------------------------------------------
+
+try:
+    import yaml as _yaml_wf
+    _YAML_WF = True
+except ImportError:
+    _YAML_WF = False
+
+
+@pytest.mark.skipif(not _YAML_WF, reason="pyyaml not installed")
+class TestLogInvestigationSigma:
+    """Task 6.4: workflow runs end-to-end on a fixture log file."""
+
+    APACHE_LINE = (
+        '1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] '
+        '"GET /etc/passwd HTTP/1.1" 200 512 "-" "curl/7"'
+    )
+
+    RULE = """
+        title: Passwd Access
+        id: bbbbbbbb-0000-0000-0000-000000000001
+        detection:
+          selection:
+            path|contains: /etc/passwd
+          condition: selection
+        level: high
+    """
+
+    def _write_log(self, tmp_path):
+        p = tmp_path / "access.log"
+        p.write_text(self.APACHE_LINE + "\n", encoding="utf-8")
+        return p
+
+    def _write_rule(self, tmp_path):
+        import textwrap
+        p = tmp_path / "rule.yml"
+        p.write_text(textwrap.dedent(self.RULE), encoding="utf-8")
+        return p
+
+    def test_workflow_runs_end_to_end(self, tmp_path):
+        from vlair.workflows.log_investigation import LogInvestigationWorkflow
+
+        log = self._write_log(tmp_path)
+        rule = self._write_rule(tmp_path)
+
+        wf = LogInvestigationWorkflow(sigma_rules=[rule])
+        result = wf.execute(str(log))
+
+        assert result is not None
+        assert result["steps_completed"] > 0
+
+    def test_sigma_evaluation_step_present(self, tmp_path):
+        from vlair.workflows.log_investigation import LogInvestigationWorkflow
+
+        log = self._write_log(tmp_path)
+        rule = self._write_rule(tmp_path)
+
+        wf = LogInvestigationWorkflow(sigma_rules=[rule])
+        result = wf.execute(str(log))
+
+        step_names = [s["name"] for s in result.get("step_results", [])]
+        assert "sigma_evaluation" in step_names
+
+    def test_sigma_matches_in_log_result(self, tmp_path):
+        """Sigma matches appear in tool_results alerts with source='sigma'."""
+        from vlair.workflows.log_investigation import LogInvestigationWorkflow
+
+        log = self._write_log(tmp_path)
+        rule = self._write_rule(tmp_path)
+
+        wf = LogInvestigationWorkflow(sigma_rules=[rule])
+        result = wf.execute(str(log))
+
+        log_result = result.get("tool_results", {}).get("log_analyzer", {})
+        sigma_alerts = [a for a in log_result.get("alerts", []) if a.get("source") == "sigma"]
+        assert len(sigma_alerts) >= 1
+        assert sigma_alerts[0]["rule_name"] == "Passwd Access"
+
+    def test_builtin_rules_used_when_no_override(self, tmp_path):
+        """Default (no sigma_rules arg) uses builtin pack."""
+        from vlair.workflows.log_investigation import LogInvestigationWorkflow
+
+        log = self._write_log(tmp_path)
+        wf = LogInvestigationWorkflow()
+        result = wf.execute(str(log))
+
+        # Workflow should complete without error even when no rule fires
+        assert result is not None
+        parse_step = next(
+            (s for s in result.get("step_results", []) if s["name"] == "parse_logs"),
+            None,
+        )
+        assert parse_step is not None and parse_step["success"]

@@ -40,6 +40,10 @@ class LogInvestigationWorkflow(Workflow):
     def description(self) -> str:
         return "Security log investigation"
 
+    def __init__(self, verbose: bool = False, sigma_rules=None):
+        self._sigma_rules = sigma_rules  # None → use builtin pack; "builtin" or path → override
+        super().__init__(verbose=verbose)
+
     def _define_steps(self):
         self.steps = [
             WorkflowStep(
@@ -47,6 +51,13 @@ class LogInvestigationWorkflow(Workflow):
                 description="Parse and analyze log file",
                 tool="log_analyzer",
                 required=True,
+            ),
+            WorkflowStep(
+                name="sigma_evaluation",
+                description="Evaluate Sigma rules against log events",
+                tool="sigma",
+                required=False,
+                depends_on=["parse_logs"],
             ),
             WorkflowStep(
                 name="detect_attacks",
@@ -94,6 +105,8 @@ class LogInvestigationWorkflow(Workflow):
     def _execute_step(self, step: WorkflowStep, context: WorkflowContext) -> StepResult:
         if step.name == "parse_logs":
             return self._parse_logs(context)
+        elif step.name == "sigma_evaluation":
+            return self._sigma_evaluation(context)
         elif step.name == "detect_attacks":
             return self._detect_attacks(context)
         elif step.name == "detect_bruteforce":
@@ -110,18 +123,22 @@ class LogInvestigationWorkflow(Workflow):
             return StepResult(step_name=step.name, success=False, error="Unknown step")
 
     def _parse_logs(self, context: WorkflowContext) -> StepResult:
-        """Parse log file"""
+        """Parse log file using analyze_file() with Sigma rules."""
         try:
             from vlair.tools.log_analyzer import LogAnalyzer
 
+            sigma_rules = self._sigma_rules if self._sigma_rules is not None else "builtin"
+
             analyzer = LogAnalyzer(verbose=self.verbose)
-            result = analyzer.analyze(context.input_value)
+            result = analyzer.analyze_file(context.input_value, sigma_rules=sigma_rules)
 
             context.add_tool_result("log_analyzer", result)
             context.data["log_result"] = result
 
-            stats = result.get("statistics", {})
-            self._log(f"  Analyzed {stats.get('total_entries', 0)} log entries")
+            meta = result.get("metadata", {})
+            self._log(f"  Analyzed {meta.get('total_entries', 0)} log entries")
+            if "sigma_rules_evaluated" in meta:
+                self._log(f"  Sigma: {meta['sigma_rules_evaluated']} rules evaluated")
 
             return StepResult(step_name="parse_logs", success=True, data=result)
 
@@ -132,125 +149,143 @@ class LogInvestigationWorkflow(Workflow):
         except Exception as e:
             return StepResult(step_name="parse_logs", success=False, error=str(e))
 
-    def _detect_attacks(self, context: WorkflowContext) -> StepResult:
-        """Detect web attacks"""
+    def _sigma_evaluation(self, context: WorkflowContext) -> StepResult:
+        """Process Sigma matches from log_result and add to scorer."""
         log_result = context.data.get("log_result", {})
-        threats = log_result.get("threats", {})
+        sigma_alerts = [a for a in log_result.get("alerts", []) if a.get("source") == "sigma"]
 
-        attack_counts = {}
-
-        # SQL Injection
-        sqli = threats.get("sql_injection", [])
-        if sqli:
-            attack_counts["sql_injection"] = len(sqli)
-            context.scorer.add_finding(
-                Severity.CRITICAL,
-                f"Detected {len(sqli)} SQL injection attempts",
-                "log_analyzer",
-                {"count": len(sqli), "samples": sqli[:3]},
+        if not sigma_alerts:
+            return StepResult(
+                step_name="sigma_evaluation", success=True, data={"sigma_matches": 0}
             )
 
-        # XSS
-        xss = threats.get("xss", [])
-        if xss:
-            attack_counts["xss"] = len(xss)
+        # Group by level for max-of-levels scoring
+        by_level: Dict[str, list] = {}
+        for alert in sigma_alerts:
+            level = (alert.get("level") or "medium").lower()
+            by_level.setdefault(level, []).append(alert)
+
+        _level_to_sev = {
+            "informational": Severity.INFO,
+            "low": Severity.LOW,
+            "medium": Severity.MEDIUM,
+            "high": Severity.HIGH,
+            "critical": Severity.CRITICAL,
+        }
+
+        for level, alerts in by_level.items():
+            severity = _level_to_sev.get(level, Severity.MEDIUM)
+            sample = alerts[0]
             context.scorer.add_finding(
-                Severity.HIGH,
-                f"Detected {len(xss)} XSS attempts",
-                "log_analyzer",
-                {"count": len(xss), "samples": xss[:3]},
+                severity,
+                f"Sigma [{level}]: {sample.get('rule_name', 'Unknown')} (+{len(alerts) - 1} more at this level)",
+                "sigma",
+                {"sigma_level": level, "match_count": len(alerts), "rule_link": sample.get("rule_link", "")},
             )
 
-        # Path Traversal
-        traversal = threats.get("path_traversal", [])
-        if traversal:
-            attack_counts["path_traversal"] = len(traversal)
-            context.scorer.add_finding(
-                Severity.HIGH,
-                f"Detected {len(traversal)} path traversal attempts",
-                "log_analyzer",
-                {"count": len(traversal), "samples": traversal[:3]},
-            )
+        context.data["sigma_matches"] = sigma_alerts
+        self._log(f"  {len(sigma_alerts)} Sigma match(es) across {len(by_level)} level(s)")
 
-        # Command Injection
-        cmd_injection = threats.get("command_injection", [])
-        if cmd_injection:
-            attack_counts["command_injection"] = len(cmd_injection)
+        return StepResult(
+            step_name="sigma_evaluation",
+            success=True,
+            data={"sigma_matches": len(sigma_alerts), "levels": list(by_level.keys())},
+        )
+
+    def _detect_attacks(self, context: WorkflowContext) -> StepResult:
+        """Detect web attacks from pattern alerts."""
+        log_result = context.data.get("log_result", {})
+        pattern_alerts = [a for a in log_result.get("alerts", []) if a.get("source") == "pattern"]
+
+        attack_counts: Dict[str, Any] = {}
+
+        _type_to_sev = {
+            "sql_injection": Severity.CRITICAL,
+            "xss": Severity.HIGH,
+            "path_traversal": Severity.HIGH,
+            "scanner_detected": Severity.MEDIUM,
+        }
+
+        for alert in pattern_alerts:
+            atype = alert.get("type", "unknown")
+            if atype in _type_to_sev:
+                attack_counts[atype] = attack_counts.get(atype, 0) + 1
+
+        for atype, count in attack_counts.items():
+            severity = _type_to_sev.get(atype, Severity.MEDIUM)
             context.scorer.add_finding(
-                Severity.CRITICAL,
-                f"Detected {len(cmd_injection)} command injection attempts",
+                severity,
+                f"Detected {count} {atype.replace('_', ' ')} attempt(s)",
                 "log_analyzer",
-                {"count": len(cmd_injection), "samples": cmd_injection[:3]},
+                {"count": count, "type": atype},
             )
 
         context.data["attack_counts"] = attack_counts
         return StepResult(step_name="detect_attacks", success=True, data=attack_counts)
 
     def _detect_bruteforce(self, context: WorkflowContext) -> StepResult:
-        """Detect brute force attempts"""
+        """Detect brute force attempts from pattern alerts."""
         log_result = context.data.get("log_result", {})
-        threats = log_result.get("threats", {})
+        bf_alerts = [
+            a for a in log_result.get("alerts", [])
+            if a.get("source") == "pattern" and a.get("type") == "brute_force_attempt"
+        ]
 
-        brute_force = threats.get("brute_force", [])
-        if brute_force:
+        if bf_alerts:
             context.scorer.add_finding(
                 Severity.MEDIUM,
-                f"Detected brute force activity from {len(brute_force)} sources",
+                f"Detected brute force activity ({len(bf_alerts)} event(s))",
                 "log_analyzer",
-                {"sources": brute_force[:5]},
+                {"count": len(bf_alerts)},
             )
+            for alert in bf_alerts:
+                ip = alert.get("source_ip")
+                if ip:
+                    context.add_iocs("ips", [ip])
 
-            # Add brute force IPs to attacker list
-            for entry in brute_force:
-                if isinstance(entry, dict) and entry.get("ip"):
-                    context.add_iocs("ips", [entry["ip"]])
-                elif isinstance(entry, str):
-                    context.add_iocs("ips", [entry])
-
-        context.data["brute_force_count"] = len(brute_force)
+        context.data["brute_force_count"] = len(bf_alerts)
         return StepResult(
-            step_name="detect_bruteforce", success=True, data={"count": len(brute_force)}
+            step_name="detect_bruteforce", success=True, data={"count": len(bf_alerts)}
         )
 
     def _detect_scanners(self, context: WorkflowContext) -> StepResult:
-        """Detect scanner activity"""
+        """Detect scanner activity from pattern alerts."""
         log_result = context.data.get("log_result", {})
-        threats = log_result.get("threats", {})
+        scanner_alerts = [
+            a for a in log_result.get("alerts", [])
+            if a.get("source") == "pattern" and a.get("type") == "scanner_detected"
+        ]
 
-        scanners = threats.get("scanners", [])
-        if scanners:
+        if scanner_alerts:
             context.scorer.add_finding(
                 Severity.LOW,
-                f"Detected scanner activity from {len(scanners)} sources",
+                f"Detected scanner activity ({len(scanner_alerts)} event(s))",
                 "log_analyzer",
-                {"sources": scanners[:5]},
+                {"count": len(scanner_alerts)},
             )
+            for alert in scanner_alerts:
+                ip = alert.get("source_ip")
+                if ip:
+                    context.add_iocs("ips", [ip])
 
-            # Add scanner IPs
-            for entry in scanners:
-                if isinstance(entry, dict) and entry.get("ip"):
-                    context.add_iocs("ips", [entry["ip"]])
-
-        context.data["scanner_count"] = len(scanners)
-        return StepResult(step_name="detect_scanners", success=True, data={"count": len(scanners)})
+        context.data["scanner_count"] = len(scanner_alerts)
+        return StepResult(step_name="detect_scanners", success=True, data={"count": len(scanner_alerts)})
 
     def _extract_attackers(self, context: WorkflowContext) -> StepResult:
-        """Extract unique attacker IPs"""
+        """Extract unique attacker IPs from alert source_ip fields."""
         log_result = context.data.get("log_result", {})
-        threats = log_result.get("threats", {})
+        attacker_ips: set = set()
 
-        attacker_ips = set()
-
-        # Collect IPs from all threat categories
-        for threat_type, entries in threats.items():
-            if isinstance(entries, list):
-                for entry in entries:
-                    if isinstance(entry, dict) and entry.get("ip"):
-                        attacker_ips.add(entry["ip"])
-                    elif isinstance(entry, str):
-                        # Check if it looks like an IP
-                        if entry.count(".") == 3:
-                            attacker_ips.add(entry)
+        for alert in log_result.get("alerts", []):
+            ip = alert.get("source_ip")
+            if ip:
+                attacker_ips.add(ip)
+            # Sigma match matched_event may also carry source_ip
+            matched = alert.get("matched_event", {})
+            if isinstance(matched, dict):
+                ip2 = matched.get("source_ip")
+                if ip2:
+                    attacker_ips.add(ip2)
 
         context.add_iocs("ips", list(attacker_ips))
         context.data["attacker_ips"] = list(attacker_ips)
@@ -338,17 +373,32 @@ class LogInvestigationWorkflow(Workflow):
         if attack_counts.get("command_injection", 0) > 0:
             recommendations.append("Check for unauthorized process execution")
 
+        # Sigma match summary for report (task 6.3)
+        sigma_matches = context.data.get("sigma_matches", [])
+        sigma_summary = []
+        for m in sigma_matches[:20]:
+            entry = {
+                "rule_name": m.get("rule_name", "Unknown"),
+                "level": m.get("level", "medium"),
+                "match_count": m.get("match_count", 1),
+                "mitre_attack": m.get("mitre_attack", []),
+            }
+            if m.get("rule_link"):
+                entry["rule_link"] = m["rule_link"]
+            sigma_summary.append(entry)
+
         return StepResult(
             step_name="generate_report",
             success=True,
             data={
-                "total_entries": log_result.get("statistics", {}).get("total_entries", 0),
+                "total_entries": log_result.get("metadata", {}).get("total_entries", 0),
                 "total_attacks": total_attacks,
                 "attack_breakdown": attack_counts,
                 "unique_attackers": len(context.data.get("attacker_ips", [])),
                 "known_malicious_ips": context.data.get("ip_check_results", {}).get(
                     "known_malicious", 0
                 ),
+                "sigma_matches": sigma_summary,
                 "risk_score": summary["risk_score"],
                 "verdict": summary["verdict"],
                 "recommendations": recommendations,
