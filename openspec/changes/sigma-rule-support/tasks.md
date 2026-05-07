@@ -46,10 +46,10 @@
 
 ## 7. Webapp
 
-- [ ] 7.1 `POST /api/log/analyze` accepts `sigma_rules` field; uses `_validate_path` for filesystem paths
-- [ ] 7.2 Response includes Sigma-related fields documented in the log-analysis spec
-- [ ] 7.3 SPA log analysis result page renders a Sigma matches table with severity color-coding
-- [ ] 7.4 Tests: webapp endpoint returns expected schema; SPA component renders both empty and populated states
+- [x] 7.1 `POST /api/log/analyze` accepts `sigma_rules` field; uses `_validate_path` for filesystem paths
+- [x] 7.2 Response includes Sigma-related fields documented in the log-analysis spec
+- [x] 7.3 SPA log analysis result page renders a Sigma matches table with severity color-coding
+- [x] 7.4 Tests: webapp endpoint returns expected schema; SPA component renders both empty and populated states
 
 ## 8. Performance and benchmark
 

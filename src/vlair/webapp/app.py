@@ -403,11 +403,13 @@ def _register_tool_routes(app: Flask) -> None:
     @app.post("/api/log/analyze")
     @require_role(Role.ANALYST)
     def analyze_logs():
-        """Analyze security log files."""
+        """Analyze security log files, optionally with Sigma rules."""
         try:
             from vlair.tools.log_analyzer import LogAnalyzer
 
             log_type = request.form.get("log_type", "auto")
+            sigma_rules = None
+            sigma_min_level = "low"
             temp_path = None
 
             if "file" in request.files:
@@ -415,33 +417,58 @@ def _register_tool_routes(app: Flask) -> None:
                 if not f or not _allowed(f.filename, "log"):
                     return jsonify({"error": "Invalid file type"}), 400
                 temp_path = _save_upload(f, "log")
+                # multipart/form-data sigma params
+                sigma_param = request.form.get("sigma_rules", "").strip()
+                sigma_min_level = request.form.get("sigma_min_level", "low").strip()
             else:
                 data = request.get_json(silent=True) or {}
                 text = data.get("log_text", "")
                 if not text:
                     return jsonify({"error": "No log file or text provided"}), 400
                 log_type = data.get("log_type", "auto")
+                sigma_param = str(data.get("sigma_rules", "")).strip()
+                sigma_min_level = str(data.get("sigma_min_level", "low")).strip()
                 temp_path = os.path.join(tempfile.gettempdir(), f"vlair_log_{os.getpid()}.log")
                 with open(temp_path, "w") as fh:
                     fh.write(text)
 
+            # Resolve sigma_rules param — "builtin" passes through; filesystem paths are validated
+            if sigma_param == "builtin":
+                sigma_rules = "builtin"
+            elif sigma_param:
+                try:
+                    sigma_rules = _validate_path(sigma_param)
+                except ValueError as ve:
+                    return jsonify({"error": str(ve)}), 400
+
             try:
                 analyzer = LogAnalyzer()
-                results = analyzer.analyze_file(temp_path, log_type=log_type)
+                results = analyzer.analyze_file(
+                    temp_path,
+                    log_type=log_type,
+                    sigma_rules=sigma_rules,
+                    sigma_min_level=sigma_min_level,
+                )
             finally:
                 if temp_path and os.path.exists(temp_path):
                     os.remove(temp_path)
 
-            return jsonify(
-                {
-                    "success": True,
-                    "timestamp": datetime.utcnow().isoformat() + "Z",
-                    "statistics": results.get("statistics", {}),
-                    "alerts": results.get("alerts", []),
-                    "top_ips": results.get("top_ips", []),
-                    "top_paths": results.get("top_paths", []),
-                }
-            )
+            meta = results.get("metadata", {})
+            response: dict = {
+                "success": True,
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "statistics": results.get("statistics", {}),
+                "alerts": results.get("alerts", []),
+                "top_ips": results.get("top_ips", []),
+                "top_paths": results.get("top_paths", []),
+            }
+            # Sigma metadata (task 7.2)
+            if "sigma_rules_loaded" in meta:
+                response["sigma_rules_loaded"] = meta["sigma_rules_loaded"]
+                response["sigma_rules_evaluated"] = meta["sigma_rules_evaluated"]
+                response["skipped_rules"] = meta.get("skipped_rules", [])
+
+            return jsonify(response)
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 

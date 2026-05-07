@@ -1024,3 +1024,93 @@ class TestFileCarverEndpoint:
             content_type="multipart/form-data",
         )
         assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Task 7.4 — POST /api/log/analyze sigma fields in response schema
+# ---------------------------------------------------------------------------
+
+try:
+    import yaml as _yaml_webapp
+    _YAML_WEBAPP = True
+except ImportError:
+    _YAML_WEBAPP = False
+
+
+@pytest.mark.skipif(not _YAML_WEBAPP, reason="pyyaml not installed")
+class TestLogAnalyzeSigmaEndpoint:
+    """Task 7.4: webapp endpoint returns expected sigma schema."""
+
+    def setup_method(self):
+        self.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        self.temp_db.close()
+        os.environ["VLAIR_WEBAPP_DB"] = self.temp_db.name
+
+        from vlair.webapp.app import create_app
+        from vlair.webapp.auth.models import create_user
+
+        self.app = create_app()
+        self.app.config["TESTING"] = True
+        self.client = self.app.test_client()
+        create_user("sigmauser", "sigma@example.com", "password123")
+
+    def teardown_method(self):
+        try:
+            os.unlink(self.temp_db.name)
+        except Exception:
+            pass
+
+    def _token(self):
+        resp = self.client.post("/api/auth/login", json={"username": "sigmauser", "password": "password123"})
+        return resp.get_json()["access_token"]
+
+    def _log_line(self):
+        return '1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] "GET /index.html HTTP/1.1" 200 512 "-" "curl/7"'
+
+    def test_sigma_builtin_adds_metadata_fields(self):
+        """sigma_rules=builtin causes sigma metadata in response."""
+        token = self._token()
+        resp = self.client.post(
+            "/api/log/analyze",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"log_text": self._log_line(), "sigma_rules": "builtin"},
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "sigma_rules_loaded" in data
+        assert "sigma_rules_evaluated" in data
+        assert "skipped_rules" in data
+
+    def test_no_sigma_no_metadata(self):
+        """Without sigma_rules, response has no sigma fields."""
+        token = self._token()
+        resp = self.client.post(
+            "/api/log/analyze",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"log_text": self._log_line()},
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "sigma_rules_evaluated" not in data
+
+    def test_sigma_path_outside_safe_root_rejected(self):
+        """Filesystem path outside safe root returns 400."""
+        token = self._token()
+        resp = self.client.post(
+            "/api/log/analyze",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"log_text": self._log_line(), "sigma_rules": "/etc/passwd"},
+        )
+        assert resp.status_code == 400
+
+    def test_alerts_have_source_field(self):
+        """All alerts in response carry a source field."""
+        token = self._token()
+        resp = self.client.post(
+            "/api/log/analyze",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"log_text": self._log_line(), "sigma_rules": "builtin"},
+        )
+        assert resp.status_code == 200
+        for alert in resp.get_json().get("alerts", []):
+            assert "source" in alert

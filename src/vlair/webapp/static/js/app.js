@@ -361,7 +361,7 @@ const ToolView = {
           <div class="form-group">
             <label class="form-label">Upload log file (.log / .txt)</label>
             <label class="btn btn-secondary" style="cursor:pointer">
-              📎 Choose Log File
+              Choose Log File
               <input type="file" style="display:none" accept=".log,.txt" @change="onFileChange($event,'log')" />
             </label>
             <span class="text-muted" style="font-size:12px;margin-left:8px">{{ fileName || 'No file selected' }}</span>
@@ -372,6 +372,23 @@ const ToolView = {
               <option value="auto">Auto-detect</option>
               <option value="apache">Apache/Nginx access</option>
               <option value="syslog">Syslog</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sigma rules</label>
+            <select v-model="sigmaRules" class="form-control">
+              <option value="">None (pattern detection only)</option>
+              <option value="builtin">Builtin rule pack</option>
+            </select>
+          </div>
+          <div class="form-group" v-if="sigmaRules === 'builtin'">
+            <label class="form-label">Minimum Sigma level</label>
+            <select v-model="sigmaMinLevel" class="form-control">
+              <option value="informational">Informational</option>
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
             </select>
           </div>
           <button class="btn btn-primary" :disabled="running || !uploadedFile" @click="runLog">
@@ -632,17 +649,36 @@ const ToolView = {
             <div class="stats-grid">
               <div class="stat-card stat-card-sm"><div class="stat-value">{{ result.statistics?.total_lines }}</div><div class="stat-label">Log Lines</div></div>
               <div class="stat-card stat-card-sm stat-malicious"><div class="stat-value">{{ result.statistics?.attacks_detected }}</div><div class="stat-label">Attacks</div></div>
+              <div class="stat-card stat-card-sm" v-if="result.sigma_rules_evaluated != null"><div class="stat-value">{{ result.sigma_rules_evaluated }}</div><div class="stat-label">Sigma Rules</div></div>
             </div>
           </div>
-          <div class="card" v-if="result.alerts?.length">
-            <div class="card-title">Alerts</div>
+          <!-- Sigma matches table (task 7.3) -->
+          <div class="card" v-if="sigmaAlerts.length">
+            <div class="card-title">Sigma Matches ({{ sigmaAlerts.length }})</div>
             <div class="table-wrap">
-              <table><thead><tr><th>Type</th><th>Severity</th><th>Count</th></tr></thead>
+              <table>
+                <thead><tr><th>Rule</th><th>Level</th><th>Hits</th><th>MITRE</th><th>Ref</th></tr></thead>
+                <tbody>
+                  <tr v-for="m in sigmaAlerts" :key="m.rule_id">
+                    <td>{{ m.rule_name }}</td>
+                    <td><span :class="'sev-badge sev-' + sigmaLevelSev(m.level)">{{ m.level }}</span></td>
+                    <td>{{ m.match_count }}</td>
+                    <td>{{ (m.mitre_attack || []).join(', ') || '-' }}</td>
+                    <td><a v-if="m.rule_link" :href="m.rule_link" target="_blank" rel="noreferrer" style="font-size:11px">ref</a><span v-else>-</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card" v-if="patternAlerts.length">
+            <div class="card-title">Pattern Alerts ({{ patternAlerts.length }})</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Type</th><th>Severity</th><th>Description</th></tr></thead>
               <tbody>
-                <tr v-for="a in result.alerts" :key="a.type">
+                <tr v-for="(a,i) in patternAlerts" :key="i">
                   <td>{{ a.type }}</td>
                   <td><span :class="'sev-badge sev-' + a.severity">{{ a.severity }}</span></td>
-                  <td>{{ a.count }}</td>
+                  <td style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.description }}</td>
                 </tr>
               </tbody></table>
             </div>
@@ -1038,6 +1074,8 @@ const ToolView = {
     const intelTarget  = ref("");
     const urlText      = ref("");
     const logFormat    = ref("auto");
+    const sigmaRules   = ref("");
+    const sigmaMinLevel = ref("medium");
     const yaraRules    = ref("");
     const certHost     = ref(""); const certPort = ref(443);
     const deobLang     = ref("auto"); const deobCode = ref("");
@@ -1088,6 +1126,8 @@ const ToolView = {
       const fd = new FormData();
       fd.append("file", uploadedFile.value);
       fd.append("format", logFormat.value);
+      if (sigmaRules.value) fd.append("sigma_rules", sigmaRules.value);
+      if (sigmaRules.value) fd.append("sigma_min_level", sigmaMinLevel.value);
       await runTool("/api/log/analyze", fd);
     }
     async function runEml() {
@@ -1149,15 +1189,23 @@ const ToolView = {
       ];
     });
 
+    // Sigma helpers (task 7.3)
+    const sigmaAlerts = computed(() => (result.value?.alerts || []).filter(a => a.source === 'sigma'));
+    const patternAlerts = computed(() => (result.value?.alerts || []).filter(a => a.source === 'pattern'));
+    function sigmaLevelSev(level) {
+      return { critical: 'critical', high: 'high', medium: 'medium', low: 'low', informational: 'info' }[level] || 'info';
+    }
+
     return {
       toolId, tool, running, error, result, resultFormatted,
       iocText, uploadedFile, fileName, hashText, intelTarget, urlText,
-      logFormat, yaraRules, certHost, certPort, deobLang, deobCode, feedQuery,
+      logFormat, sigmaRules, sigmaMinLevel, yaraRules, certHost, certPort, deobLang, deobCode, feedQuery,
       onFileChange, runIoc, runHash, runIntel, runUrl, runLog, runEml,
       runYara, runCert, runDeobfus, runPcap, runFeedSearch, runFeedUpdate, runCarve,
       copyResult,
       showRaw, hashChartCanvas, pcapChartCanvas, iocChartCanvas,
       riskColor, triggeredChecks, authBadge, formatSize, formatDns, hasIocs, copyText, allHashes,
+      sigmaAlerts, patternAlerts, sigmaLevelSev,
       aiResult, aiLoading, aiError, runAiAnalysis, AI_TOOLS,
     };
   },
