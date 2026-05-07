@@ -1,19 +1,19 @@
 ## 1. Dependencies and bundled assets
 
-- [ ] 1.1 Add `pySigma>=0.10,<0.12` as a new optional dep `[sigma]` in `pyproject.toml`; include in `[all]`
-- [ ] 1.2 Create `src/vlair/data/sigma_rules/` directory; commit ~50 curated rules from SigmaHQ with attribution `LICENSE` file
-- [ ] 1.3 Create `src/vlair/data/sigma_field_map.yml` mapping common Sigma fields to vlair event fields
-- [ ] 1.4 Tests: validate the field-map file loads and contains entries for all bundled-pack rule fields
+- [x] 1.1 Add `pySigma>=0.10,<0.12` as a new optional dep `[sigma]` in `pyproject.toml`; include in `[all]`
+- [x] 1.2 Create `src/vlair/data/sigma_rules/` directory; commit ~50 curated rules from SigmaHQ with attribution `LICENSE` file
+- [x] 1.3 Create `src/vlair/data/sigma_field_map.yml` mapping common Sigma fields to vlair event fields
+- [x] 1.4 Tests: validate the field-map file loads and contains entries for all bundled-pack rule fields
 
 ## 2. Sigma engine
 
-- [ ] 2.1 New `tools/sigma_engine.py` with `SigmaEngine` class: `__init__(rule_paths, field_map_path, min_level)`
-- [ ] 2.2 Rule loader: walks paths, parses with pySigma, captures parse errors per file
-- [ ] 2.3 Field-mapping resolver: rejects rules with unmapped fields, populates `skipped_rules`
-- [ ] 2.4 Modifier evaluators: `contains`, `startswith`, `endswith`, `re`, `cidr`, `all`, `any`, comparison operators
-- [ ] 2.5 Condition evaluator: walks pySigma's condition AST (selections, logical ops, `1/all of`)
-- [ ] 2.6 De-duplication per `(rule_id, src_ip)` with `match_count` and event window
-- [ ] 2.7 Tests: per-modifier unit tests; condition combinations; rule-loading edge cases
+- [x] 2.1 New `tools/sigma_engine.py` with `SigmaEngine` class: `__init__(rule_paths, field_map_path, min_level)`
+- [x] 2.2 Rule loader: walks paths, parses with pySigma, captures parse errors per file
+- [x] 2.3 Field-mapping resolver: rejects rules with unmapped fields, populates `skipped_rules`
+- [x] 2.4 Modifier evaluators: `contains`, `startswith`, `endswith`, `re`, `cidr`, `all`, `any`, comparison operators
+- [x] 2.5 Condition evaluator: walks pySigma's condition AST (selections, logical ops, `1/all of`)
+- [x] 2.6 De-duplication per `(rule_id, src_ip)` with `match_count` and event window
+- [x] 2.7 Tests: per-modifier unit tests; condition combinations; rule-loading edge cases
 
 ## 3. LogAnalyzer integration
 
