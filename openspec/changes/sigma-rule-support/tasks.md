@@ -31,11 +31,11 @@
 
 ## 5. CLI
 
-- [ ] 5.1 `vlair log analyze --sigma <path|builtin>` and `--sigma-min-level <level>`
-- [ ] 5.2 `vlair analyze` (smart mode) auto-detects `.log` and applies the same flags
-- [ ] 5.3 New subcommand `vlair sigma test <rule.yml> <event.json|-->` for rule authors
-- [ ] 5.4 Console output: dedicated "Sigma matches" section above pattern matches
-- [ ] 5.5 Tests: each CLI flag round-trips into the engine; `vlair sigma test` exit codes 0/1
+- [x] 5.1 `vlair log analyze --sigma <path|builtin>` and `--sigma-min-level <level>`
+- [x] 5.2 `vlair analyze` (smart mode) auto-detects `.log` and applies the same flags
+- [x] 5.3 New subcommand `vlair sigma test <rule.yml> <event.json|-->` for rule authors
+- [x] 5.4 Console output: dedicated "Sigma matches" section above pattern matches
+- [x] 5.5 Tests: each CLI flag round-trips into the engine; `vlair sigma test` exit codes 0/1
 
 ## 6. Workflow integration
 

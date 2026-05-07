@@ -59,12 +59,19 @@ class Analyzer:
         if self.verbose:
             print(f"[*] {message}", file=sys.stderr)
 
-    def analyze(self, input_value: str) -> Dict[str, Any]:
+    def analyze(
+        self,
+        input_value: str,
+        sigma_rules=None,
+        sigma_min_level: str = "low",
+    ) -> Dict[str, Any]:
         """
         Analyze the input and return results.
 
         Args:
             input_value: File path, hash, IP, domain, URL, etc.
+            sigma_rules: Optional Sigma rule path(s) or 'builtin'; forwarded to log analysis.
+            sigma_min_level: Minimum Sigma level to evaluate.
 
         Returns:
             Dict with analysis results
@@ -99,7 +106,7 @@ class Analyzer:
         elif input_type == InputType.PCAP:
             tool_results, iocs = self._analyze_pcap(input_value)
         elif input_type == InputType.LOG:
-            tool_results, iocs = self._analyze_log(input_value)
+            tool_results, iocs = self._analyze_log(input_value, sigma_rules=sigma_rules, sigma_min_level=sigma_min_level)
         elif input_type == InputType.SCRIPT:
             tool_results, iocs = self._analyze_script(input_value)
         elif input_type == InputType.FILE:
@@ -295,8 +302,8 @@ class Analyzer:
 
         return results, iocs
 
-    def _analyze_log(self, file_path: str) -> tuple:
-        """Analyze a log file."""
+    def _analyze_log(self, file_path: str, sigma_rules=None, sigma_min_level: str = "low") -> tuple:
+        """Analyze a log file, optionally with Sigma rules."""
         results = {}
         iocs = {"hashes": [], "domains": [], "ips": [], "urls": [], "emails": []}
 
@@ -306,19 +313,17 @@ class Analyzer:
                 from vlair.tools.log_analyzer import LogAnalyzer
 
                 analyzer = LogAnalyzer(verbose=self.verbose)
-                result = analyzer.analyze(file_path)
+                result = analyzer.analyze_file(file_path, sigma_rules=sigma_rules, sigma_min_level=sigma_min_level)
                 results["log_analyzer"] = result
 
                 # Add findings to scorer
                 self.scorer.add_findings_from_log_analysis(result)
 
-                # Extract IOCs from log results
-                threats = result.get("threats", {})
-                for threat_type, entries in threats.items():
-                    if isinstance(entries, list):
-                        for entry in entries[:10]:
-                            if isinstance(entry, dict) and "ip" in entry:
-                                iocs["ips"].append(entry["ip"])
+                # Extract source IPs from sigma/pattern alerts as IOCs
+                for alert in result.get("alerts", []):
+                    ip = alert.get("source_ip")
+                    if ip and ip not in iocs["ips"]:
+                        iocs["ips"].append(ip)
 
             except Exception as e:
                 self._log(f"Log analysis error: {e}")

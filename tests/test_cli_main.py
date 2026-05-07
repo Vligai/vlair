@@ -2959,3 +2959,174 @@ class TestEdgeCases:
         mock_generator.generate.assert_called_once()
         call_args = mock_generator.generate.call_args
         assert call_args[0][1] == "html"  # report_format arg
+
+
+# ---------------------------------------------------------------------------
+# Task 5.5 — CLI sigma flags and vlair sigma test exit codes
+# ---------------------------------------------------------------------------
+
+try:
+    import yaml as _yaml_cli
+    _YAML_CLI = True
+except ImportError:
+    _YAML_CLI = False
+
+
+@pytest.mark.skipif(not _YAML_CLI, reason="pyyaml not installed")
+class TestLogAnalyzeCLI:
+    """vlair log analyze --sigma flag round-trips into the engine."""
+
+    RULE = """
+        title: Test Rule
+        id: eeeeeeee-0000-0000-0000-000000000001
+        detection:
+          selection:
+            path|contains: /evil
+          condition: selection
+        level: medium
+    """
+
+    def _write_rule(self, tmp_path, body=None):
+        import textwrap
+        p = tmp_path / "rule.yml"
+        p.write_text(textwrap.dedent(body or self.RULE), encoding="utf-8")
+        return p
+
+    def _write_log(self, tmp_path, lines):
+        p = tmp_path / "access.log"
+        p.write_text("\n".join(lines), encoding="utf-8")
+        return p
+
+    def test_log_analyze_sigma_flag_reaches_engine(self, tmp_path, capsys):
+        """--sigma flag causes sigma metadata to appear in JSON output."""
+        rule = self._write_rule(tmp_path)
+        log = self._write_log(tmp_path, [
+            '1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] "GET /evil HTTP/1.1" 200 512 "-" "test"'
+        ])
+
+        with patch("sys.argv", ["vlair", "log", "analyze", str(log), "--sigma", str(rule), "--json"]):
+            with patch("sys.exit"):
+                from vlair.cli.main import main
+                main()
+
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        meta = data.get("metadata", {})
+        assert "sigma_rules_evaluated" in meta
+
+    def test_log_analyze_sigma_min_level_filters(self, tmp_path, capsys):
+        """--sigma-min-level critical filters out medium rules."""
+        rule = self._write_rule(tmp_path)
+        log = self._write_log(tmp_path, [
+            '1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] "GET /evil HTTP/1.1" 200 512 "-" "test"'
+        ])
+
+        with patch("sys.argv", ["vlair", "log", "analyze", str(log),
+                                 "--sigma", str(rule), "--sigma-min-level", "critical", "--json"]):
+            with patch("sys.exit"):
+                from vlair.cli.main import main
+                main()
+
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert data["metadata"]["sigma_rules_evaluated"] == 0
+
+
+@pytest.mark.skipif(not _YAML_CLI, reason="pyyaml not installed")
+class TestSigmaTestCLI:
+    """vlair sigma test <rule.yml> <event.json|-> exit codes 0/1/2."""
+
+    RULE = """
+        title: Exit Code Rule
+        id: ffffffff-0000-0000-0000-000000000001
+        detection:
+          selection:
+            path|contains: /evil
+          condition: selection
+        level: high
+    """
+
+    def _write_rule(self, tmp_path):
+        import textwrap
+        p = tmp_path / "rule.yml"
+        p.write_text(textwrap.dedent(self.RULE), encoding="utf-8")
+        return p
+
+    def _write_event(self, tmp_path, data: dict) -> Path:
+        p = tmp_path / "event.json"
+        p.write_text(json.dumps(data), encoding="utf-8")
+        return p
+
+    def test_exit_0_on_match(self, tmp_path, capsys):
+        rule = self._write_rule(tmp_path)
+        event = self._write_event(tmp_path, {"path": "/evil/path", "source_ip": "1.1.1.1"})
+
+        exit_code = None
+        with patch("sys.argv", ["vlair", "sigma", "test", str(rule), str(event)]):
+            with patch("sys.exit", side_effect=lambda c: (_ for _ in ()).throw(SystemExit(c))) as mock_exit:
+                try:
+                    from vlair.cli.main import main
+                    main()
+                except SystemExit as e:
+                    exit_code = e.code
+
+        assert exit_code == 0
+
+    def test_exit_1_on_no_match(self, tmp_path, capsys):
+        rule = self._write_rule(tmp_path)
+        event = self._write_event(tmp_path, {"path": "/harmless", "source_ip": "1.1.1.1"})
+
+        exit_code = None
+        with patch("sys.argv", ["vlair", "sigma", "test", str(rule), str(event)]):
+            with patch("sys.exit", side_effect=lambda c: (_ for _ in ()).throw(SystemExit(c))) as mock_exit:
+                try:
+                    from vlair.cli.main import main
+                    main()
+                except SystemExit as e:
+                    exit_code = e.code
+
+        assert exit_code == 1
+
+    def test_exit_2_on_bad_json(self, tmp_path, capsys):
+        rule = self._write_rule(tmp_path)
+        bad = tmp_path / "bad.json"
+        bad.write_text("{not json}", encoding="utf-8")
+
+        exit_code = None
+        with patch("sys.argv", ["vlair", "sigma", "test", str(rule), str(bad)]):
+            with patch("sys.exit", side_effect=lambda c: (_ for _ in ()).throw(SystemExit(c))):
+                try:
+                    from vlair.cli.main import main
+                    main()
+                except SystemExit as e:
+                    exit_code = e.code
+
+        assert exit_code == 2
+
+    def test_exit_2_on_missing_rule(self, tmp_path, capsys):
+        event = self._write_event(tmp_path, {"path": "/evil"})
+
+        exit_code = None
+        with patch("sys.argv", ["vlair", "sigma", "test", str(tmp_path / "no.yml"), str(event)]):
+            with patch("sys.exit", side_effect=lambda c: (_ for _ in ()).throw(SystemExit(c))):
+                try:
+                    from vlair.cli.main import main
+                    main()
+                except SystemExit as e:
+                    exit_code = e.code
+
+        assert exit_code == 2
+
+    def test_match_output_contains_rule_name(self, tmp_path, capsys):
+        rule = self._write_rule(tmp_path)
+        event = self._write_event(tmp_path, {"path": "/evil", "source_ip": "9.9.9.9"})
+
+        with patch("sys.argv", ["vlair", "sigma", "test", str(rule), str(event)]):
+            try:
+                from vlair.cli.main import main
+                main()
+            except SystemExit:
+                pass
+
+        captured = capsys.readouterr()
+        assert "Exit Code Rule" in captured.out

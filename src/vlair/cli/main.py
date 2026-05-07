@@ -866,6 +866,8 @@ def main():
             report_format = None
             output_path = None
             ai_depth = "standard"
+            sigma_rules_analyze = None
+            sigma_min_level_analyze = "low"
             args_list = sys.argv[3:]
             for i, arg in enumerate(args_list):
                 if arg == "--report":
@@ -884,6 +886,10 @@ def main():
                 if arg == "--depth" and i + 1 < len(args_list):
                     if args_list[i + 1] in ("quick", "standard", "thorough"):
                         ai_depth = args_list[i + 1]
+                if arg == "--sigma" and i + 1 < len(args_list):
+                    sigma_rules_analyze = args_list[i + 1]
+                if arg == "--sigma-min-level" and i + 1 < len(args_list):
+                    sigma_min_level_analyze = args_list[i + 1]
 
             # If --dry-run without --ai, enable --ai implicitly
             if dry_run and not ai_enabled:
@@ -891,7 +897,7 @@ def main():
 
             # Run analysis
             analyzer = Analyzer(verbose=verbose)
-            result = analyzer.analyze(input_value)
+            result = analyzer.analyze(input_value, sigma_rules=sigma_rules_analyze, sigma_min_level=sigma_min_level_analyze)
 
             # Run AI analysis if requested
             ai_result = None
@@ -1942,6 +1948,173 @@ def main():
         except ValueError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
+
+    elif sys.argv[1] == "log":
+        # Log analysis subcommand: vlair log analyze <file> [--sigma <path|builtin>] [--sigma-min-level <level>]
+        if len(sys.argv) < 3 or sys.argv[2] in ("--help", "-h", "help"):
+            print("Usage: vlair log analyze <file> [options]", file=sys.stderr)
+            print("\nOptions:", file=sys.stderr)
+            print("  --sigma <path|builtin>      Apply Sigma rules (use 'builtin' for bundled pack)", file=sys.stderr)
+            print("  --sigma-min-level <level>   Minimum Sigma level (informational/low/medium/high/critical)", file=sys.stderr)
+            print("  --json                      Output raw JSON", file=sys.stderr)
+            print("  --verbose, -v               Verbose output", file=sys.stderr)
+            print("\nExamples:", file=sys.stderr)
+            print("  vlair log analyze access.log --sigma builtin", file=sys.stderr)
+            print("  vlair log analyze access.log --sigma /path/to/rules --sigma-min-level high", file=sys.stderr)
+            sys.exit(0)
+
+        log_subcmd = sys.argv[2]
+        if log_subcmd != "analyze":
+            print(f"Unknown log subcommand: {log_subcmd}", file=sys.stderr)
+            print("Use 'vlair log --help' for help", file=sys.stderr)
+            sys.exit(1)
+
+        if len(sys.argv) < 4:
+            print("Usage: vlair log analyze <file>", file=sys.stderr)
+            sys.exit(1)
+
+        log_file = sys.argv[3]
+        args_list = sys.argv[4:]
+        verbose = "--verbose" in args_list or "-v" in args_list
+        json_output = "--json" in args_list or "-j" in args_list
+        sigma_rules = None
+        sigma_min_level = "low"
+
+        for i, arg in enumerate(args_list):
+            if arg == "--sigma" and i + 1 < len(args_list):
+                sigma_rules = args_list[i + 1]
+            if arg == "--sigma-min-level" and i + 1 < len(args_list):
+                sigma_min_level = args_list[i + 1]
+
+        try:
+            from vlair.tools.log_analyzer import LogAnalyzer, format_output_json
+
+            analyzer_log = LogAnalyzer(verbose=verbose)
+            result = analyzer_log.analyze_file(log_file, sigma_rules=sigma_rules, sigma_min_level=sigma_min_level)
+
+            if "error" in result:
+                print(f"Error: {result['error']}", file=sys.stderr)
+                sys.exit(1)
+
+            if json_output:
+                print(format_output_json(result))
+            else:
+                meta = result.get("metadata", {})
+                print(f"\nLog Analysis: {meta.get('log_file', log_file)}")
+                print(f"Format: {meta.get('log_type')} | Entries: {meta.get('total_entries')} | Alerts: {meta.get('total_alerts')}")
+                if "sigma_rules_evaluated" in meta:
+                    print(f"Sigma: {meta['sigma_rules_evaluated']} rules evaluated ({len(meta.get('skipped_rules', []))} skipped)")
+
+                # Sigma matches section (task 5.4)
+                sigma_alerts = [a for a in result.get("alerts", []) if a.get("source") == "sigma"]
+                if sigma_alerts:
+                    print(f"\n{'='*60}")
+                    print("  SIGMA MATCHES")
+                    print(f"{'='*60}")
+                    for m in sigma_alerts:
+                        level = m.get("level", "?").upper()
+                        name = m.get("rule_name", "Unknown")
+                        count = m.get("match_count", 1)
+                        mitre = ", ".join(m.get("mitre_attack", [])) or "-"
+                        link = m.get("rule_link", "")
+                        print(f"  [{level:12s}] {name} (x{count})")
+                        print(f"               MITRE: {mitre}")
+                        if link:
+                            print(f"               {link}")
+
+                # Pattern alerts section
+                pattern_alerts = [a for a in result.get("alerts", []) if a.get("source") != "sigma"]
+                if pattern_alerts:
+                    print(f"\nPattern Alerts ({len(pattern_alerts)}):")
+                    for a in pattern_alerts[:20]:
+                        sev = a.get("severity", "?").upper()
+                        atype = a.get("type", "?")
+                        desc = a.get("description", "")[:80]
+                        print(f"  [{sev:8s}] {atype}: {desc}")
+                    if len(pattern_alerts) > 20:
+                        print(f"  ... and {len(pattern_alerts) - 20} more")
+
+        except Exception as _log_err:
+            print(f"Error during log analysis: {_log_err}", file=sys.stderr)
+            if verbose:
+                import traceback
+                traceback.print_exc()
+            sys.exit(1)
+
+    elif sys.argv[1] == "sigma":
+        # Sigma subcommand: vlair sigma test <rule.yml> <event.json|->
+        if len(sys.argv) < 3 or sys.argv[2] in ("--help", "-h", "help"):
+            print("Usage: vlair sigma test <rule.yml> <event.json|->", file=sys.stderr)
+            print("\nTest a Sigma rule against a JSON event.", file=sys.stderr)
+            print("Pass '-' as event path to read JSON from stdin.", file=sys.stderr)
+            print("\nExamples:", file=sys.stderr)
+            print("  vlair sigma test rule.yml event.json", file=sys.stderr)
+            print("  echo '{\"path\":\"/evil\"}' | vlair sigma test rule.yml -", file=sys.stderr)
+            print("\nExit codes: 0 = rule fired, 1 = no match, 2 = error", file=sys.stderr)
+            sys.exit(0)
+
+        sigma_subcmd = sys.argv[2]
+        if sigma_subcmd != "test":
+            print(f"Unknown sigma subcommand: {sigma_subcmd}", file=sys.stderr)
+            print("Use 'vlair sigma --help' for help", file=sys.stderr)
+            sys.exit(2)
+
+        if len(sys.argv) < 5:
+            print("Usage: vlair sigma test <rule.yml> <event.json|->", file=sys.stderr)
+            sys.exit(2)
+
+        rule_path = sys.argv[3]
+        event_path = sys.argv[4]
+
+        try:
+            from vlair.tools.sigma_engine import SigmaEngine
+
+            # Load event
+            if event_path == "-":
+                event_raw = sys.stdin.read()
+            else:
+                if not Path(event_path).exists():
+                    print(f"Error: Event file not found: {event_path}", file=sys.stderr)
+                    sys.exit(2)
+                event_raw = Path(event_path).read_text(encoding="utf-8")
+
+            try:
+                event = json.loads(event_raw)
+            except json.JSONDecodeError as _jderr:
+                print(f"Error: Invalid JSON event: {_jderr}", file=sys.stderr)
+                sys.exit(2)
+
+            if not Path(rule_path).exists():
+                print(f"Error: Rule file not found: {rule_path}", file=sys.stderr)
+                sys.exit(2)
+
+            # Run engine
+            engine = SigmaEngine(rule_paths=[rule_path])
+            if not engine.rules and engine.skipped_rules:
+                print(f"Error loading rule: {engine.skipped_rules[0].get('reason', 'unknown')}", file=sys.stderr)
+                sys.exit(2)
+
+            engine.evaluate(event)
+            matches = engine.get_matches()
+
+            if matches:
+                m = matches[0]
+                print(f"MATCH: {m['rule_name']} [{m['level'].upper()}]")
+                if m.get("mitre_attack"):
+                    print(f"MITRE: {', '.join(m['mitre_attack'])}")
+                if m.get("rule_link"):
+                    print(f"REF:   {m['rule_link']}")
+                sys.exit(0)
+            else:
+                print("NO MATCH")
+                sys.exit(1)
+
+        except ImportError:
+            print("Error: SigmaEngine unavailable (pip install pyyaml)", file=sys.stderr)
+            sys.exit(2)
+        except Exception as _sig_err:
+            print(f"Error: {_sig_err}", file=sys.stderr)
+            sys.exit(2)
 
     else:
         # Run a tool
