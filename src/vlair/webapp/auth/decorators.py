@@ -27,6 +27,7 @@ All authenticated requests are written to the audit log.
 """
 
 import functools
+from datetime import datetime
 from flask import request, jsonify, g
 
 from vlair.webapp.auth.models import (
@@ -79,6 +80,11 @@ def _resolve_user():
         user = get_user_by_id(int(payload["sub"]))
         if user is None or not user["is_active"]:
             return jsonify({"error": "Account not found or disabled"}), 401
+        invalidated_after = user.get("tokens_invalidated_after")
+        if invalidated_after and "iat" in payload:
+            iat_iso = datetime.utcfromtimestamp(payload["iat"]).isoformat()
+            if iat_iso < invalidated_after:
+                return jsonify({"error": "Token has been revoked"}), 401
         g.current_user = user
         g.auth_type = "bearer"
         return None

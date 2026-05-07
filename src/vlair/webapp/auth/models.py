@@ -81,16 +81,17 @@ def init_db() -> None:
         conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS users (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                username    TEXT    NOT NULL UNIQUE,
-                email       TEXT    NOT NULL UNIQUE,
-                password_hash TEXT  NOT NULL,
-                role        TEXT    NOT NULL DEFAULT 'analyst',
-                is_active   INTEGER NOT NULL DEFAULT 1,
-                mfa_secret  TEXT,
-                mfa_enabled INTEGER NOT NULL DEFAULT 0,
-                created_at  TEXT    NOT NULL,
-                last_login  TEXT
+                id                        INTEGER PRIMARY KEY AUTOINCREMENT,
+                username                  TEXT    NOT NULL UNIQUE,
+                email                     TEXT    NOT NULL UNIQUE,
+                password_hash             TEXT    NOT NULL,
+                role                      TEXT    NOT NULL DEFAULT 'analyst',
+                is_active                 INTEGER NOT NULL DEFAULT 1,
+                mfa_secret                TEXT,
+                mfa_enabled               INTEGER NOT NULL DEFAULT 0,
+                created_at                TEXT    NOT NULL,
+                last_login                TEXT,
+                tokens_invalidated_after  TEXT
             );
 
             CREATE TABLE IF NOT EXISTS api_keys (
@@ -141,6 +142,11 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_audit_timestamp  ON audit_log(timestamp);
         """
         )
+        # Migration: add tokens_invalidated_after to existing databases
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN tokens_invalidated_after TEXT")
+        except Exception:
+            pass  # column already exists
 
 
 # ---------------------------------------------------------------------------
@@ -499,14 +505,17 @@ def is_token_revoked(jti: str) -> bool:
 
 
 def revoke_all_user_tokens(user_id: int) -> None:
-    """Revoke all tokens for a user (e.g. on deactivation)."""
+    """Invalidate all tokens for a user by recording the current timestamp.
+
+    Any token whose iat precedes this timestamp is considered revoked during
+    validation, without requiring an individual entry per token.
+    """
     now = datetime.utcnow().isoformat()
     try:
         with _connect() as conn:
             conn.execute(
-                "INSERT OR IGNORE INTO revoked_tokens (jti, user_id, revoked_at, expires_at) "
-                "SELECT '__all_before_' || ?, ?, ?, datetime(?, '+7 days')",
-                (now, user_id, now, now),
+                "UPDATE users SET tokens_invalidated_after = ? WHERE id = ?",
+                (now, user_id),
             )
     except Exception:
         pass
