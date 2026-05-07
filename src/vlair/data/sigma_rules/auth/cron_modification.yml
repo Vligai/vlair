@@ -1,0 +1,26 @@
+title: Cron Job Modification (Persistence)
+id: a3b4c5d6-e7f8-9012-abcd-345678901234
+status: stable
+description: Detects cron job creation or modification, a common persistence technique
+references:
+    - https://attack.mitre.org/techniques/T1053/003/
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.persistence
+    - attack.t1053.003
+logsource:
+    category: syslog
+detection:
+    selection:
+        message|contains:
+            - 'CRON'
+            - 'crontab'
+        message|contains:
+            - 'new job'
+            - 'modified crontab'
+            - 'installed new crontab'
+    condition: selection
+level: low
+falsepositives:
+    - Legitimate scheduled task management by administrators

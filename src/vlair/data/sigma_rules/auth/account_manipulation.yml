@@ -1,0 +1,27 @@
+title: User Account Manipulation
+id: e1f2a3b4-c5d6-7890-efab-123456789012
+status: stable
+description: Detects user account creation, modification, or deletion in system logs
+references:
+    - https://attack.mitre.org/techniques/T1136/001/
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.persistence
+    - attack.t1136.001
+logsource:
+    category: syslog
+detection:
+    selection:
+        message|contains:
+            - 'useradd'
+            - 'usermod'
+            - 'userdel'
+            - 'groupadd'
+            - 'passwd changed'
+            - 'new user:'
+            - 'new group:'
+    condition: selection
+level: medium
+falsepositives:
+    - Legitimate system administration tasks

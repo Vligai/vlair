@@ -1,0 +1,35 @@
+title: Security Scanner User Agent Detected
+id: d4f6e8b0-2c3d-4e5f-9a1b-3c5d7e9b1d3f
+status: stable
+description: Detects known security scanner and exploitation tool user agents
+references:
+    - https://attack.mitre.org/techniques/T1595/
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.reconnaissance
+    - attack.t1595.002
+logsource:
+    category: webserver
+detection:
+    selection:
+        user_agent|contains:
+            - 'sqlmap'
+            - 'nikto'
+            - 'nmap'
+            - 'masscan'
+            - 'nessus'
+            - 'openvas'
+            - 'acunetix'
+            - 'burpsuite'
+            - 'dirbuster'
+            - 'gobuster'
+            - 'wfuzz'
+            - 'hydra'
+            - 'zgrab'
+            - 'nuclei'
+    condition: selection
+level: medium
+falsepositives:
+    - Authorized penetration testing
+    - Security team assessments

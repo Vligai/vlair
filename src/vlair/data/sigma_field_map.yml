@@ -1,0 +1,70 @@
+# Sigma field name → vlair normalized event field name
+# Used by SigmaEngine to translate rule field references to vlair's parsed event schema.
+#
+# vlair event fields (Apache/Nginx):   source_ip, method, path, status, user_agent, referer, size
+# vlair event fields (syslog):         host, process, pid, message
+#
+# Add entries here to support additional Sigma field aliases or log source formats.
+
+# W3C Extended log format (IIS)
+c-ip: source_ip
+cs-ip: source_ip
+cs-uri-stem: path
+cs-uri: path
+cs-uri-query: path
+cs-method: method
+cs-user-agent: user_agent
+cs-referer: referer
+sc-status: status
+cs-username: user
+s-computername: host
+s-ip: host
+cs-bytes: size
+sc-bytes: size
+
+# Apache / Nginx combined log aliases
+clientip: source_ip
+src_ip: source_ip
+request: path
+verb: method
+agent: user_agent
+response: status
+bytes: size
+referrer: referer
+
+# Common Sigma field aliases
+http_method: method
+request_method: method
+uri: path
+uri_path: path
+uri_stem: path
+url: path
+http_status_code: status
+http_status: status
+useragent: user_agent
+http_user_agent: user_agent
+http_referer: referer
+
+# Syslog / auth log aliases
+hostname: host
+syslog_hostname: host
+syslog_process: process
+program: process
+application: process
+pid: pid
+syslog_message: message
+msg: message
+
+# Identity (vlair field → vlair field, allows rules to use vlair names directly)
+source_ip: source_ip
+method: method
+path: path
+status: status
+user_agent: user_agent
+referer: referer
+size: size
+host: host
+process: process
+message: message
+user: user
+username: user

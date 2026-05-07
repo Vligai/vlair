@@ -1,0 +1,29 @@
+title: PHP Code Injection Attempt
+id: e5f6a7b8-c9d0-1234-efab-567890123456
+status: stable
+description: Detects PHP code injection via URL parameters
+references:
+    - https://owasp.org/www-community/attacks/Code_Injection
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.execution
+    - attack.t1059.006
+logsource:
+    category: webserver
+detection:
+    selection:
+        path|contains:
+            - '<?php'
+            - '<%'
+            - 'eval('
+            - 'base64_decode('
+            - 'passthru('
+            - 'shell_exec('
+            - 'system('
+            - 'exec('
+            - 'phpinfo()'
+    condition: selection
+level: high
+falsepositives:
+    - Legitimate API endpoints receiving PHP snippets (rare)

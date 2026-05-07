@@ -1,0 +1,36 @@
+title: Web Shell Upload Attempt
+id: f6h8j0l2-4e5f-6g7h-1c3d-5e7g9h1c3e5g
+status: stable
+description: Detects attempts to upload web shells via POST requests to suspicious paths
+references:
+    - https://attack.mitre.org/techniques/T1505/003/
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.persistence
+    - attack.t1505.003
+logsource:
+    category: webserver
+detection:
+    selection_php:
+        path|contains:
+            - '.php.jpg'
+            - '.php.png'
+            - '.phtml'
+            - '.php5'
+            - '.phar'
+    selection_shell_path:
+        path|contains:
+            - '/upload/'
+            - '/uploads/'
+            - '/files/'
+            - '/tmp/'
+        path|endswith:
+            - '.php'
+            - '.asp'
+            - '.aspx'
+            - '.jsp'
+    condition: 1 of selection_*
+level: high
+falsepositives:
+    - Legitimate PHP file uploads to allowed directories

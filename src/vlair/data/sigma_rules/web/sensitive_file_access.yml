@@ -1,0 +1,33 @@
+title: Sensitive File Access Attempt
+id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+status: stable
+description: Detects requests for sensitive configuration and credential files
+references:
+    - https://attack.mitre.org/techniques/T1552/001/
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.credential_access
+    - attack.t1552.001
+logsource:
+    category: webserver
+detection:
+    selection:
+        path|contains:
+            - '/.env'
+            - '/.git/'
+            - '/wp-config.php'
+            - '/config.php'
+            - '/database.yml'
+            - '/secrets.yml'
+            - '/.htpasswd'
+            - '/.htaccess'
+            - '/id_rsa'
+            - '/authorized_keys'
+            - '/server.xml'
+            - '/web.config'
+            - '/appsettings.json'
+    condition: selection
+level: high
+falsepositives:
+    - Legitimate access to configuration files by authorized systems

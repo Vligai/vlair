@@ -1,0 +1,14 @@
+Detection Rule License (DRL) 1.1
+https://github.com/SigmaHQ/Detection-Rule-License
+
+Rules in this directory are adapted from the SigmaHQ community rule repository
+(https://github.com/SigmaHQ/sigma) and are provided under the Detection Rule License.
+
+Original authors retain copyright. Modifications for vlair field mapping are made
+by the vlair project and are also provided under DRL 1.1.
+
+You may use these rules freely for detection and threat hunting. You may not use
+them to build a commercial product that repackages the rules themselves as its
+primary value, without complying with DRL terms.
+
+Full license text: https://github.com/SigmaHQ/Detection-Rule-License/blob/main/LICENSE.Detection.Rules.md

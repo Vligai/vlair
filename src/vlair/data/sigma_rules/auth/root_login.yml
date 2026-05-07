@@ -1,0 +1,23 @@
+title: Direct Root Login Detected
+id: f2a3b4c5-d6e7-8901-fabc-234567890123
+status: stable
+description: Detects direct root login via SSH or su, which is a security risk
+references:
+    - https://attack.mitre.org/techniques/T1078/003/
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.initial_access
+    - attack.t1078.003
+logsource:
+    category: syslog
+detection:
+    selection:
+        message|contains:
+            - 'Accepted password for root'
+            - 'Accepted publickey for root'
+            - 'session opened for user root'
+    condition: selection
+level: high
+falsepositives:
+    - Authorized root access by system administrators

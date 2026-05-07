@@ -1,0 +1,27 @@
+title: Privilege Escalation via Sudo
+id: d0e1f2a3-b4c5-6789-defa-012345678901
+status: stable
+description: Detects sudo privilege escalation activity in auth logs
+references:
+    - https://attack.mitre.org/techniques/T1548/003/
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.privilege_escalation
+    - attack.t1548.003
+logsource:
+    category: syslog
+detection:
+    selection_sudo_fail:
+        message|contains:
+            - 'sudo: authentication failure'
+            - 'sudo:  authentication failure'
+            - 'user NOT in sudoers'
+    selection_su_fail:
+        message|contains:
+            - 'su: FAILED su'
+            - 'su: pam_unix(su'
+    condition: 1 of selection_*
+level: medium
+falsepositives:
+    - Users who accidentally run sudo commands they are not authorized for

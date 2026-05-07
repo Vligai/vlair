@@ -1,0 +1,25 @@
+title: ProxyShell Exchange Server Exploitation (CVE-2021-34473)
+id: d6e7f8a9-b0c1-2345-defa-678901234567
+status: stable
+description: Detects ProxyShell exploitation attempts targeting Microsoft Exchange autodiscover paths
+references:
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-34473
+author: SigmaHQ community, adapted for vlair
+date: 2024/01/01
+tags:
+    - attack.initial_access
+    - attack.t1190
+    - cve.2021.34473
+logsource:
+    category: webserver
+detection:
+    selection:
+        path|contains:
+            - '/autodiscover/autodiscover.json'
+            - '/autodiscover/autodiscover.xml'
+        path|contains:
+            - '@'
+    condition: selection
+level: critical
+falsepositives:
+    - Legitimate Exchange autodiscover requests (check for @ character in path)
