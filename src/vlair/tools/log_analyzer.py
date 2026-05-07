@@ -9,9 +9,16 @@ import sys
 import json
 import argparse
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 from pathlib import Path
 from collections import defaultdict, Counter
+
+try:
+    from vlair.tools.sigma_engine import SigmaEngine
+
+    _SIGMA_AVAILABLE = True
+except ImportError:
+    _SIGMA_AVAILABLE = False
 
 
 class LogParser:
@@ -266,8 +273,14 @@ class LogAnalyzer:
 
         return "unknown"
 
-    def analyze_file(self, file_path: str, log_type: str = "auto") -> Dict:
-        """Analyze log file"""
+    def analyze_file(
+        self,
+        file_path: str,
+        log_type: str = "auto",
+        sigma_rules: Optional[Union[str, Path, List[Union[str, Path]]]] = None,
+        sigma_min_level: str = "low",
+    ) -> Dict:
+        """Analyze log file, optionally running Sigma rules against each parsed event."""
         if not Path(file_path).exists():
             return {"error": f"File not found: {file_path}"}
 
@@ -288,6 +301,25 @@ class LogAnalyzer:
             return {"error": f"Unsupported log type: {log_type}"}
 
         parser = self.parsers[log_type]
+
+        # Initialise Sigma engine if requested
+        sigma_engine: Optional["SigmaEngine"] = None
+        sigma_meta: Dict = {}
+        if sigma_rules is not None:
+            if not _SIGMA_AVAILABLE:
+                sys.stderr.write("[sigma] SigmaEngine unavailable — skipping Sigma evaluation\n")
+            else:
+                rule_paths = sigma_rules if isinstance(sigma_rules, list) else [sigma_rules]
+                sigma_engine = SigmaEngine(
+                    rule_paths=rule_paths,
+                    min_level=sigma_min_level,
+                )
+                if self.verbose:
+                    print(
+                        f"Sigma: {sigma_engine.rules_evaluated} rules loaded "
+                        f"({len(sigma_engine.skipped_rules)} skipped)",
+                        file=sys.stderr,
+                    )
 
         # Parse logs
         entries = []
@@ -316,7 +348,22 @@ class LogAnalyzer:
             else:
                 alerts = []
 
+            for a in alerts:
+                a.setdefault("source", "pattern")
             all_alerts.extend(alerts)
+
+            if sigma_engine is not None:
+                sigma_engine.evaluate(entry)
+
+        # Collect Sigma matches and append to alerts
+        if sigma_engine is not None:
+            sigma_matches = sigma_engine.get_matches()
+            all_alerts.extend(sigma_matches)
+            sigma_meta = {
+                "sigma_rules_loaded": sigma_engine.rules_loaded,
+                "sigma_rules_evaluated": sigma_engine.rules_evaluated,
+                "skipped_rules": sigma_engine.skipped_rules,
+            }
 
         # Generate statistics
         stats = self._generate_statistics(entries, log_type)
@@ -329,6 +376,7 @@ class LogAnalyzer:
                 "total_entries": len(entries),
                 "total_alerts": len(all_alerts),
                 "analysis_date": datetime.now().isoformat(),
+                **sigma_meta,
             },
             "summary": {
                 "alerts_by_type": self._count_by_type(all_alerts),
@@ -386,13 +434,13 @@ class LogAnalyzer:
         return stats
 
     def _count_by_type(self, alerts: List[Dict]) -> Dict:
-        """Count alerts by type"""
-        counter = Counter(alert["type"] for alert in alerts)
+        """Count alerts by type; Sigma alerts use rule_name as type key."""
+        counter = Counter(alert.get("type") or alert.get("rule_name", "sigma") for alert in alerts)
         return dict(counter)
 
     def _count_by_severity(self, alerts: List[Dict]) -> Dict:
-        """Count alerts by severity"""
-        counter = Counter(alert["severity"] for alert in alerts)
+        """Count alerts by severity; Sigma alerts carry 'level' instead of 'severity'."""
+        counter = Counter(alert.get("severity") or alert.get("level", "unknown") for alert in alerts)
         return dict(counter)
 
 

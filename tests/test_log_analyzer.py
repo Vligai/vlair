@@ -565,5 +565,138 @@ class TestFormatOutput:
         assert "high: 3" in output
 
 
+# ---------------------------------------------------------------------------
+# Task 3.5 — SigmaEngine integration with LogAnalyzer
+# ---------------------------------------------------------------------------
+
+try:
+    import yaml as _yaml_mod
+
+    _YAML_FOR_TESTS = True
+except ImportError:
+    _YAML_FOR_TESTS = False
+
+SIGMA_FIELD_MAP = Path(__file__).parent.parent / "src" / "vlair" / "data" / "sigma_field_map.yml"
+
+_APACHE_LINE = (
+    '1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] '
+    '"GET /etc/passwd HTTP/1.1" 200 512 "-" "Mozilla/5.0"'
+)
+
+_CLEAN_LINE = (
+    '5.6.7.8 - - [01/Jan/2025:00:00:01 +0000] '
+    '"GET /index.html HTTP/1.1" 200 1024 "-" "Chrome/120"'
+)
+
+
+@pytest.mark.skipif(not _YAML_FOR_TESTS, reason="pyyaml not installed")
+class TestLogAnalyzerSigmaIntegration:
+    """Task 3.5 — regression and integration tests for Sigma path in analyze_file."""
+
+    def _write_log(self, tmp_path: Path, lines: list) -> Path:
+        p = tmp_path / "access.log"
+        p.write_text("\n".join(lines), encoding="utf-8")
+        return p
+
+    def _write_rule(self, tmp_path: Path, body: str, name: str = "rule.yml") -> Path:
+        import textwrap
+
+        p = tmp_path / name
+        p.write_text(textwrap.dedent(body), encoding="utf-8")
+        return p
+
+    def test_without_sigma_output_unchanged(self, tmp_path):
+        """Regression: omitting sigma_rules produces identical metadata shape."""
+        log = self._write_log(tmp_path, [_APACHE_LINE, _CLEAN_LINE])
+        analyzer = LogAnalyzer()
+        result = analyzer.analyze_file(str(log))
+
+        assert "sigma_rules_loaded" not in result["metadata"]
+        assert "sigma_rules_evaluated" not in result["metadata"]
+        assert "skipped_rules" not in result["metadata"]
+        # All existing alerts get source="pattern"
+        for alert in result["alerts"]:
+            assert alert.get("source") == "pattern"
+
+    def test_with_sigma_rules_alerts_grow(self, tmp_path):
+        """Sigma matches are appended to alerts and result count increases."""
+        rule = """
+            title: Passwd Access
+            id: ccccdddd-0000-0000-0000-000000000001
+            detection:
+              selection:
+                path|contains: /etc/passwd
+              condition: selection
+            level: high
+        """
+        rule_path = self._write_rule(tmp_path, rule)
+        log = self._write_log(tmp_path, [_APACHE_LINE, _CLEAN_LINE])
+
+        analyzer = LogAnalyzer()
+        result_no_sigma = analyzer.analyze_file(str(log))
+        result_sigma = analyzer.analyze_file(str(log), sigma_rules=[rule_path])
+
+        assert result_sigma["metadata"]["total_alerts"] > result_no_sigma["metadata"]["total_alerts"]
+        sigma_alerts = [a for a in result_sigma["alerts"] if a.get("source") == "sigma"]
+        assert len(sigma_alerts) >= 1
+
+    def test_sigma_metadata_in_result(self, tmp_path):
+        """Result metadata includes sigma_rules_loaded, sigma_rules_evaluated, skipped_rules."""
+        rule = """
+            title: Any Path
+            id: ccccdddd-0000-0000-0000-000000000002
+            detection:
+              selection:
+                path|contains: /index
+              condition: selection
+            level: low
+        """
+        rule_path = self._write_rule(tmp_path, rule)
+        log = self._write_log(tmp_path, [_CLEAN_LINE])
+
+        result = LogAnalyzer().analyze_file(str(log), sigma_rules=[rule_path])
+
+        assert "sigma_rules_loaded" in result["metadata"]
+        assert "sigma_rules_evaluated" in result["metadata"]
+        assert "skipped_rules" in result["metadata"]
+        assert result["metadata"]["sigma_rules_evaluated"] >= 1
+
+    def test_builtin_rules_string(self, tmp_path):
+        """sigma_rules='builtin' string triggers built-in rule pack."""
+        log = self._write_log(tmp_path, [_APACHE_LINE])
+        result = LogAnalyzer().analyze_file(str(log), sigma_rules="builtin")
+        assert "sigma_rules_evaluated" in result["metadata"]
+        assert result["metadata"]["sigma_rules_evaluated"] > 0
+
+    def test_sigma_min_level_filters(self, tmp_path):
+        """sigma_min_level='critical' filters out lower-level rules."""
+        low_rule = """
+            title: Low Rule
+            id: ccccdddd-0000-0000-0000-000000000003
+            detection:
+              selection:
+                path|contains: /index
+              condition: selection
+            level: low
+        """
+        rule_path = self._write_rule(tmp_path, low_rule)
+        log = self._write_log(tmp_path, [_CLEAN_LINE])
+
+        result = LogAnalyzer().analyze_file(str(log), sigma_rules=[rule_path], sigma_min_level="critical")
+        assert result["metadata"]["sigma_rules_evaluated"] == 0
+
+    def test_pattern_alerts_have_source_pattern(self, tmp_path):
+        """Existing pattern-based alerts have source='pattern' even when Sigma is active."""
+        sqli_line = (
+            '9.9.9.9 - - [01/Jan/2025:00:00:02 +0000] '
+            '"GET /search.php?q=union%20select%20*%20from%20users HTTP/1.1" 200 512 "-" "curl/7"'
+        )
+        log = self._write_log(tmp_path, [sqli_line])
+        result = LogAnalyzer().analyze_file(str(log), sigma_rules="builtin")
+
+        pattern_alerts = [a for a in result["alerts"] if a.get("source") == "pattern"]
+        assert any(a["type"] == "sql_injection" for a in pattern_alerts)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

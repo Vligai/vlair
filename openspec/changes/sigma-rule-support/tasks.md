@@ -17,11 +17,11 @@
 
 ## 3. LogAnalyzer integration
 
-- [ ] 3.1 Update `LogAnalyzer.analyze_file()` signature: `sigma_rules: Optional[Path | List[Path] | "builtin"] = None`
-- [ ] 3.2 When set, instantiate SigmaEngine and call `evaluate(event)` per parsed event
-- [ ] 3.3 Append matches to `alerts` list with `source="sigma"`; pattern-based alerts get `source="pattern"`
-- [ ] 3.4 Result schema: `sigma_rules_loaded`, `sigma_rules_evaluated`, `skipped_rules`
-- [ ] 3.5 Tests: regression — without sigma_rules, output identical; with sigma_rules, alerts grow
+- [x] 3.1 Update `LogAnalyzer.analyze_file()` signature: `sigma_rules: Optional[Path | List[Path] | "builtin"] = None`
+- [x] 3.2 When set, instantiate SigmaEngine and call `evaluate(event)` per parsed event
+- [x] 3.3 Append matches to `alerts` list with `source="sigma"`; pattern-based alerts get `source="pattern"`
+- [x] 3.4 Result schema: `sigma_rules_loaded`, `sigma_rules_evaluated`, `skipped_rules`
+- [x] 3.5 Tests: regression — without sigma_rules, output identical; with sigma_rules, alerts grow
 
 ## 4. Risk-score integration
 
