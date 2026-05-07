@@ -433,3 +433,88 @@ class TestAddFindingsFromToolResults:
 
         # Should not crash and should have no findings
         assert len(self.scorer.findings) == 0
+
+
+# ---------------------------------------------------------------------------
+# Task 4.3 — Sigma level → risk score integration tests
+# ---------------------------------------------------------------------------
+
+class TestSigmaScoring:
+    """Task 4.3: Sigma level → score combinations, cap at 100, max-of-levels."""
+
+    def _sigma_result(self, *levels):
+        """Build a fake log-analysis result with Sigma alerts at the given levels."""
+        alerts = [{"source": "sigma", "level": lvl, "rule_name": f"rule_{lvl}"} for lvl in levels]
+        return {"alerts": alerts}
+
+    def test_no_sigma_alerts_no_findings(self):
+        scorer = RiskScorer()
+        scorer.add_findings_from_log_analysis({"alerts": []})
+        sigma_findings = [f for f in scorer.findings if f.source == "sigma"]
+        assert sigma_findings == []
+
+    def test_single_medium_alert_adds_finding(self):
+        scorer = RiskScorer()
+        scorer.add_findings_from_log_analysis(self._sigma_result("medium"))
+        sigma = [f for f in scorer.findings if f.source == "sigma"]
+        assert len(sigma) == 1
+        assert sigma[0].severity == Severity.MEDIUM
+
+    def test_single_critical_alert(self):
+        scorer = RiskScorer()
+        scorer.add_findings_from_log_analysis(self._sigma_result("critical"))
+        sigma = [f for f in scorer.findings if f.source == "sigma"]
+        assert len(sigma) == 1
+        assert sigma[0].severity == Severity.CRITICAL
+
+    def test_max_of_levels_one_finding_per_level(self):
+        """Multiple matches at same level → one finding, not N."""
+        scorer = RiskScorer()
+        scorer.add_findings_from_log_analysis(self._sigma_result("high", "high", "high"))
+        sigma = [f for f in scorer.findings if f.source == "sigma"]
+        assert len(sigma) == 1
+        assert sigma[0].details["match_count"] == 3
+
+    def test_two_different_levels(self):
+        scorer = RiskScorer()
+        scorer.add_findings_from_log_analysis(self._sigma_result("low", "high"))
+        sigma = [f for f in scorer.findings if f.source == "sigma"]
+        assert len(sigma) == 2
+        levels = {f.severity for f in sigma}
+        assert Severity.LOW in levels
+        assert Severity.HIGH in levels
+
+    def test_score_capped_at_100(self):
+        """A flood of critical findings must not push score above 100."""
+        scorer = RiskScorer()
+        alerts = [{"source": "sigma", "level": "critical", "rule_name": f"r{i}"} for i in range(50)]
+        scorer.add_findings_from_log_analysis({"alerts": alerts})
+        # Also pile on extra findings from other sources
+        for _ in range(20):
+            scorer.add_finding(Severity.CRITICAL, "extra", "test")
+        assert scorer.calculate_score() <= 100
+
+    def test_informational_maps_to_info(self):
+        scorer = RiskScorer()
+        scorer.add_findings_from_log_analysis(self._sigma_result("informational"))
+        sigma = [f for f in scorer.findings if f.source == "sigma"]
+        assert sigma[0].severity == Severity.INFO
+
+    def test_unknown_level_defaults_to_medium(self):
+        scorer = RiskScorer()
+        scorer.add_findings_from_log_analysis({"alerts": [{"source": "sigma", "level": "bogus"}]})
+        sigma = [f for f in scorer.findings if f.source == "sigma"]
+        assert sigma[0].severity == Severity.MEDIUM
+
+    def test_non_sigma_alerts_ignored(self):
+        """Pattern-based alerts in the alerts list don't create sigma findings."""
+        scorer = RiskScorer()
+        result = {"alerts": [{"source": "pattern", "type": "sql_injection", "severity": "high"}]}
+        scorer.add_findings_from_log_analysis(result)
+        sigma = [f for f in scorer.findings if f.source == "sigma"]
+        assert sigma == []
+
+    def test_combined_score_is_nonzero_for_high(self):
+        scorer = RiskScorer()
+        scorer.add_findings_from_log_analysis(self._sigma_result("high"))
+        assert scorer.calculate_score() > 0

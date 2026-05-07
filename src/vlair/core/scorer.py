@@ -277,6 +277,15 @@ class RiskScorer:
                 {"rule": rule, "meta": match.get("meta", {})},
             )
 
+    # Sigma level → Severity mapping (design.md D5)
+    _SIGMA_LEVEL_TO_SEVERITY = {
+        "informational": Severity.INFO,
+        "low": Severity.LOW,
+        "medium": Severity.MEDIUM,
+        "high": Severity.HIGH,
+        "critical": Severity.CRITICAL,
+    }
+
     def add_findings_from_log_analysis(self, result: Dict[str, Any]):
         """Extract findings from log analysis result."""
         if not result or "error" in result:
@@ -322,6 +331,24 @@ class RiskScorer:
                 f"Detected brute force patterns from {len(brute)} IPs",
                 "log_analyzer",
                 {"count": len(brute)},
+            )
+
+        # Sigma matches from alerts list — max-of-levels semantics:
+        # collect one finding per unique Sigma level, not one per match.
+        sigma_by_level: Dict[str, int] = {}
+        for alert in result.get("alerts", []):
+            if alert.get("source") != "sigma":
+                continue
+            level = (alert.get("level") or "medium").lower()
+            sigma_by_level[level] = sigma_by_level.get(level, 0) + 1
+
+        for level, count in sigma_by_level.items():
+            severity = self._SIGMA_LEVEL_TO_SEVERITY.get(level, Severity.MEDIUM)
+            self.add_finding(
+                severity,
+                f"Sigma: {count} rule match(es) at level '{level}'",
+                "sigma",
+                {"sigma_level": level, "match_count": count},
             )
 
     def add_findings_from_pcap_analysis(self, result: Dict[str, Any]):

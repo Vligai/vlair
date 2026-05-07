@@ -25,9 +25,9 @@
 
 ## 4. Risk-score integration
 
-- [ ] 4.1 `core/scorer.py` reads `alerts` and adds Sigma level → score per the design's mapping
-- [ ] 4.2 Cap at 100; max-of-levels semantics
-- [ ] 4.3 Tests: combinations of levels produce expected scores
+- [x] 4.1 `core/scorer.py` reads `alerts` and adds Sigma level → score per the design's mapping
+- [x] 4.2 Cap at 100; max-of-levels semantics
+- [x] 4.3 Tests: combinations of levels produce expected scores
 
 ## 5. CLI
 
