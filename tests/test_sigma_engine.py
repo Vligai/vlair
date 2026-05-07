@@ -642,3 +642,48 @@ class TestMatchStructure:
 def test_benchmark_not_in_ci(tmp_path):
     """Placeholder: real benchmark lives in task 8.1."""
     pass
+
+
+# ---------------------------------------------------------------------------
+# Task 8.2 — required_fields short-circuit tests
+# ---------------------------------------------------------------------------
+
+
+class TestRequiredFieldsShortCircuit:
+    """required_fields is populated and evaluate() skips irrelevant events."""
+
+    def test_required_fields_populated(self, tmp_path):
+        engine = _make_engine(tmp_path, SIMPLE_RULE)
+        rule = engine.rules[0]
+        assert "path" in rule.required_fields
+
+    def test_event_missing_all_fields_skipped(self, tmp_path):
+        """Event with no fields this rule cares about should produce no match."""
+        engine = _make_engine(tmp_path, SIMPLE_RULE)
+        engine.evaluate({"host": "myserver", "process": "sshd", "message": "evil"})
+        assert engine.get_matches() == []
+
+    def test_event_with_matching_field_still_fires(self, tmp_path):
+        engine = _make_engine(tmp_path, SIMPLE_RULE)
+        engine.evaluate(_web_event(path="/evil/path"))
+        assert len(engine.get_matches()) == 1
+
+
+# ---------------------------------------------------------------------------
+# Task 8.3 — Benchmark (skipped by default; run with pytest -m benchmark)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.benchmark
+def test_benchmark_100k_events(tmp_path):
+    """100k events × builtin rules must complete in under 30s on a laptop."""
+    import time
+
+    engine = SigmaEngine(rule_paths=["builtin"], min_level="low")
+    events = [_web_event(path=f"/path/{i}", source_ip=f"10.0.{i // 256}.{i % 256}") for i in range(100_000)]
+
+    start = time.time()
+    for e in events:
+        engine.evaluate(e)
+    elapsed = time.time() - start
+
+    assert elapsed < 30, f"Benchmark exceeded 30s: {elapsed:.1f}s"

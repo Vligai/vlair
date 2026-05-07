@@ -53,9 +53,9 @@
 
 ## 8. Performance and benchmark
 
-- [ ] 8.1 Benchmark fixture: 100k synthetic events × 50 rules; target <30s on a laptop
-- [ ] 8.2 Index rules by required field set to short-circuit unmapped events
-- [ ] 8.3 Tests: benchmark in `tests/test_sigma_engine.py` with `pytest -m benchmark` (skipped by default in CI)
+- [x] 8.1 Benchmark fixture: 100k synthetic events × 50 rules; target <30s on a laptop
+- [x] 8.2 Index rules by required field set to short-circuit unmapped events
+- [x] 8.3 Tests: benchmark in `tests/test_sigma_engine.py` with `pytest -m benchmark` (skipped by default in CI)
 
 ## 9. Documentation
 
