@@ -108,7 +108,7 @@ vlair eml suspicious.eml --vt
 vlair ioc report.txt --format csv
 vlair hash 44d88612fea8a8f36de82e1278abb02f
 vlair intel malicious.com
-vlair log access.log
+vlair log analyze access.log --sigma builtin   # Sigma rule detection
 vlair pcap capture.pcap
 vlair url "http://suspicious.com"
 vlair yara scan /samples/ --rules ./rules/

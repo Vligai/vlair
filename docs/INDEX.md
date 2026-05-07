@@ -42,7 +42,7 @@ docs/             INDEX.md (this), CONTRIBUTING.md, ROADMAP.md, openspec/
 | `ioc` | tools/ioc_extractor.py | Extract IPs/domains/URLs/hashes/CVEs from text |
 | `hash` | tools/hash_lookup.py | VirusTotal + MalwareBazaar file hash lookup |
 | `intel` | tools/domain_ip_intel.py | DNS, reputation, threat intel for domains/IPs |
-| `log` | tools/log_analyzer.py | Apache/Nginx/syslog — SQLi, XSS, brute-force |
+| `log` | tools/log_analyzer.py | Apache/Nginx/syslog — SQLi, XSS, brute-force, Sigma rules |
 | `pcap` | tools/pcap_analyzer.py | Network traffic, port scan, DGA detection |
 | `url` | tools/url_analyzer.py | URL reputation, 11 suspicious pattern checks |
 | `yara` | tools/yara_scanner.py | YARA malware scanning, multi-threaded |
@@ -79,6 +79,11 @@ vlair investigate phishing --file <eml> [--mock]
 vlair investigate status <INV-ID>
 vlair investigate list [--limit N]
 vlair investigate results <INV-ID> [--json]
+
+# Log analysis with Sigma rules
+vlair log analyze access.log --sigma builtin              # built-in rule pack
+vlair log analyze access.log --sigma ./rules/ --sigma-min-level high
+vlair sigma test my_rule.yml event.json                   # exit 0=match, 1=no match
 
 # Individual tools
 vlair eml|ioc|hash|intel|log|pcap|url|yara|cert|deobfuscate|feeds|carve <args>
@@ -143,6 +148,7 @@ Operationalize spec: `docs/openspec/specs/operationalize.spec.md`
 |-----|----------|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, code quality, PR process, CI/CD |
 | [ROADMAP.md](ROADMAP.md) | Phases 5–10, timelines, tech stack evolution |
+| [SIGMA.md](SIGMA.md) | Sigma rule support — bundled pack, field map, modifiers, authoring tips |
 | [openspec/project.openspec.md](openspec/project.openspec.md) | Project-level OpenSpec |
 | [openspec/specs/](openspec/specs/) | 17 individual tool specs (FR-1…FR-15 each) |
 | [../README.md](../README.md) | User-facing install/usage guide |

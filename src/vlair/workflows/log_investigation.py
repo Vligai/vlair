@@ -387,20 +387,24 @@ class LogInvestigationWorkflow(Workflow):
                 entry["rule_link"] = m["rule_link"]
             sigma_summary.append(entry)
 
+        report_data: Dict[str, Any] = {
+            "total_entries": log_result.get("metadata", {}).get("total_entries", 0),
+            "total_attacks": total_attacks,
+            "attack_breakdown": attack_counts,
+            "unique_attackers": len(context.data.get("attacker_ips", [])),
+            "known_malicious_ips": context.data.get("ip_check_results", {}).get(
+                "known_malicious", 0
+            ),
+            "sigma_matches": sigma_summary,
+            "risk_score": summary["risk_score"],
+            "verdict": summary["verdict"],
+            "recommendations": recommendations,
+        }
+        if sigma_summary:
+            report_data["sigma_docs"] = "docs/SIGMA.md"
+
         return StepResult(
             step_name="generate_report",
             success=True,
-            data={
-                "total_entries": log_result.get("metadata", {}).get("total_entries", 0),
-                "total_attacks": total_attacks,
-                "attack_breakdown": attack_counts,
-                "unique_attackers": len(context.data.get("attacker_ips", [])),
-                "known_malicious_ips": context.data.get("ip_check_results", {}).get(
-                    "known_malicious", 0
-                ),
-                "sigma_matches": sigma_summary,
-                "risk_score": summary["risk_score"],
-                "verdict": summary["verdict"],
-                "recommendations": recommendations,
-            },
+            data=report_data,
         )

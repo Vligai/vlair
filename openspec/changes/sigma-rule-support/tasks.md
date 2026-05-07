@@ -59,7 +59,7 @@
 
 ## 9. Documentation
 
-- [ ] 9.1 New `docs/SIGMA.md`: bundled pack contents, field map, supported modifiers, authoring tips
-- [ ] 9.2 Update `docs/INDEX.md` with `--sigma` flag and `vlair sigma test`
-- [ ] 9.3 Update `README.md` with a one-line Sigma example
-- [ ] 9.4 Add inline link from log-investigation workflow output to `docs/SIGMA.md`
+- [x] 9.1 New `docs/SIGMA.md`: bundled pack contents, field map, supported modifiers, authoring tips
+- [x] 9.2 Update `docs/INDEX.md` with `--sigma` flag and `vlair sigma test`
+- [x] 9.3 Update `README.md` with a one-line Sigma example
+- [x] 9.4 Add inline link from log-investigation workflow output to `docs/SIGMA.md`
