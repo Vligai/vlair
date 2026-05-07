@@ -297,7 +297,7 @@ def change_password():
 
     Body: {"current_password": str, "new_password": str}
     """
-    from vlair.webapp.auth.models import authenticate_user, _hash_password, _connect
+    from vlair.webapp.auth.models import authenticate_user, _hash_password, _connect, revoke_all_user_tokens
 
     data = request.get_json(force=True) or {}
     current_pw = data.get("current_password", "")
@@ -320,13 +320,16 @@ def change_password():
             (new_hash, g.current_user["id"]),
         )
 
+    # Invalidate all active sessions so compromised tokens cannot be reused
+    revoke_all_user_tokens(g.current_user["id"])
+
     log_action(
         "password_changed",
         user_id=g.current_user["id"],
         username=g.current_user["username"],
         ip_address=request.remote_addr,
     )
-    return jsonify({"message": "Password changed successfully"})
+    return jsonify({"message": "Password changed. All active sessions have been invalidated. Please log in again."})
 
 
 # ---------------------------------------------------------------------------
