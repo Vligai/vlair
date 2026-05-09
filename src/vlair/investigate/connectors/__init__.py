@@ -7,6 +7,10 @@ This module defines abstract interfaces for connecting to:
 - SIEM platforms (Splunk, Sentinel, etc.)
 - EDR solutions (CrowdStrike, Defender, etc.)
 - Identity providers (Azure AD, Okta, etc.)
+
+Real connector implementations:
+- CrowdStrikeConnector (EDR) — requires CROWDSTRIKE_CLIENT_ID/SECRET env vars
+- SplunkConnector (SIEM)    — requires SPLUNK_TOKEN env var
 """
 
 from .base import (
@@ -23,6 +27,8 @@ from .base import (
     EDRConnector,
     IdentityConnector,
 )
+from .crowdstrike import CrowdStrikeConnector
+from .splunk import SplunkConnector
 
 __all__ = [
     # DTOs
@@ -32,9 +38,12 @@ __all__ = [
     "User",
     "AuthenticationEvent",
     "URLClickEvent",
-    # Connectors
+    # Abstract interfaces
     "EmailConnector",
     "SIEMConnector",
     "EDRConnector",
     "IdentityConnector",
+    # Real connectors
+    "CrowdStrikeConnector",
+    "SplunkConnector",
 ]
