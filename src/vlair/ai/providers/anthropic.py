@@ -40,27 +40,55 @@ class AnthropicProvider(AIProvider):
         """Return True if ANTHROPIC_API_KEY is set."""
         return bool(os.getenv("ANTHROPIC_API_KEY"))
 
-    def analyze(self, system_prompt: str, user_message: str, max_tokens: int = 2000) -> AIResponse:
+    def analyze(
+        self,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int = 2000,
+        thinking: bool = False,
+        thinking_budget_tokens: int = 8000,
+    ) -> AIResponse:
         """Call Claude and return an AIResponse."""
         client = self._get_client()
 
-        response = client.messages.create(
-            model=self._model,
-            max_tokens=max_tokens,
-            temperature=self.temperature,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-        )
+        create_kwargs: dict = {
+            "model": self._model,
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": user_message}],
+        }
 
-        content = response.content[0].text if response.content else ""
+        if thinking:
+            # Extended thinking requires max_tokens > budget; no temperature param
+            budget = min(thinking_budget_tokens, max(max_tokens - 1024, 1024))
+            create_kwargs["max_tokens"] = max(max_tokens, budget + 1024)
+            create_kwargs["thinking"] = {"type": "enabled", "budget_tokens": budget}
+        else:
+            create_kwargs["max_tokens"] = max_tokens
+            create_kwargs["temperature"] = self.temperature
+
+        response = client.messages.create(**create_kwargs)
+
+        thinking_trace: Optional[str] = None
+        text_content = ""
+        for block in response.content:
+            block_type = getattr(block, "type", None)
+            if block_type == "thinking":
+                thinking_trace = getattr(block, "thinking", None)
+            elif block_type == "text":
+                text_content = getattr(block, "text", "")
+
+        if not text_content and response.content:
+            text_content = getattr(response.content[0], "text", "")
+
         tokens_used = response.usage.input_tokens + response.usage.output_tokens
 
         return AIResponse(
-            content=content,
+            content=text_content,
             tokens_used=tokens_used,
             model=self._model,
             cached=False,
             provider=self.name,
+            thinking_trace=thinking_trace,
         )
 
     # ------------------------------------------------------------------

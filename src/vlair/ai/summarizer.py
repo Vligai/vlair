@@ -31,6 +31,8 @@ class SummaryConfig:
     use_cache: bool = True
     cache_ttl_seconds: int = 86400  # 24 hours
     provider: str = "anthropic"  # anthropic | openai | ollama
+    thinking: bool = False
+    thinking_budget_tokens: int = 8000
 
 
 # ---------------------------------------------------------------------------
@@ -291,19 +293,27 @@ class ThreatSummarizer:
         user_message = build_prompt(ioc_value, ioc_type, tool_result, depth)
 
         provider = self._get_provider()
-        response = provider.analyze(system_prompt, user_message, max_tokens=max_tokens)
+        response = provider.analyze(
+            system_prompt,
+            user_message,
+            max_tokens=max_tokens,
+            thinking=self.config.thinking,
+            thinking_budget_tokens=self.config.thinking_budget_tokens,
+        )
 
         elapsed_ms = int((time.time() - t_start) * 1000)
         tokens_used = response.tokens_used
         content = response.content
 
         parsed = self._parse_response(content)
+        parsed["thinking_trace"] = response.thinking_trace
         parsed["metadata"] = {
             "model": response.model or self.config.model,
             "provider": response.provider or self.config.provider,
             "tokens_used": tokens_used,
             "cached": False,
             "analysis_time_ms": elapsed_ms,
+            "has_thinking": response.thinking_trace is not None,
         }
 
         if self.config.use_cache:

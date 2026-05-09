@@ -17,20 +17,30 @@ class AIResponse:
     model: str = ""
     cached: bool = False
     provider: str = ""
+    thinking_trace: Optional[str] = None
 
 
 class AIProvider(ABC):
     """Abstract base class for AI provider implementations."""
 
     @abstractmethod
-    def analyze(self, system_prompt: str, user_message: str, max_tokens: int = 2000) -> AIResponse:
+    def analyze(
+        self,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int = 2000,
+        thinking: bool = False,
+        thinking_budget_tokens: int = 8000,
+    ) -> AIResponse:
         """
         Send a prompt to the AI provider and return a structured response.
 
         Args:
-            system_prompt: The system-level instructions for the AI.
-            user_message:  The user-turn message / data to analyze.
-            max_tokens:    Maximum tokens in the response.
+            system_prompt:           The system-level instructions for the AI.
+            user_message:            The user-turn message / data to analyze.
+            max_tokens:              Maximum tokens in the response.
+            thinking:                Enable extended reasoning trace (Anthropic only).
+            thinking_budget_tokens:  Token budget for reasoning (used when thinking=True).
 
         Returns:
             AIResponse with content and usage metadata.

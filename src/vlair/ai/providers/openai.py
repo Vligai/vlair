@@ -47,7 +47,14 @@ class OpenAIProvider(AIProvider):
         except ImportError:
             return False
 
-    def analyze(self, system_prompt: str, user_message: str, max_tokens: int = 2000) -> AIResponse:
+    def analyze(
+        self,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int = 2000,
+        thinking: bool = False,
+        thinking_budget_tokens: int = 8000,
+    ) -> AIResponse:
         """Call the OpenAI chat completions API and return an AIResponse."""
         client = self._get_client()
 

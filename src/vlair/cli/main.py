@@ -86,6 +86,15 @@ def _format_ai_assessment(ai: dict) -> str:
         for part in notes.splitlines():
             lines.append(f"  {part}")
 
+    thinking_trace = ai.get("thinking_trace")
+    if thinking_trace:
+        lines.append("")
+        lines.append("AI Reasoning Trace (--thinking):")
+        for part in thinking_trace.splitlines()[:30]:  # cap console output
+            lines.append(f"  {part}")
+        if thinking_trace.count("\n") > 30:
+            lines.append("  ... (truncated — full trace in ai-markdown report)")
+
     meta = ai.get("metadata", {})
     elapsed_ms = meta.get("analysis_time_ms", 0)
     tokens = meta.get("tokens_used", 0)
@@ -94,7 +103,8 @@ def _format_ai_assessment(ai: dict) -> str:
     lines.append("")
     lines.append(SEP)
     cache_tag = " | Cache: hit" if cached else " | Cache: miss"
-    lines.append(f"AI: {model} | {elapsed_ms}ms | {tokens} tokens{cache_tag}")
+    thinking_tag = " | Thinking: on" if meta.get("has_thinking") else ""
+    lines.append(f"AI: {model} | {elapsed_ms}ms | {tokens} tokens{cache_tag}{thinking_tag}")
     lines.append(SEP)
 
     return "\n".join(lines)
@@ -844,6 +854,10 @@ def main():
                 "  vlair analyze hash123 --ai --report ai-markdown # AI Markdown report",
                 file=sys.stderr,
             )
+            print(
+                "  vlair analyze hash123 --ai --thinking           # AI with reasoning trace",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         try:
@@ -861,6 +875,7 @@ def main():
             quiet = "--quiet" in sys.argv or "-q" in sys.argv
             ai_enabled = "--ai" in sys.argv
             dry_run = "--dry-run" in sys.argv
+            thinking_enabled = "--thinking" in sys.argv
 
             # Parse report and AI arguments
             report_format = None
@@ -897,7 +912,11 @@ def main():
 
             # Run analysis
             analyzer = Analyzer(verbose=verbose)
-            result = analyzer.analyze(input_value, sigma_rules=sigma_rules_analyze, sigma_min_level=sigma_min_level_analyze)
+            result = analyzer.analyze(
+                input_value,
+                sigma_rules=sigma_rules_analyze,
+                sigma_min_level=sigma_min_level_analyze,
+            )
 
             # Run AI analysis if requested
             ai_result = None
@@ -917,9 +936,10 @@ def main():
                     "file": "hash",
                 }
                 try:
-                    from vlair.ai import ThreatSummarizer
+                    from vlair.ai import ThreatSummarizer, SummaryConfig
 
-                    _summarizer = ThreatSummarizer()
+                    _ai_config = SummaryConfig(depth=ai_depth, thinking=thinking_enabled)
+                    _summarizer = ThreatSummarizer(config=_ai_config)
 
                     if dry_run:
                         # Show what would be sent without calling AI
@@ -1954,13 +1974,22 @@ def main():
         if len(sys.argv) < 3 or sys.argv[2] in ("--help", "-h", "help"):
             print("Usage: vlair log analyze <file> [options]", file=sys.stderr)
             print("\nOptions:", file=sys.stderr)
-            print("  --sigma <path|builtin>      Apply Sigma rules (use 'builtin' for bundled pack)", file=sys.stderr)
-            print("  --sigma-min-level <level>   Minimum Sigma level (informational/low/medium/high/critical)", file=sys.stderr)
+            print(
+                "  --sigma <path|builtin>      Apply Sigma rules (use 'builtin' for bundled pack)",
+                file=sys.stderr,
+            )
+            print(
+                "  --sigma-min-level <level>   Minimum Sigma level (informational/low/medium/high/critical)",
+                file=sys.stderr,
+            )
             print("  --json                      Output raw JSON", file=sys.stderr)
             print("  --verbose, -v               Verbose output", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
             print("  vlair log analyze access.log --sigma builtin", file=sys.stderr)
-            print("  vlair log analyze access.log --sigma /path/to/rules --sigma-min-level high", file=sys.stderr)
+            print(
+                "  vlair log analyze access.log --sigma /path/to/rules --sigma-min-level high",
+                file=sys.stderr,
+            )
             sys.exit(0)
 
         log_subcmd = sys.argv[2]
@@ -1990,7 +2019,9 @@ def main():
             from vlair.tools.log_analyzer import LogAnalyzer, format_output_json
 
             analyzer_log = LogAnalyzer(verbose=verbose)
-            result = analyzer_log.analyze_file(log_file, sigma_rules=sigma_rules, sigma_min_level=sigma_min_level)
+            result = analyzer_log.analyze_file(
+                log_file, sigma_rules=sigma_rules, sigma_min_level=sigma_min_level
+            )
 
             if "error" in result:
                 print(f"Error: {result['error']}", file=sys.stderr)
@@ -2001,9 +2032,13 @@ def main():
             else:
                 meta = result.get("metadata", {})
                 print(f"\nLog Analysis: {meta.get('log_file', log_file)}")
-                print(f"Format: {meta.get('log_type')} | Entries: {meta.get('total_entries')} | Alerts: {meta.get('total_alerts')}")
+                print(
+                    f"Format: {meta.get('log_type')} | Entries: {meta.get('total_entries')} | Alerts: {meta.get('total_alerts')}"
+                )
                 if "sigma_rules_evaluated" in meta:
-                    print(f"Sigma: {meta['sigma_rules_evaluated']} rules evaluated ({len(meta.get('skipped_rules', []))} skipped)")
+                    print(
+                        f"Sigma: {meta['sigma_rules_evaluated']} rules evaluated ({len(meta.get('skipped_rules', []))} skipped)"
+                    )
 
                 # Sigma matches section (task 5.4)
                 sigma_alerts = [a for a in result.get("alerts", []) if a.get("source") == "sigma"]
@@ -2038,6 +2073,7 @@ def main():
             print(f"Error during log analysis: {_log_err}", file=sys.stderr)
             if verbose:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
 
@@ -2049,7 +2085,7 @@ def main():
             print("Pass '-' as event path to read JSON from stdin.", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
             print("  vlair sigma test rule.yml event.json", file=sys.stderr)
-            print("  echo '{\"path\":\"/evil\"}' | vlair sigma test rule.yml -", file=sys.stderr)
+            print('  echo \'{"path":"/evil"}\' | vlair sigma test rule.yml -', file=sys.stderr)
             print("\nExit codes: 0 = rule fired, 1 = no match, 2 = error", file=sys.stderr)
             sys.exit(0)
 
@@ -2091,7 +2127,10 @@ def main():
             # Run engine
             engine = SigmaEngine(rule_paths=[rule_path])
             if not engine.rules and engine.skipped_rules:
-                print(f"Error loading rule: {engine.skipped_rules[0].get('reason', 'unknown')}", file=sys.stderr)
+                print(
+                    f"Error loading rule: {engine.skipped_rules[0].get('reason', 'unknown')}",
+                    file=sys.stderr,
+                )
                 sys.exit(2)
 
             engine.evaluate(event)

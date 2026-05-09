@@ -47,7 +47,14 @@ class OllamaProvider(AIProvider):
         except Exception:
             return False
 
-    def analyze(self, system_prompt: str, user_message: str, max_tokens: int = 2000) -> AIResponse:
+    def analyze(
+        self,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int = 2000,
+        thinking: bool = False,
+        thinking_budget_tokens: int = 8000,
+    ) -> AIResponse:
         """Call the Ollama /api/chat endpoint and return an AIResponse."""
         try:
             import requests  # noqa: PLC0415

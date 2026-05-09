@@ -155,6 +155,20 @@ class AIReporter:
         if confidence_notes:
             lines += ["## Confidence Notes", "", confidence_notes, ""]
 
+        # AI Reasoning Trace (only present when --thinking was used)
+        thinking_trace = ai_result.get("thinking_trace")
+        if thinking_trace:
+            lines += [
+                "## AI Reasoning Trace",
+                "",
+                "_Step-by-step reasoning the AI used to reach its verdict._",
+                "",
+                "```",
+                thinking_trace,
+                "```",
+                "",
+            ]
+
         # Footer
         lines += [
             "---",
