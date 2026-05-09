@@ -443,6 +443,27 @@ def lookup_api_key(raw_key: str) -> Optional[Dict]:
             ):
                 continue
 
+            # Migrate to salted PBKDF2 on first successful use.
+            # Deprecated legacy format — force-rotate all remaining keys by 2027-06-01.
+            import logging as _logging
+
+            _logging.getLogger("vlair.auth").warning(
+                "API key id=%s matched legacy unsalted SHA256 hash. "
+                "Migrating to PBKDF2 in place. "
+                "Rotate any remaining legacy keys before 2027-06-01.",
+                row["id"],
+            )
+            _new_salt = secrets.token_hex(16)
+            _new_hash = f"{_new_salt}${_hash_api_key(raw_key, _new_salt)}"
+            try:
+                with _connect() as _mc:
+                    _mc.execute(
+                        "UPDATE api_keys SET key_hash = ? WHERE id = ?",
+                        (_new_hash, row["id"]),
+                    )
+            except Exception:
+                pass  # non-fatal — next auth will retry
+
         # Match found — check expiration
         if row["expires_at"]:
             if datetime.utcnow().isoformat() > row["expires_at"]:
