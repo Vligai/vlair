@@ -77,24 +77,66 @@ OPEN_REGISTRATION = os.getenv("VLAIR_OPEN_REGISTRATION", "true").lower() == "tru
 
 
 # ---------------------------------------------------------------------------
-# Simple in-memory rate limiter for auth endpoints
+# Rate limiter — Redis-backed (sliding window) with in-memory fallback.
+#
+# Redis is preferred because each gunicorn worker has independent in-memory
+# state, meaning the effective limit under N workers is N × the configured
+# value.  With Redis the counter is shared across all workers and processes.
+#
+# Falls back to the in-memory implementation automatically when Redis is
+# unavailable (no REDIS_URL set, connection refused, etc.).
 # ---------------------------------------------------------------------------
-
-_rate_limit_store: dict = defaultdict(list)
-_rate_limit_lock = threading.Lock()
 
 # Max attempts per IP within the window
 _AUTH_RATE_LIMIT = int(os.getenv("VLAIR_AUTH_RATE_LIMIT", "10"))
 _AUTH_RATE_WINDOW = int(os.getenv("VLAIR_AUTH_RATE_WINDOW", "300"))  # 5 min
 
+# ---------------------------------------------------------------------------
+# Redis client (lazy, optional)
+# ---------------------------------------------------------------------------
 
-def _check_rate_limit(ip: str) -> bool:
-    """Return True if the IP is within rate limits, False if exceeded."""
+_redis_client = None
+_redis_available: bool = False
+_redis_init_lock = threading.Lock()
+
+
+def _get_redis():
+    """Return a connected Redis client, or None if Redis is unavailable."""
+    global _redis_client, _redis_available
+    if _redis_client is not None:
+        return _redis_client if _redis_available else None
+    with _redis_init_lock:
+        if _redis_client is not None:
+            return _redis_client if _redis_available else None
+        redis_url = os.getenv("REDIS_URL", "")
+        if not redis_url:
+            _redis_available = False
+            return None
+        try:
+            import redis as _redis_lib
+
+            client = _redis_lib.from_url(redis_url, socket_connect_timeout=2, decode_responses=True)
+            client.ping()
+            _redis_client = client
+            _redis_available = True
+        except Exception:
+            _redis_available = False
+    return _redis_client if _redis_available else None
+
+
+# ---------------------------------------------------------------------------
+# In-memory fallback
+# ---------------------------------------------------------------------------
+
+_rate_limit_store: dict = defaultdict(list)
+_rate_limit_lock = threading.Lock()
+
+
+def _check_rate_limit_memory(ip: str) -> bool:
     now = time.time()
     cutoff = now - _AUTH_RATE_WINDOW
     with _rate_limit_lock:
         attempts = _rate_limit_store[ip]
-        # Prune old entries
         _rate_limit_store[ip] = [t for t in attempts if t > cutoff]
         if len(_rate_limit_store[ip]) >= _AUTH_RATE_LIMIT:
             return False
@@ -102,10 +144,44 @@ def _check_rate_limit(ip: str) -> bool:
         return True
 
 
+def _check_rate_limit_redis(ip: str, r) -> bool:
+    """Sliding-window rate limit using a Redis sorted set."""
+    key = f"vlair:rl:auth:{ip}"
+    now = time.time()
+    cutoff = now - _AUTH_RATE_WINDOW
+    try:
+        pipe = r.pipeline()
+        pipe.zremrangebyscore(key, 0, cutoff)
+        pipe.zadd(key, {f"{now}:{id(pipe)}": now})
+        pipe.zcard(key)
+        pipe.expire(key, _AUTH_RATE_WINDOW)
+        results = pipe.execute()
+        count = results[2]
+        return count <= _AUTH_RATE_LIMIT
+    except Exception:
+        # Redis error mid-request — fall back to memory for this call
+        return _check_rate_limit_memory(ip)
+
+
+def _check_rate_limit(ip: str) -> bool:
+    """Return True if the IP is within rate limits, False if exceeded."""
+    r = _get_redis()
+    if r is not None:
+        return _check_rate_limit_redis(ip, r)
+    return _check_rate_limit_memory(ip)
+
+
 def reset_rate_limits() -> None:
     """Clear all rate limit state. Intended for testing."""
     with _rate_limit_lock:
         _rate_limit_store.clear()
+    r = _get_redis()
+    if r is not None:
+        try:
+            for key in r.scan_iter("vlair:rl:auth:*"):
+                r.delete(key)
+        except Exception:
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +373,12 @@ def change_password():
 
     Body: {"current_password": str, "new_password": str}
     """
-    from vlair.webapp.auth.models import authenticate_user, _hash_password, _connect, revoke_all_user_tokens
+    from vlair.webapp.auth.models import (
+        authenticate_user,
+        _hash_password,
+        _connect,
+        revoke_all_user_tokens,
+    )
 
     data = request.get_json(force=True) or {}
     current_pw = data.get("current_password", "")
@@ -329,7 +410,11 @@ def change_password():
         username=g.current_user["username"],
         ip_address=request.remote_addr,
     )
-    return jsonify({"message": "Password changed. All active sessions have been invalidated. Please log in again."})
+    return jsonify(
+        {
+            "message": "Password changed. All active sessions have been invalidated. Please log in again."
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
