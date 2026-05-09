@@ -49,13 +49,41 @@ import sys
 import json
 import uuid
 import tempfile
+import threading
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from flask import Flask, g, jsonify, request, send_from_directory, render_template
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
+
+# ---------------------------------------------------------------------------
+# App-level tool instance cache (P-4)
+#
+# Tool classes do non-trivial work in __init__ (SQLite connects, env-var
+# reads).  Instantiating them once per process and sharing across requests
+# avoids that overhead under load.
+#
+# Only tools whose constructor args are constant across requests (i.e.
+# derived purely from env vars or hard-coded defaults) are cached here.
+# Tools whose __init__ takes per-request parameters (e.g. IOCExtractor
+# with caller-supplied defang/exclude_private_ips flags) are NOT cached.
+# ---------------------------------------------------------------------------
+
+_TOOL_CACHE: dict[str, Any] = {}
+_TOOL_CACHE_LOCK = threading.Lock()
+
+
+def _get_tool(cls, *args, **kwargs):
+    """Return a cached singleton instance of *cls*, creating it if needed."""
+    key = cls.__qualname__
+    if key not in _TOOL_CACHE:
+        with _TOOL_CACHE_LOCK:
+            if key not in _TOOL_CACHE:
+                _TOOL_CACHE[key] = cls(*args, **kwargs)
+    return _TOOL_CACHE[key]
+
 
 # ---------------------------------------------------------------------------
 # Bootstrap imports
@@ -296,7 +324,7 @@ def _register_tool_routes(app: Flask) -> None:
             if not hashes:
                 return jsonify({"error": "No hashes provided"}), 400
 
-            lookup = HashLookup()
+            lookup = _get_tool(HashLookup)
             results = [lookup.lookup(h.strip()) for h in hashes if h.strip()]
             results = [r for r in results if r]
 
@@ -337,7 +365,7 @@ def _register_tool_routes(app: Flask) -> None:
             if not targets:
                 return jsonify({"error": "No targets provided"}), 400
 
-            intel = IntelligenceGatherer()
+            intel = _get_tool(IntelligenceGatherer)
             results = [intel.analyze(t.strip()) for t in targets]
             results = [r for r in results if r]
 
@@ -378,7 +406,7 @@ def _register_tool_routes(app: Flask) -> None:
             if not urls:
                 return jsonify({"error": "No URLs provided"}), 400
 
-            analyzer = URLAnalyzer(cache_enabled=data.get("cache_enabled", True))
+            analyzer = _get_tool(URLAnalyzer)
             results = [analyzer.analyze(u) for u in urls]
 
             verdicts: dict = {}
@@ -442,7 +470,7 @@ def _register_tool_routes(app: Flask) -> None:
                     return jsonify({"error": str(ve)}), 400
 
             try:
-                analyzer = LogAnalyzer()
+                analyzer = _get_tool(LogAnalyzer)
                 results = analyzer.analyze_file(
                     temp_path,
                     log_type=log_type,
@@ -582,7 +610,7 @@ def _register_tool_routes(app: Flask) -> None:
                 f = request.files["file"]
                 if f and _allowed(f.filename, "cert"):
                     cert_data = f.read()
-                    analyzer = CertificateAnalyzer()
+                    analyzer = _get_tool(CertificateAnalyzer)
                     results = analyzer.analyze_certificate_data(cert_data)
                     return jsonify(
                         {
@@ -597,7 +625,7 @@ def _register_tool_routes(app: Flask) -> None:
             if not hostname:
                 return jsonify({"error": "hostname or certificate file required"}), 400
 
-            analyzer = CertificateAnalyzer()
+            analyzer = _get_tool(CertificateAnalyzer)
             results = analyzer.analyze_host(hostname, data.get("port", 443))
             return jsonify(
                 {
@@ -641,7 +669,7 @@ def _register_tool_routes(app: Flask) -> None:
             if not code:
                 return jsonify({"error": "No script code provided"}), 400
 
-            d = Deobfuscator()
+            d = _get_tool(Deobfuscator)
             results = d.deobfuscate(code, language=language)
 
             iocs = results.get("iocs", {})
@@ -679,7 +707,7 @@ def _register_tool_routes(app: Flask) -> None:
 
             temp_path = _save_upload(f, "pcap")
             try:
-                analyzer = PCAPAnalyzer()
+                analyzer = _get_tool(PCAPAnalyzer)
                 results = analyzer.analyze(temp_path)
             finally:
                 os.remove(temp_path)
@@ -712,7 +740,7 @@ def _register_tool_routes(app: Flask) -> None:
             if not query:
                 return jsonify({"error": "query is required"}), 400
 
-            agg = ThreatFeedAggregator()
+            agg = _get_tool(ThreatFeedAggregator)
             results = agg.search(
                 query,
                 ioc_type=data.get("ioc_type"),
@@ -739,7 +767,7 @@ def _register_tool_routes(app: Flask) -> None:
             from vlair.tools.threat_feed_aggregator import ThreatFeedAggregator
 
             data = request.get_json(silent=True) or {}
-            agg = ThreatFeedAggregator()
+            agg = _get_tool(ThreatFeedAggregator)
             results = agg.update_feeds(sources=data.get("sources"))
             return jsonify(
                 {
@@ -773,7 +801,7 @@ def _register_tool_routes(app: Flask) -> None:
             os.makedirs(output_dir, exist_ok=True)
 
             try:
-                carver = FileCarver()
+                carver = _get_tool(FileCarver)
                 results = carver.carve(temp_path, output_dir=output_dir)
             finally:
                 os.remove(temp_path)
@@ -911,7 +939,7 @@ def _register_tool_routes(app: Flask) -> None:
                     from vlair.tools.pcap_analyzer import PCAPAnalyzer
 
                     try:
-                        analyzer = PCAPAnalyzer()
+                        analyzer = _get_tool(PCAPAnalyzer)
                         return analyzer.analyze(_target)
                     finally:
                         if os.path.exists(_target):
