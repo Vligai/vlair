@@ -7,6 +7,7 @@ from .playbook_generator import PlaybookGenerator
 from .cache import AIResponseCache
 from .privacy import sanitize_tool_result, get_dry_run_summary
 from .reporter import AIReporter
+from .siem_query import SiemQueryGenerator, PLATFORMS as SIEM_PLATFORMS
 from .providers.base import AIProvider, AIResponse
 
 __all__ = [
@@ -17,6 +18,8 @@ __all__ = [
     "PlaybookGenerator",
     "AIResponseCache",
     "AIReporter",
+    "SiemQueryGenerator",
+    "SIEM_PLATFORMS",
     "AIProvider",
     "AIResponse",
     "sanitize_tool_result",

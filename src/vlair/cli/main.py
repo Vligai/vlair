@@ -2155,6 +2155,100 @@ def main():
             print(f"Error: {_sig_err}", file=sys.stderr)
             sys.exit(2)
 
+    elif sys.argv[1] == "siem-query":
+        # SIEM query generator: vlair siem-query <ioc> [--type <type>] [--siem <platform,...>] [--ai] [--json]
+        if len(sys.argv) < 3 or sys.argv[2] in ("--help", "-h"):
+            print("Usage: vlair siem-query <ioc_value> [options]", file=sys.stderr)
+            print("", file=sys.stderr)
+            print(
+                "Generate SIEM detection queries for an IOC across multiple platforms.",
+                file=sys.stderr,
+            )
+            print("", file=sys.stderr)
+            print("Options:", file=sys.stderr)
+            print(
+                "  --type <type>      IOC type: ip, domain, hash_md5, hash_sha1,", file=sys.stderr
+            )
+            print(
+                "                               hash_sha256, url, email (auto-detected)",
+                file=sys.stderr,
+            )
+            print("  --siem <list>      Comma-separated platforms (default: all)", file=sys.stderr)
+            print("                     Choices: splunk, elastic, sentinel, sumo", file=sys.stderr)
+            print("  --ai               Use AI for context-aware query generation", file=sys.stderr)
+            print("  --json             Output raw JSON", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("Examples:", file=sys.stderr)
+            print("  vlair siem-query 1.2.3.4", file=sys.stderr)
+            print("  vlair siem-query malicious.com --siem splunk,sentinel", file=sys.stderr)
+            print(
+                "  vlair siem-query 44d88612fea8a8f36de82e1278abb02f --type hash_md5 --ai",
+                file=sys.stderr,
+            )
+            sys.exit(0 if sys.argv[2:] and sys.argv[2] in ("--help", "-h") else 1)
+
+        try:
+            from vlair.ai import SiemQueryGenerator, SIEM_PLATFORMS
+            from vlair.core.detector import InputDetector
+
+            sq_value = sys.argv[2]
+            sq_args = sys.argv[3:]
+
+            # Parse options
+            sq_ioc_type = None
+            sq_platforms = None
+            sq_use_ai = "--ai" in sq_args
+            sq_json = "--json" in sq_args
+
+            i = 0
+            while i < len(sq_args):
+                if sq_args[i] == "--type" and i + 1 < len(sq_args):
+                    sq_ioc_type = sq_args[i + 1].lower()
+                    i += 2
+                elif sq_args[i] == "--siem" and i + 1 < len(sq_args):
+                    sq_platforms = [p.strip().lower() for p in sq_args[i + 1].split(",")]
+                    i += 2
+                else:
+                    i += 1
+
+            # Auto-detect IOC type if not provided
+            if sq_ioc_type is None:
+                try:
+                    detector = InputDetector()
+                    detected = detector.detect(sq_value)
+                    sq_ioc_type = str(detected).lower()
+                except Exception:
+                    sq_ioc_type = "unknown"
+
+            gen = SiemQueryGenerator()
+            queries = gen.generate(
+                ioc_value=sq_value,
+                ioc_type=sq_ioc_type,
+                platforms=sq_platforms,
+                use_ai=sq_use_ai,
+            )
+
+            if sq_json:
+                print(
+                    json.dumps({"ioc": sq_value, "type": sq_ioc_type, "queries": queries}, indent=2)
+                )
+            else:
+                print(f"\nSIEM Queries — {sq_value} ({sq_ioc_type})")
+                print("=" * 66)
+                if sq_use_ai:
+                    print("(AI-generated)")
+                for platform, query in queries.items():
+                    print(f"\n--- {platform.upper()} ---")
+                    print(query)
+                print()
+
+        except ValueError as _sq_val_err:
+            print(f"Error: {_sq_val_err}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as _sq_err:
+            print(f"Error generating SIEM queries: {_sq_err}", file=sys.stderr)
+            sys.exit(2)
+
     else:
         # Run a tool
         tool_id = sys.argv[1]
