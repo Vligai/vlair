@@ -28,7 +28,9 @@ class TestApacheLogParser:
     def test_parse_valid_log_line(self):
         """Test parsing valid Apache log line"""
         parser = ApacheLogParser()
-        line = '192.0.2.1 - - [18/Nov/2025:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "http://example.com" "Mozilla/5.0"'
+        line = (
+            '192.0.2.1 - - [18/Nov/2025:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "http://example.com" "Mozilla/5.0"'
+        )
 
         result = parser.parse_line(line)
 
@@ -352,9 +354,7 @@ class TestLogAnalyzer:
         """Test Apache log format detection"""
         analyzer = LogAnalyzer()
 
-        lines = [
-            '192.0.2.1 - - [18/Nov/2025:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"'
-        ]
+        lines = ['192.0.2.1 - - [18/Nov/2025:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"']
 
         format_type = analyzer.detect_format(lines)
         assert format_type == "apache"
@@ -578,15 +578,9 @@ except ImportError:
 
 SIGMA_FIELD_MAP = Path(__file__).parent.parent / "src" / "vlair" / "data" / "sigma_field_map.yml"
 
-_APACHE_LINE = (
-    '1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] '
-    '"GET /etc/passwd HTTP/1.1" 200 512 "-" "Mozilla/5.0"'
-)
+_APACHE_LINE = "1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] " '"GET /etc/passwd HTTP/1.1" 200 512 "-" "Mozilla/5.0"'
 
-_CLEAN_LINE = (
-    '5.6.7.8 - - [01/Jan/2025:00:00:01 +0000] '
-    '"GET /index.html HTTP/1.1" 200 1024 "-" "Chrome/120"'
-)
+_CLEAN_LINE = "5.6.7.8 - - [01/Jan/2025:00:00:01 +0000] " '"GET /index.html HTTP/1.1" 200 1024 "-" "Chrome/120"'
 
 
 @pytest.mark.skipif(not _YAML_FOR_TESTS, reason="pyyaml not installed")
@@ -688,7 +682,7 @@ class TestLogAnalyzerSigmaIntegration:
     def test_pattern_alerts_have_source_pattern(self, tmp_path):
         """Existing pattern-based alerts have source='pattern' even when Sigma is active."""
         sqli_line = (
-            '9.9.9.9 - - [01/Jan/2025:00:00:02 +0000] '
+            "9.9.9.9 - - [01/Jan/2025:00:00:02 +0000] "
             '"GET /search.php?q=union%20select%20*%20from%20users HTTP/1.1" 200 512 "-" "curl/7"'
         )
         log = self._write_log(tmp_path, [sqli_line])

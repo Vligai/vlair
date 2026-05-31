@@ -316,8 +316,7 @@ class LogAnalyzer:
                 )
                 if self.verbose:
                     print(
-                        f"Sigma: {sigma_engine.rules_evaluated} rules loaded "
-                        f"({len(sigma_engine.skipped_rules)} skipped)",
+                        f"Sigma: {sigma_engine.rules_evaluated} rules loaded " f"({len(sigma_engine.skipped_rules)} skipped)",
                         file=sys.stderr,
                     )
 
@@ -405,9 +404,7 @@ class LogAnalyzer:
 
             stats = {
                 "top_ips": [{"ip": ip, "count": count} for ip, count in ip_counter.most_common(10)],
-                "top_paths": [
-                    {"path": path, "count": count} for path, count in path_counter.most_common(10)
-                ],
+                "top_paths": [{"path": path, "count": count} for path, count in path_counter.most_common(10)],
                 "status_codes": dict(status_counter),
                 "total_requests": len(entries),
             }
@@ -421,13 +418,8 @@ class LogAnalyzer:
             process_counter = Counter(processes)
 
             stats = {
-                "top_hosts": [
-                    {"host": host, "count": count} for host, count in host_counter.most_common(10)
-                ],
-                "top_processes": [
-                    {"process": proc, "count": count}
-                    for proc, count in process_counter.most_common(10)
-                ],
+                "top_hosts": [{"host": host, "count": count} for host, count in host_counter.most_common(10)],
+                "top_processes": [{"process": proc, "count": count} for proc, count in process_counter.most_common(10)],
                 "total_events": len(entries),
             }
 

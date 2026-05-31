@@ -31,7 +31,6 @@ from vlair.tools.sigma_engine import (
     _SigmaRule,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -606,7 +605,17 @@ class TestMatchStructure:
         engine = _make_engine(tmp_path, SIMPLE_RULE)
         engine.evaluate(_web_event(path="/evil/path"))
         m = engine.get_matches()[0]
-        required = {"rule_id", "rule_name", "level", "mitre_attack", "tags", "matched_event", "rule_path", "match_count", "source"}
+        required = {
+            "rule_id",
+            "rule_name",
+            "level",
+            "mitre_attack",
+            "tags",
+            "matched_event",
+            "rule_path",
+            "match_count",
+            "source",
+        }
         assert required.issubset(m.keys())
 
     def test_source_is_sigma(self, tmp_path):
@@ -672,6 +681,7 @@ class TestRequiredFieldsShortCircuit:
 # ---------------------------------------------------------------------------
 # Task 8.3 — Benchmark (skipped by default; run with pytest -m benchmark)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.benchmark
 def test_benchmark_100k_events(tmp_path):

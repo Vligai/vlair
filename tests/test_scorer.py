@@ -315,9 +315,7 @@ class TestRecommendations:
 
     def test_recommendations_for_phishing(self):
         """Test recommendations for phishing indicators"""
-        self.scorer.add_finding(
-            Severity.HIGH, "SPF validation failed", "eml_parser", {"spf": "fail"}
-        )
+        self.scorer.add_finding(Severity.HIGH, "SPF validation failed", "eml_parser", {"spf": "fail"})
         recommendations = self.scorer.get_recommendations()
 
         assert any("block" in r.lower() and "domain" in r.lower() for r in recommendations)
@@ -417,9 +415,7 @@ class TestAddFindingsFromToolResults:
 
     def test_log_analysis_sql_injection(self):
         """Test adding findings from log analysis with SQL injection"""
-        result = {
-            "threats": {"sql_injection": [{"ip": "1.2.3.4", "payload": "' OR 1=1"}], "xss": []}
-        }
+        result = {"threats": {"sql_injection": [{"ip": "1.2.3.4", "payload": "' OR 1=1"}], "xss": []}}
         self.scorer.add_findings_from_log_analysis(result)
 
         assert len(self.scorer.findings) > 0
@@ -438,6 +434,7 @@ class TestAddFindingsFromToolResults:
 # ---------------------------------------------------------------------------
 # Task 4.3 — Sigma level → risk score integration tests
 # ---------------------------------------------------------------------------
+
 
 class TestSigmaScoring:
     """Task 4.3: Sigma level → score combinations, cap at 100, max-of-levels."""

@@ -250,11 +250,7 @@ class Analyzer:
                 ioc_result = extractor.extract_from_file(file_path)
 
                 hash_results = ioc_result.get("hashes", {})
-                iocs["hashes"] = (
-                    hash_results.get("md5", [])
-                    + hash_results.get("sha1", [])
-                    + hash_results.get("sha256", [])
-                )
+                iocs["hashes"] = hash_results.get("md5", []) + hash_results.get("sha1", []) + hash_results.get("sha256", [])
                 iocs["domains"] = ioc_result.get("domains", [])
                 iocs["ips"] = ioc_result.get("ips", [])
                 iocs["urls"] = ioc_result.get("urls", [])
@@ -438,11 +434,7 @@ class Analyzer:
                 ioc_result = extractor.extract_from_file(file_path)
 
                 hash_results = ioc_result.get("hashes", {})
-                iocs["hashes"] = (
-                    hash_results.get("md5", [])
-                    + hash_results.get("sha1", [])
-                    + hash_results.get("sha256", [])
-                )
+                iocs["hashes"] = hash_results.get("md5", []) + hash_results.get("sha1", []) + hash_results.get("sha256", [])
                 iocs["domains"] = ioc_result.get("domains", [])
                 iocs["ips"] = ioc_result.get("ips", [])
                 iocs["urls"] = ioc_result.get("urls", [])
@@ -458,9 +450,7 @@ class Analyzer:
 
         return results, iocs
 
-    def _lookup_extracted_iocs(
-        self, iocs: Dict[str, List], results: Dict[str, Any], max_lookups: int = 5
-    ):
+    def _lookup_extracted_iocs(self, iocs: Dict[str, List], results: Dict[str, Any], max_lookups: int = 5):
         """Look up extracted IOCs against threat intelligence."""
 
         lookups_done = 0
@@ -474,10 +464,7 @@ class Analyzer:
                     hash_result = self._analyze_hash(hash_val)
                     if "hash_lookup" not in results:
                         results["hash_lookup"] = {"results": []}
-                    if (
-                        isinstance(results.get("hash_lookup"), dict)
-                        and "results" not in results["hash_lookup"]
-                    ):
+                    if isinstance(results.get("hash_lookup"), dict) and "results" not in results["hash_lookup"]:
                         results["hash_lookup"] = {"results": [results["hash_lookup"]]}
                     results["hash_lookup"]["results"].append(hash_result.get("hash_lookup", {}))
                     lookups_done += 1
@@ -493,10 +480,7 @@ class Analyzer:
                     domain_result = self._analyze_domain(domain)
                     if "domain_intel" not in results:
                         results["domain_intel"] = {"results": []}
-                    if (
-                        isinstance(results.get("domain_intel"), dict)
-                        and "results" not in results["domain_intel"]
-                    ):
+                    if isinstance(results.get("domain_intel"), dict) and "results" not in results["domain_intel"]:
                         results["domain_intel"] = {"results": [results["domain_intel"]]}
                     results["domain_intel"]["results"].append(domain_result.get("domain_intel", {}))
                     lookups_done += 1
@@ -512,10 +496,7 @@ class Analyzer:
                     url_result = self._analyze_url(url)
                     if "url_analyzer" not in results:
                         results["url_analyzer"] = {"results": []}
-                    if (
-                        isinstance(results.get("url_analyzer"), dict)
-                        and "results" not in results["url_analyzer"]
-                    ):
+                    if isinstance(results.get("url_analyzer"), dict) and "results" not in results["url_analyzer"]:
                         results["url_analyzer"] = {"results": [results["url_analyzer"]]}
                     results["url_analyzer"]["results"].append(url_result.get("url_analyzer", {}))
                     lookups_done += 1
@@ -553,9 +534,7 @@ Examples:
     parser.add_argument("input", help="Input to analyze (file, hash, IP, domain, URL)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed progress")
     parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
-    parser.add_argument(
-        "--quiet", "-q", action="store_true", help="Minimal output (just verdict and score)"
-    )
+    parser.add_argument("--quiet", "-q", action="store_true", help="Minimal output (just verdict and score)")
 
     return parser.parse_args()
 

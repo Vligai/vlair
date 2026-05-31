@@ -112,15 +112,11 @@ class SigmaEngine:
         min_level: str = "low",
     ) -> None:
         if not _YAML_AVAILABLE:
-            raise ImportError(
-                "PyYAML is required for Sigma support. Install with: pip install pyyaml"
-            )
+            raise ImportError("PyYAML is required for Sigma support. Install with: pip install pyyaml")
 
         self.min_level = min_level.lower()
         self.min_score = SIGMA_LEVEL_SCORES.get(self.min_level, 15)
-        self.field_map: Dict[str, str] = self._load_field_map(
-            field_map_path or self.BUILTIN_FIELD_MAP_PATH
-        )
+        self.field_map: Dict[str, str] = self._load_field_map(field_map_path or self.BUILTIN_FIELD_MAP_PATH)
 
         self.rules: List[_SigmaRule] = []
         self.skipped_rules: List[Dict[str, str]] = []
@@ -175,9 +171,7 @@ class SigmaEngine:
             with open(path, encoding="utf-8") as f:
                 raw = yaml.safe_load(f)
             if not isinstance(raw, dict) or "detection" not in raw:
-                self.skipped_rules.append(
-                    {"path": str(path), "reason": "missing or invalid detection block"}
-                )
+                self.skipped_rules.append({"path": str(path), "reason": "missing or invalid detection block"})
                 return
 
             rule = _SigmaRule(raw, path)

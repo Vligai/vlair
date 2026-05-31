@@ -143,9 +143,7 @@ class LogInvestigationWorkflow(Workflow):
             return StepResult(step_name="parse_logs", success=True, data=result)
 
         except ImportError:
-            return StepResult(
-                step_name="parse_logs", success=False, error="Log analyzer not available"
-            )
+            return StepResult(step_name="parse_logs", success=False, error="Log analyzer not available")
         except Exception as e:
             return StepResult(step_name="parse_logs", success=False, error=str(e))
 
@@ -155,9 +153,7 @@ class LogInvestigationWorkflow(Workflow):
         sigma_alerts = [a for a in log_result.get("alerts", []) if a.get("source") == "sigma"]
 
         if not sigma_alerts:
-            return StepResult(
-                step_name="sigma_evaluation", success=True, data={"sigma_matches": 0}
-            )
+            return StepResult(step_name="sigma_evaluation", success=True, data={"sigma_matches": 0})
 
         # Group by level for max-of-levels scoring
         by_level: Dict[str, list] = {}
@@ -227,8 +223,7 @@ class LogInvestigationWorkflow(Workflow):
         """Detect brute force attempts from pattern alerts."""
         log_result = context.data.get("log_result", {})
         bf_alerts = [
-            a for a in log_result.get("alerts", [])
-            if a.get("source") == "pattern" and a.get("type") == "brute_force_attempt"
+            a for a in log_result.get("alerts", []) if a.get("source") == "pattern" and a.get("type") == "brute_force_attempt"
         ]
 
         if bf_alerts:
@@ -244,16 +239,13 @@ class LogInvestigationWorkflow(Workflow):
                     context.add_iocs("ips", [ip])
 
         context.data["brute_force_count"] = len(bf_alerts)
-        return StepResult(
-            step_name="detect_bruteforce", success=True, data={"count": len(bf_alerts)}
-        )
+        return StepResult(step_name="detect_bruteforce", success=True, data={"count": len(bf_alerts)})
 
     def _detect_scanners(self, context: WorkflowContext) -> StepResult:
         """Detect scanner activity from pattern alerts."""
         log_result = context.data.get("log_result", {})
         scanner_alerts = [
-            a for a in log_result.get("alerts", [])
-            if a.get("source") == "pattern" and a.get("type") == "scanner_detected"
+            a for a in log_result.get("alerts", []) if a.get("source") == "pattern" and a.get("type") == "scanner_detected"
         ]
 
         if scanner_alerts:
@@ -292,9 +284,7 @@ class LogInvestigationWorkflow(Workflow):
 
         self._log(f"  Found {len(attacker_ips)} unique attacker IPs")
 
-        return StepResult(
-            step_name="extract_attackers", success=True, data={"count": len(attacker_ips)}
-        )
+        return StepResult(step_name="extract_attackers", success=True, data={"count": len(attacker_ips)})
 
     def _check_ips(self, context: WorkflowContext) -> StepResult:
         """Check attacker IPs against threat intelligence"""
@@ -392,9 +382,7 @@ class LogInvestigationWorkflow(Workflow):
             "total_attacks": total_attacks,
             "attack_breakdown": attack_counts,
             "unique_attackers": len(context.data.get("attacker_ips", [])),
-            "known_malicious_ips": context.data.get("ip_check_results", {}).get(
-                "known_malicious", 0
-            ),
+            "known_malicious_ips": context.data.get("ip_check_results", {}).get("known_malicious", 0),
             "sigma_matches": sigma_summary,
             "risk_score": summary["risk_score"],
             "verdict": summary["verdict"],

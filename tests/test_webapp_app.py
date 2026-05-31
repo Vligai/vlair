@@ -230,9 +230,7 @@ class TestEndpointsListing:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "endpointuser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "endpointuser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_endpoints_listing_requires_auth(self):
@@ -278,9 +276,7 @@ class TestIOCExtractorEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "iocuser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "iocuser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_ioc_extract_requires_auth(self):
@@ -291,9 +287,7 @@ class TestIOCExtractorEndpoint:
     def test_ioc_extract_no_input(self):
         """Test IOC extraction with no input."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/ioc/extract", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/ioc/extract", headers={"Authorization": f"Bearer {token}"}, json={})
         assert resp.status_code == 400
 
     def test_ioc_extract_success(self):
@@ -350,9 +344,7 @@ class TestHashLookupEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "hashuser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "hashuser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_hash_lookup_requires_auth(self):
@@ -363,9 +355,7 @@ class TestHashLookupEndpoint:
     def test_hash_lookup_no_hashes(self):
         """Test hash lookup with no hashes."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/hash/lookup", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/hash/lookup", headers={"Authorization": f"Bearer {token}"}, json={})
         assert resp.status_code == 400
 
     def test_hash_lookup_string_input(self):
@@ -407,9 +397,7 @@ class TestIntelEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "inteluser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "inteluser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_intel_requires_auth(self):
@@ -420,9 +408,7 @@ class TestIntelEndpoint:
     def test_intel_no_targets(self):
         """Test intel with no targets."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/intel/analyze", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/intel/analyze", headers={"Authorization": f"Bearer {token}"}, json={})
         # Might be 400 or 500 depending on how tool handles empty input
         assert resp.status_code in [400, 500]
 
@@ -466,9 +452,7 @@ class TestURLAnalyzerEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "urluser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "urluser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_url_requires_auth(self):
@@ -479,9 +463,7 @@ class TestURLAnalyzerEndpoint:
     def test_url_no_urls(self):
         """Test URL analysis with no URLs."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/url/analyze", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/url/analyze", headers={"Authorization": f"Bearer {token}"}, json={})
         assert resp.status_code == 400
 
     def test_url_string_input(self):
@@ -523,9 +505,7 @@ class TestLogAnalyzerEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "loguser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "loguser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_log_requires_auth(self):
@@ -536,9 +516,7 @@ class TestLogAnalyzerEndpoint:
     def test_log_no_input(self):
         """Test log analysis with no input."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/log/analyze", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/log/analyze", headers={"Authorization": f"Bearer {token}"}, json={})
         assert resp.status_code == 400
 
     def test_log_text_input(self):
@@ -606,9 +584,7 @@ class TestDeobfuscatorEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "deobuser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "deobuser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_deobfuscate_requires_auth(self):
@@ -619,9 +595,7 @@ class TestDeobfuscatorEndpoint:
     def test_deobfuscate_no_code(self):
         """Test deobfuscation with no code."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/deobfuscate", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/deobfuscate", headers={"Authorization": f"Bearer {token}"}, json={})
         assert resp.status_code == 400
 
     def test_deobfuscate_success(self):
@@ -669,9 +643,7 @@ class TestThreatFeedEndpoints:
         self.client = self.app.test_client()
 
         self.analyst = create_user("feedanalyst", "feedanalyst@example.com", "password123")
-        self.senior = create_user(
-            "feedsenior", "feedsenior@example.com", "password123", role=Role.SENIOR_ANALYST
-        )
+        self.senior = create_user("feedsenior", "feedsenior@example.com", "password123", role=Role.SENIOR_ANALYST)
 
     def teardown_method(self):
         """Clean up test database."""
@@ -683,16 +655,12 @@ class TestThreatFeedEndpoints:
 
     def get_analyst_token(self):
         """Get analyst authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "feedanalyst", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "feedanalyst", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def get_senior_token(self):
         """Get senior analyst authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "feedsenior", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "feedsenior", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_threatfeed_search_requires_auth(self):
@@ -703,9 +671,7 @@ class TestThreatFeedEndpoints:
     def test_threatfeed_search_no_query(self):
         """Test threat feed search with no query."""
         token = self.get_analyst_token()
-        resp = self.client.post(
-            "/api/threatfeed/search", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/threatfeed/search", headers={"Authorization": f"Bearer {token}"}, json={})
         # May be 400 or 500 depending on how tool handles missing query
         assert resp.status_code in [400, 500]
 
@@ -723,17 +689,13 @@ class TestThreatFeedEndpoints:
     def test_threatfeed_update_requires_senior(self):
         """Test threat feed update requires senior analyst."""
         token = self.get_analyst_token()
-        resp = self.client.post(
-            "/api/threatfeed/update", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/threatfeed/update", headers={"Authorization": f"Bearer {token}"}, json={})
         assert resp.status_code == 403
 
     def test_threatfeed_update_senior_allowed(self):
         """Test senior analyst can update threat feeds."""
         token = self.get_senior_token()
-        resp = self.client.post(
-            "/api/threatfeed/update", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/threatfeed/update", headers={"Authorization": f"Bearer {token}"}, json={})
         # Tool may have database issues but should respond
         assert resp.status_code in [200, 500]
 
@@ -766,9 +728,7 @@ class TestEMLParserEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "emluser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "emluser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_eml_requires_auth(self):
@@ -826,9 +786,7 @@ class TestYARAScannerEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "yarauser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "yarauser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_yara_requires_auth(self):
@@ -840,9 +798,7 @@ class TestYARAScannerEndpoint:
     def test_yara_no_file(self):
         """Test YARA scanning with no file."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/yara/scan", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/yara/scan", headers={"Authorization": f"Bearer {token}"}, json={})
         # May be 400 or 500 depending on error handling
         assert resp.status_code in [400, 500]
 
@@ -875,9 +831,7 @@ class TestCertAnalyzerEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "certuser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "certuser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_cert_requires_auth(self):
@@ -888,9 +842,7 @@ class TestCertAnalyzerEndpoint:
     def test_cert_no_input(self):
         """Test certificate analysis with no input."""
         token = self.get_auth_token()
-        resp = self.client.post(
-            "/api/cert/analyze", headers={"Authorization": f"Bearer {token}"}, json={}
-        )
+        resp = self.client.post("/api/cert/analyze", headers={"Authorization": f"Bearer {token}"}, json={})
         assert resp.status_code == 400
 
 
@@ -922,9 +874,7 @@ class TestPCAPAnalyzerEndpoint:
 
     def get_auth_token(self):
         """Get authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "pcapuser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "pcapuser", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_pcap_requires_auth(self):
@@ -969,9 +919,7 @@ class TestFileCarverEndpoint:
         self.client = self.app.test_client()
 
         self.analyst = create_user("carveanalyst", "carveanalyst@example.com", "password123")
-        self.senior = create_user(
-            "carvesenior", "carvesenior@example.com", "password123", role=Role.SENIOR_ANALYST
-        )
+        self.senior = create_user("carvesenior", "carvesenior@example.com", "password123", role=Role.SENIOR_ANALYST)
 
     def teardown_method(self):
         """Clean up test database."""
@@ -983,16 +931,12 @@ class TestFileCarverEndpoint:
 
     def get_analyst_token(self):
         """Get analyst authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "carveanalyst", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "carveanalyst", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def get_senior_token(self):
         """Get senior analyst authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "carvesenior", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "carvesenior", "password": "password123"})
         return resp.get_json()["access_token"]
 
     def test_carve_requires_senior(self):
@@ -1032,6 +976,7 @@ class TestFileCarverEndpoint:
 
 try:
     import yaml as _yaml_webapp
+
     _YAML_WEBAPP = True
 except ImportError:
     _YAML_WEBAPP = False

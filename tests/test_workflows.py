@@ -49,9 +49,7 @@ class TestWorkflowStep:
 
     def test_optional_step(self):
         """Test optional step"""
-        step = WorkflowStep(
-            name="optional", description="Optional step", tool="tool", required=False
-        )
+        step = WorkflowStep(name="optional", description="Optional step", tool="tool", required=False)
         assert step.required is False
 
 
@@ -338,12 +336,8 @@ class TestLogInvestigationWorkflow:
 
         # Create a test log file
         with tempfile.NamedTemporaryFile(suffix=".log", delete=False, mode="w") as f:
-            f.write(
-                '192.168.1.100 - - [01/Jan/2025:00:00:00 +0000] "GET /admin HTTP/1.1" 200 1234\n'
-            )
-            f.write(
-                '192.168.1.100 - - [01/Jan/2025:00:00:01 +0000] "GET /login HTTP/1.1" 200 1234\n'
-            )
+            f.write('192.168.1.100 - - [01/Jan/2025:00:00:00 +0000] "GET /admin HTTP/1.1" 200 1234\n')
+            f.write('192.168.1.100 - - [01/Jan/2025:00:00:01 +0000] "GET /login HTTP/1.1" 200 1234\n')
             temp_path = f.name
 
         try:
@@ -467,6 +461,7 @@ class TestWorkflowErrorHandling:
 
 try:
     import yaml as _yaml_wf
+
     _YAML_WF = True
 except ImportError:
     _YAML_WF = False
@@ -476,10 +471,7 @@ except ImportError:
 class TestLogInvestigationSigma:
     """Task 6.4: workflow runs end-to-end on a fixture log file."""
 
-    APACHE_LINE = (
-        '1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] '
-        '"GET /etc/passwd HTTP/1.1" 200 512 "-" "curl/7"'
-    )
+    APACHE_LINE = "1.2.3.4 - - [01/Jan/2025:00:00:00 +0000] " '"GET /etc/passwd HTTP/1.1" 200 512 "-" "curl/7"'
 
     RULE = """
         title: Passwd Access
@@ -498,6 +490,7 @@ class TestLogInvestigationSigma:
 
     def _write_rule(self, tmp_path):
         import textwrap
+
         p = tmp_path / "rule.yml"
         p.write_text(textwrap.dedent(self.RULE), encoding="utf-8")
         return p
