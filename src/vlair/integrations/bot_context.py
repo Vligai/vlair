@@ -36,7 +36,8 @@ class BotContext:
 
     def _init_db(self) -> None:
         with self._connect() as conn:
-            conn.executescript("""
+            conn.executescript(
+                """
                 CREATE TABLE IF NOT EXISTS messages (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
                     platform    TEXT    NOT NULL,
@@ -59,7 +60,8 @@ class BotContext:
 
                 CREATE INDEX IF NOT EXISTS idx_rate_limits_user
                     ON rate_limits (user_id, requested_at);
-                """)
+                """
+            )
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(str(self.db_path))

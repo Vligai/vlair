@@ -29,7 +29,8 @@ class AnalysisHistory:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS analysis_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -40,7 +41,8 @@ class AnalysisHistory:
                     command TEXT NOT NULL,
                     duration_seconds REAL
                 )
-            """)
+            """
+            )
             conn.commit()
             conn.close()
         except Exception:
@@ -113,28 +115,34 @@ class AnalysisHistory:
             total = cursor.fetchone()[0]
 
             # Verdicts breakdown
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT verdict, COUNT(*) as count
                 FROM analysis_history
                 WHERE verdict IS NOT NULL
                 GROUP BY verdict
-            """)
+            """
+            )
             verdicts = {row[0]: row[1] for row in cursor.fetchall()}
 
             # Types breakdown
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT input_type, COUNT(*) as count
                 FROM analysis_history
                 GROUP BY input_type
                 ORDER BY count DESC
-            """)
+            """
+            )
             types = {row[0]: row[1] for row in cursor.fetchall()}
 
             # Last analysis timestamp
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT timestamp FROM analysis_history
                 ORDER BY id DESC LIMIT 1
-            """)
+            """
+            )
             last_row = cursor.fetchone()
             last_analysis = last_row[0] if last_row else None
 
