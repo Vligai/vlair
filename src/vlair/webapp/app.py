@@ -238,8 +238,7 @@ def _validate_path(user_path: str) -> str:
         except ValueError:
             continue
     raise ValueError(
-        f"Path '{user_path}' is outside allowed directories. "
-        "Upload the file or place it in ~/.vlair/ instead."
+        f"Path '{user_path}' is outside allowed directories. " "Upload the file or place it in ~/.vlair/ instead."
     )
 
 
@@ -544,9 +543,7 @@ def _register_tool_routes(app: Flask) -> None:
         try:
             from vlair.tools.yara_scanner import YARAScanner
 
-            rules_path = request.form.get("rules_path") or (
-                (request.get_json(silent=True) or {}).get("rules_path")
-            )
+            rules_path = request.form.get("rules_path") or ((request.get_json(silent=True) or {}).get("rules_path"))
             if rules_path:
                 try:
                     rules_path = _validate_path(rules_path)
@@ -885,9 +882,7 @@ def _register_tool_routes(app: Flask) -> None:
 
         try:
             if tool == "yara":
-                rules_path = request.form.get("rules_path") or (
-                    (request.get_json(silent=True) or {}).get("rules_path")
-                )
+                rules_path = request.form.get("rules_path") or ((request.get_json(silent=True) or {}).get("rules_path"))
                 if rules_path:
                     try:
                         rules_path = _validate_path(rules_path)

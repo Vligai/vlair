@@ -244,9 +244,7 @@ class TestPCAPAnalyzer:
         mock_dnsqr_layer.qname = b"malicious-site.tk."
 
         mock_packet.haslayer.side_effect = lambda layer: True
-        mock_packet.__getitem__.side_effect = lambda layer: (
-            mock_dns_layer if layer == mock_dns else mock_dnsqr_layer
-        )
+        mock_packet.__getitem__.side_effect = lambda layer: (mock_dns_layer if layer == mock_dns else mock_dnsqr_layer)
 
         analyzer._analyze_dns(mock_packet, "192.0.2.1", "8.8.8.8")
 
@@ -271,9 +269,7 @@ class TestPCAPAnalyzer:
         mock_dnsqr_layer.qname = b"asdfjklasdfjklqweriuqweriuzxcvzxcv.com."
 
         mock_packet.haslayer.side_effect = lambda layer: True
-        mock_packet.__getitem__.side_effect = lambda layer: (
-            mock_dns_layer if layer == mock_dns else mock_dnsqr_layer
-        )
+        mock_packet.__getitem__.side_effect = lambda layer: (mock_dns_layer if layer == mock_dns else mock_dnsqr_layer)
 
         analyzer._analyze_dns(mock_packet, "192.0.2.1", "8.8.8.8")
 

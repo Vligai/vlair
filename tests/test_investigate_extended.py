@@ -1596,9 +1596,7 @@ class TestInvestigationStateManagerExtended:
 
         state = _create_test_state(inv_id="INV-DEL")
         state.add_step_result(StepResult(name="s1", status=StepStatus.COMPLETED))
-        state.add_remediation_action(
-            RemediationAction(id="a1", name="act", action_type="block", target="x")
-        )
+        state.add_remediation_action(RemediationAction(id="a1", name="act", action_type="block", target="x"))
         manager.save(state)
 
         assert manager.delete("INV-DEL") is True
@@ -1799,9 +1797,7 @@ class TestStateSerialization:
         state.add_step_result(StepResult(name="s1", status=StepStatus.COMPLETED, output={"k": "v"}))
         state.add_finding("critical", "Finding 1", "test_tool", {"detail": "x"})
         state.add_iocs("urls", ["http://example.com"])
-        state.add_remediation_action(
-            RemediationAction(id="a1", name="Act", action_type="block", target="t", priority=2)
-        )
+        state.add_remediation_action(RemediationAction(id="a1", name="Act", action_type="block", target="t", priority=2))
         state.completed_at = datetime.now(timezone.utc)
 
         data = state.to_dict()

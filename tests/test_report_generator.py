@@ -489,9 +489,7 @@ class TestExecSummary:
     def setup_method(self):
         self.gen = ReportGenerator()
 
-    def _make_data(
-        self, verdict="SUSPICIOUS", score=50, findings=None, iocs=None, finding_counts=None
-    ):
+    def _make_data(self, verdict="SUSPICIOUS", score=50, findings=None, iocs=None, finding_counts=None):
         return ReportData(
             input_value="test.eml",
             input_type="email",
@@ -500,8 +498,7 @@ class TestExecSummary:
             verdict=verdict,
             confidence="medium",
             findings=findings or [],
-            finding_counts=finding_counts
-            or {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
+            finding_counts=finding_counts or {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
             iocs=iocs or {},
             recommendations=[],
             tool_results={},

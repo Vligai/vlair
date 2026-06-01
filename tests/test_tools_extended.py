@@ -299,9 +299,7 @@ class TestHashLookupMain:
         from vlair.tools.hash_lookup import main
 
         mock_lookup = MagicMock()
-        mock_lookup.lookup_batch.return_value = [
-            {"hash": "d41d8cd98f00b204e9800998ecf8427e", "verdict": "clean"}
-        ]
+        mock_lookup.lookup_batch.return_value = [{"hash": "d41d8cd98f00b204e9800998ecf8427e", "verdict": "clean"}]
         mock_lookup.cache = None
 
         with (
@@ -317,9 +315,7 @@ class TestHashLookupMain:
         hash_file.write_text("d41d8cd98f00b204e9800998ecf8427e\n# comment\n\n")
 
         mock_lookup = MagicMock()
-        mock_lookup.lookup_batch.return_value = [
-            {"hash": "d41d8cd98f00b204e9800998ecf8427e", "verdict": "clean"}
-        ]
+        mock_lookup.lookup_batch.return_value = [{"hash": "d41d8cd98f00b204e9800998ecf8427e", "verdict": "clean"}]
         mock_lookup.cache = None
 
         with (
@@ -372,9 +368,7 @@ class TestHashLookupMain:
         output_file = tmp_path / "output.json"
 
         mock_lookup = MagicMock()
-        mock_lookup.lookup_batch.return_value = [
-            {"hash": "d41d8cd98f00b204e9800998ecf8427e", "verdict": "clean"}
-        ]
+        mock_lookup.lookup_batch.return_value = [{"hash": "d41d8cd98f00b204e9800998ecf8427e", "verdict": "clean"}]
         mock_lookup.cache = None
 
         with (
@@ -838,24 +832,10 @@ class TestURLAnalyzerOrchestrator:
         with patch.dict(os.environ, {}, clear=True):
             analyzer = URLAnalyzer(cache_enabled=False)
 
-        assert (
-            analyzer._classify_risk({"verdict": "malicious", "pattern_analysis": {"risk_score": 0}})
-            == "high"
-        )
-        assert (
-            analyzer._classify_risk(
-                {"verdict": "suspicious", "pattern_analysis": {"risk_score": 0}}
-            )
-            == "medium"
-        )
-        assert (
-            analyzer._classify_risk({"verdict": "clean", "pattern_analysis": {"risk_score": 0}})
-            == "low"
-        )
-        assert (
-            analyzer._classify_risk({"verdict": "unknown", "pattern_analysis": {"risk_score": 0}})
-            == "unknown"
-        )
+        assert analyzer._classify_risk({"verdict": "malicious", "pattern_analysis": {"risk_score": 0}}) == "high"
+        assert analyzer._classify_risk({"verdict": "suspicious", "pattern_analysis": {"risk_score": 0}}) == "medium"
+        assert analyzer._classify_risk({"verdict": "clean", "pattern_analysis": {"risk_score": 0}}) == "low"
+        assert analyzer._classify_risk({"verdict": "unknown", "pattern_analysis": {"risk_score": 0}}) == "unknown"
 
     def test_analyze_batch(self):
         from vlair.tools.url_analyzer import URLAnalyzer
@@ -1208,9 +1188,7 @@ class TestLogAnalyzerMain:
         from vlair.tools.log_analyzer import main
 
         log_file = tmp_path / "syslog"
-        log_file.write_text(
-            "Jan  1 10:00:00 myhost sshd[1234]: Accepted publickey for user from 1.2.3.4\n"
-        )
+        log_file.write_text("Jan  1 10:00:00 myhost sshd[1234]: Accepted publickey for user from 1.2.3.4\n")
 
         with patch("sys.argv", ["analyzer.py", str(log_file), "--type", "syslog"]):
             main()

@@ -109,9 +109,7 @@ class IOCHuntWorkflow(Workflow):
             result = extractor.extract_from_file(context.input_value)
 
             # Add IOCs to context
-            context.add_iocs(
-                "hashes", result.get("md5", []) + result.get("sha1", []) + result.get("sha256", [])
-            )
+            context.add_iocs("hashes", result.get("md5", []) + result.get("sha1", []) + result.get("sha256", []))
             context.add_iocs("domains", result.get("domains", []))
             context.add_iocs("ips", result.get("ips", []))
             context.add_iocs("urls", result.get("urls", []))

@@ -6,7 +6,6 @@ import os
 import re
 from typing import Dict, List, Optional, Tuple
 
-
 HELP_TEXT = """*vlair Security Assistant* — available commands:
 
 • `analyze <hash|domain|ip|url>` — auto-detect IOC type, run threat intelligence, return verdict + risk score
@@ -159,9 +158,7 @@ class CommandRouter:
         except ImportError:
             ollama_available = False
         icon = "green_circle" if ollama_available else "white_circle"
-        lines.append(
-            f":{icon}: Ollama (local) — {'available' if ollama_available else 'not detected'}"
-        )
+        lines.append(f":{icon}: Ollama (local) — {'available' if ollama_available else 'not detected'}")
 
         return {"text": "\n".join(lines), "error": False, "raw_result": None}
 
@@ -483,9 +480,7 @@ class CommandRouter:
             role = msg.get("role", "user")
             content = msg.get("content", "")
             context_lines.append(f"{role.upper()}: {content}")
-        user_message = "Summarise the security findings in this thread:\n\n" + "\n".join(
-            context_lines
-        )
+        user_message = "Summarise the security findings in this thread:\n\n" + "\n".join(context_lines)
 
         try:
             response = provider.analyze(system_prompt, user_message, max_tokens=500)

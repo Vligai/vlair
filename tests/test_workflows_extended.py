@@ -1319,10 +1319,7 @@ class TestMalwareTriageWorkflowSteps:
             result = wf._deobfuscate(ctx)
 
         assert result.success is True
-        assert any(
-            f.severity == Severity.HIGH and "heavily obfuscated" in f.message
-            for f in ctx.scorer.findings
-        )
+        assert any(f.severity == Severity.HIGH and "heavily obfuscated" in f.message for f in ctx.scorer.findings)
         assert "http://evil.com" in ctx.iocs["urls"]
 
     def test_deobfuscate_light_obfuscation(self):
@@ -1341,9 +1338,7 @@ class TestMalwareTriageWorkflowSteps:
             result = wf._deobfuscate(ctx)
 
         assert result.success is True
-        assert any(
-            f.severity == Severity.MEDIUM and "obfuscated" in f.message for f in ctx.scorer.findings
-        )
+        assert any(f.severity == Severity.MEDIUM and "obfuscated" in f.message for f in ctx.scorer.findings)
 
     def test_deobfuscate_import_error(self):
         wf = self._make_workflow()

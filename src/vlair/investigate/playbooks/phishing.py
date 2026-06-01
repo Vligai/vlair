@@ -249,9 +249,7 @@ class PhishingPlaybook(BasePlaybook):
         failures = []
         if "fail" in spf_result.lower():
             failures.append("SPF")
-            state.add_finding(
-                "high", "SPF validation failed - sender may be spoofed", "validate_auth"
-            )
+            state.add_finding("high", "SPF validation failed - sender may be spoofed", "validate_auth")
         if "fail" in dkim_result.lower():
             failures.append("DKIM")
             state.add_finding("medium", "DKIM validation failed", "validate_auth")

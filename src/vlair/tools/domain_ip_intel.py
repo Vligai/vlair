@@ -127,9 +127,7 @@ class AbuseIPDBAPI:
             headers = {"Key": self.api_key, "Accept": "application/json"}
             params = {"ipAddress": ip, "maxAgeInDays": 90, "verbose": ""}
 
-            response = requests.get(
-                f"{self.BASE_URL}/check", headers=headers, params=params, timeout=15
-            )
+            response = requests.get(f"{self.BASE_URL}/check", headers=headers, params=params, timeout=15)
 
             if response.status_code == 200:
                 data = response.json()["data"]
@@ -167,9 +165,7 @@ class VirusTotalAPI:
 
         try:
             headers = {"x-apikey": self.api_key}
-            response = requests.get(
-                f"{self.base_url}/ip_addresses/{ip}", headers=headers, timeout=15
-            )
+            response = requests.get(f"{self.base_url}/ip_addresses/{ip}", headers=headers, timeout=15)
 
             if response.status_code == 200:
                 data = response.json()["data"]["attributes"]
@@ -198,9 +194,7 @@ class VirusTotalAPI:
 
         try:
             headers = {"x-apikey": self.api_key}
-            response = requests.get(
-                f"{self.base_url}/domains/{domain}", headers=headers, timeout=15
-            )
+            response = requests.get(f"{self.base_url}/domains/{domain}", headers=headers, timeout=15)
 
             if response.status_code == 200:
                 data = response.json()["data"]["attributes"]
@@ -323,9 +317,7 @@ class DomainIPIntelligence:
             result["note"] = "Private IP address - skipping threat intelligence lookups"
             # Still cache private IP results (quick lookups)
             if self.cache:
-                self.cache.set(
-                    f"ip:{ip}", result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL
-                )
+                self.cache.set(f"ip:{ip}", result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL)
             return result
 
         # Reverse DNS
@@ -397,9 +389,7 @@ class DomainIPIntelligence:
 
         # Cache result
         if self.cache:
-            self.cache.set(
-                f"domain:{domain}", result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL
-            )
+            self.cache.set(f"domain:{domain}", result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL)
 
         return result
 
@@ -474,9 +464,7 @@ Examples:
 
     parser.add_argument("--output", "-o", help="Output file (default: stdout)")
 
-    parser.add_argument(
-        "--format", choices=["json", "csv"], default="json", help="Output format (default: json)"
-    )
+    parser.add_argument("--format", choices=["json", "csv"], default="json", help="Output format (default: json)")
 
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 

@@ -95,9 +95,7 @@ class TestParseEML:
         assert args.verbose is False
 
     def test_all_options(self):
-        args = self.parser.parse_args(
-            ["eml", "email.eml", "--output", "report.json", "--vt", "--verbose"]
-        )
+        args = self.parser.parse_args(["eml", "email.eml", "--output", "report.json", "--vt", "--verbose"])
         assert args.eml == "email.eml"
         assert args.output == "report.json"
         assert args.vt is True
@@ -349,9 +347,7 @@ class TestParsePCAP:
         assert args.verbose is False
 
     def test_all_options(self):
-        args = self.parser.parse_args(
-            ["pcap", "capture.pcap", "--output", "out.json", "--format", "txt", "--verbose"]
-        )
+        args = self.parser.parse_args(["pcap", "capture.pcap", "--output", "out.json", "--format", "txt", "--verbose"])
         assert args.pcap_file == "capture.pcap"
         assert args.output == "out.json"
         assert args.format == "txt"
@@ -591,9 +587,7 @@ class TestMainRouting:
     def test_eml_all_options(self, mock_eml_main):
         captured = {}
         mock_eml_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "eml", "phish.eml", "--output", "r.json", "--vt", "--verbose"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "eml", "phish.eml", "--output", "r.json", "--vt", "--verbose"]):
             main()
         mock_eml_main.assert_called_once()
         assert captured["argv"] == [
@@ -1130,9 +1124,7 @@ class TestMainRouting:
     def test_deobfuscate_non_default_language_included(self, mock_deobf_main):
         captured = {}
         mock_deobf_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "deobfuscate", "malware.js", "--language", "javascript"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "deobfuscate", "malware.js", "--language", "javascript"]):
             main()
         assert "--language" in captured["argv"]
         assert "javascript" in captured["argv"]
@@ -1278,9 +1270,7 @@ class TestSysArgvReconstruction:
     def test_eml_exact_argv(self, mock_eml_main):
         captured = {}
         mock_eml_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "eml", "test.eml", "--output", "r.json", "--vt", "--verbose"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "eml", "test.eml", "--output", "r.json", "--vt", "--verbose"]):
             main()
         assert captured["argv"] == [
             "emlParser.py",
@@ -1348,9 +1338,7 @@ class TestSysArgvReconstruction:
     def test_yara_exact_argv(self, mock_yara_main):
         captured = {}
         mock_yara_main.side_effect = _capture_argv(captured)
-        with patch.object(
-            sys, "argv", ["vlair", "yara", "scan", "/samples/", "--rules", "r/", "--recursive"]
-        ):
+        with patch.object(sys, "argv", ["vlair", "yara", "scan", "/samples/", "--rules", "r/", "--recursive"]):
             main()
         assert captured["argv"] == [
             "scanner.py",

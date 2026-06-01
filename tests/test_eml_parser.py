@@ -208,10 +208,7 @@ class TestExtractAttachments:
         assert result[0]["size"] == 12345
         assert result[0]["extension"] == "pdf"
         assert result[0]["hashes"]["md5"] == "5d41402abc4b2a76b9719d911017c592"
-        assert (
-            result[0]["hashes"]["sha256"]
-            == "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
-        )
+        assert result[0]["hashes"]["sha256"] == "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
 
     def test_extract_attachments_no_attachments(self):
         """Test extraction with no attachments"""
@@ -338,11 +335,7 @@ class TestVirusTotalLookup:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "data": {
-                "attributes": {
-                    "last_analysis_stats": {"malicious": 10, "suspicious": 2, "undetected": 60}
-                }
-            }
+            "data": {"attributes": {"last_analysis_stats": {"malicious": 10, "suspicious": 2, "undetected": 60}}}
         }
         mock_get.return_value = mock_response
 

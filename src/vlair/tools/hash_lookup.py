@@ -97,9 +97,7 @@ class VirusTotalAPI:
                     "suspicious": stats.get("suspicious", 0),
                     "undetected": stats.get("undetected", 0),
                     "harmless": stats.get("harmless", 0),
-                    "malware_names": self._extract_malware_names(
-                        attrs.get("last_analysis_results", {})
-                    ),
+                    "malware_names": self._extract_malware_names(attrs.get("last_analysis_results", {})),
                     "first_seen": attrs.get("first_submission_date"),
                     "last_seen": attrs.get("last_submission_date"),
                     "permalink": f"https://www.virustotal.com/gui/file/{hash_value}",
@@ -309,9 +307,7 @@ def format_output_csv(results: List[Dict]) -> str:
         malware_family = malware_names[0] if malware_names else ""
         vt_link = vt_data.get("permalink", "")
 
-        lines.append(
-            f"{hash_val},{hash_type},{verdict},{risk},{detection_ratio},{malware_family},{vt_link},{cached}"
-        )
+        lines.append(f"{hash_val},{hash_type},{verdict},{risk},{detection_ratio},{malware_family},{vt_link},{cached}")
 
     return "\n".join(lines)
 
@@ -342,9 +338,7 @@ Examples:
 
     parser.add_argument("--output", "-o", help="Output file (default: stdout)")
 
-    parser.add_argument(
-        "--format", choices=["json", "csv"], default="json", help="Output format (default: json)"
-    )
+    parser.add_argument("--format", choices=["json", "csv"], default="json", help="Output format (default: json)")
 
     parser.add_argument(
         "--filter",
@@ -355,9 +349,7 @@ Examples:
 
     parser.add_argument("--no-cache", action="store_true", help="Disable cache")
 
-    parser.add_argument(
-        "--cache-ttl", type=int, default=86400, help="Cache TTL in seconds (default: 86400 = 24h)"
-    )
+    parser.add_argument("--cache-ttl", type=int, default=86400, help="Cache TTL in seconds (default: 86400 = 24h)")
 
     parser.add_argument(
         "--rate-limit",
@@ -432,9 +424,7 @@ def main():
     metadata = {
         "lookup_date": datetime.now().isoformat(),
         "total_hashes": len(results),
-        "cache_stats": (
-            lookup.cache.get_stats(namespace=HashLookup.CACHE_NAMESPACE) if lookup.cache else None
-        ),
+        "cache_stats": (lookup.cache.get_stats(namespace=HashLookup.CACHE_NAMESPACE) if lookup.cache else None),
     }
 
     if args.format == "json":

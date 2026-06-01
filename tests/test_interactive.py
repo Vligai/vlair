@@ -73,9 +73,7 @@ class TestInvestigationTypes:
         """Test email investigation type"""
         investigation = InteractiveInvestigation()
 
-        email_type = next(
-            (t for t in investigation.INVESTIGATION_TYPES if t["id"] == "email"), None
-        )
+        email_type = next((t for t in investigation.INVESTIGATION_TYPES if t["id"] == "email"), None)
 
         assert email_type is not None
         assert email_type["workflow"] == "phishing-email"
@@ -85,9 +83,7 @@ class TestInvestigationTypes:
         """Test indicator investigation type (no workflow)"""
         investigation = InteractiveInvestigation()
 
-        indicator_type = next(
-            (t for t in investigation.INVESTIGATION_TYPES if t["id"] == "indicator"), None
-        )
+        indicator_type = next((t for t in investigation.INVESTIGATION_TYPES if t["id"] == "indicator"), None)
 
         assert indicator_type is not None
         assert indicator_type["workflow"] is None

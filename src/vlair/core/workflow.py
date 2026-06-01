@@ -149,10 +149,7 @@ class Workflow(ABC):
 
             # Check dependencies
             if step.depends_on:
-                deps_met = all(
-                    any(r.step_name == dep and r.success for r in context.step_results)
-                    for dep in step.depends_on
-                )
+                deps_met = all(any(r.step_name == dep and r.success for r in context.step_results) for dep in step.depends_on)
                 if not deps_met:
                     self._log(f"  Skipping: dependencies not met")
                     continue
@@ -174,9 +171,7 @@ class Workflow(ABC):
 
             except Exception as e:
                 self._log(f"  Error: {e}")
-                context.add_step_result(
-                    StepResult(step_name=step.name, success=False, error=str(e))
-                )
+                context.add_step_result(StepResult(step_name=step.name, success=False, error=str(e)))
 
         self._log(f"Workflow complete in {context.get_elapsed_time():.1f}s")
 
@@ -226,9 +221,7 @@ class WorkflowRegistry:
         result = []
         for name, workflow_class in cls._workflows.items():
             instance = workflow_class(verbose=False)
-            result.append(
-                {"name": name, "description": instance.description, "steps": len(instance.steps)}
-            )
+            result.append({"name": name, "description": instance.description, "steps": len(instance.steps)})
         return result
 
 

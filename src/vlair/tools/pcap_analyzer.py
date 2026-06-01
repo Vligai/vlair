@@ -157,9 +157,7 @@ class PCAPAnalyzer:
         # Detect potential port scanning
         if self.stats["syn_packets"][src_ip] > 20:
             # Check if we already alerted for this IP
-            if not any(
-                a.get("source_ip") == src_ip and a.get("type") == "port_scan" for a in self.alerts
-            ):
+            if not any(a.get("source_ip") == src_ip and a.get("type") == "port_scan" for a in self.alerts):
                 self.alerts.append(
                     {
                         "type": "port_scan",
@@ -273,34 +271,24 @@ class PCAPAnalyzer:
             dst_ip_counter[dst] += count
 
         # Top ports
-        top_ports = [
-            {"port": port, "count": count}
-            for port, count in Counter(self.stats["dst_ports"]).most_common(10)
-        ]
+        top_ports = [{"port": port, "count": count} for port, count in Counter(self.stats["dst_ports"]).most_common(10)]
 
         # Top DNS queries
         top_dns = []
         if "dns_queries" in self.stats:
             top_dns = [
-                {"domain": domain, "count": count}
-                for domain, count in Counter(self.stats["dns_queries"]).most_common(10)
+                {"domain": domain, "count": count} for domain, count in Counter(self.stats["dns_queries"]).most_common(10)
             ]
 
         # Top conversations
         top_conversations = [
             {"conversation": conv, "packets": count}
-            for conv, count in sorted(self.conversations.items(), key=lambda x: x[1], reverse=True)[
-                :10
-            ]
+            for conv, count in sorted(self.conversations.items(), key=lambda x: x[1], reverse=True)[:10]
         ]
 
         return {
-            "top_source_ips": [
-                {"ip": ip, "packets": count} for ip, count in src_ip_counter.most_common(10)
-            ],
-            "top_destination_ips": [
-                {"ip": ip, "packets": count} for ip, count in dst_ip_counter.most_common(10)
-            ],
+            "top_source_ips": [{"ip": ip, "packets": count} for ip, count in src_ip_counter.most_common(10)],
+            "top_destination_ips": [{"ip": ip, "packets": count} for ip, count in dst_ip_counter.most_common(10)],
             "top_ports": top_ports,
             "top_dns_queries": top_dns,
             "top_conversations": top_conversations,

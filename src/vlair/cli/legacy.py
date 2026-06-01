@@ -106,9 +106,7 @@ Documentation: https://github.com/Vligai/vlair
     ioc_parser.add_argument("input", nargs="?", help="Input file or text")
     ioc_parser.add_argument("--file", "-f", help="Input file")
     ioc_parser.add_argument("--output", "-o", help="Output file")
-    ioc_parser.add_argument(
-        "--format", choices=["json", "csv", "txt", "stix"], default="json", help="Output format"
-    )
+    ioc_parser.add_argument("--format", choices=["json", "csv", "txt", "stix"], default="json", help="Output format")
     ioc_parser.add_argument("--types", nargs="+", help="IOC types to extract")
     ioc_parser.add_argument("--refang", action="store_true", help="Refang defanged IOCs")
     ioc_parser.add_argument("--defang", action="store_true", help="Defang output")
@@ -123,9 +121,7 @@ Documentation: https://github.com/Vligai/vlair
     hash_parser.add_argument("hash", nargs="?", help="Hash to lookup")
     hash_parser.add_argument("--file", "-f", help="File with hashes (one per line)")
     hash_parser.add_argument("--output", "-o", help="Output file")
-    hash_parser.add_argument(
-        "--format", choices=["json", "csv", "txt"], default="json", help="Output format"
-    )
+    hash_parser.add_argument("--format", choices=["json", "csv", "txt"], default="json", help="Output format")
     hash_parser.add_argument("--no-cache", action="store_true", help="Disable caching")
     hash_parser.add_argument("--rate-limit", type=int, default=4, help="Requests per minute")
     hash_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
@@ -139,9 +135,7 @@ Documentation: https://github.com/Vligai/vlair
     intel_parser.add_argument("target", nargs="?", help="IP address or domain")
     intel_parser.add_argument("--file", "-f", help="File with targets (one per line)")
     intel_parser.add_argument("--output", "-o", help="Output file")
-    intel_parser.add_argument(
-        "--format", choices=["json", "csv"], default="json", help="Output format"
-    )
+    intel_parser.add_argument("--format", choices=["json", "csv"], default="json", help="Output format")
     intel_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     # Log Analyzer subcommand
@@ -159,9 +153,7 @@ Documentation: https://github.com/Vligai/vlair
         help="Log type",
     )
     log_parser.add_argument("--output", "-o", help="Output file")
-    log_parser.add_argument(
-        "--format", "-f", choices=["json", "csv", "txt"], default="json", help="Output format"
-    )
+    log_parser.add_argument("--format", "-f", choices=["json", "csv", "txt"], default="json", help="Output format")
     log_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     # PCAP Analyzer subcommand
@@ -172,9 +164,7 @@ Documentation: https://github.com/Vligai/vlair
     )
     pcap_parser.add_argument("pcap_file", help="Path to PCAP file")
     pcap_parser.add_argument("--output", "-o", help="Output file")
-    pcap_parser.add_argument(
-        "--format", "-f", choices=["json", "csv", "txt"], default="json", help="Output format"
-    )
+    pcap_parser.add_argument("--format", "-f", choices=["json", "csv", "txt"], default="json", help="Output format")
     pcap_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     # URL Analyzer subcommand
@@ -186,9 +176,7 @@ Documentation: https://github.com/Vligai/vlair
     url_parser.add_argument("url", nargs="?", help="URL to analyze")
     url_parser.add_argument("--file", "-f", help="File with URLs (one per line)")
     url_parser.add_argument("--output", "-o", help="Output file")
-    url_parser.add_argument(
-        "--format", choices=["json", "csv", "txt"], default="json", help="Output format"
-    )
+    url_parser.add_argument("--format", choices=["json", "csv", "txt"], default="json", help="Output format")
     url_parser.add_argument("--no-cache", action="store_true", help="Disable caching")
     url_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
@@ -217,9 +205,7 @@ Documentation: https://github.com/Vligai/vlair
     cert_parser.add_argument("--hostname", help="Hostname for validation (with --file)")
     cert_parser.add_argument("--port", type=int, default=443, help="Port number")
     cert_parser.add_argument("--ct-search", help="Search Certificate Transparency logs")
-    cert_parser.add_argument(
-        "--format", choices=["json", "txt"], default="txt", help="Output format"
-    )
+    cert_parser.add_argument("--format", choices=["json", "txt"], default="txt", help="Output format")
     cert_parser.add_argument("--output", "-o", help="Output file")
     cert_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
@@ -237,13 +223,9 @@ Documentation: https://github.com/Vligai/vlair
         default="auto",
         help="Script language",
     )
-    deobf_parser.add_argument(
-        "--max-layers", type=int, default=10, help="Maximum deobfuscation layers"
-    )
+    deobf_parser.add_argument("--max-layers", type=int, default=10, help="Maximum deobfuscation layers")
     deobf_parser.add_argument("--extract-iocs", action="store_true", help="Extract IOCs")
-    deobf_parser.add_argument(
-        "--format", choices=["json", "txt"], default="txt", help="Output format"
-    )
+    deobf_parser.add_argument("--format", choices=["json", "txt"], default="txt", help="Output format")
     deobf_parser.add_argument("--output", "-o", help="Output file")
     deobf_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     deobf_parser.add_argument("--decode-base64", help="Decode base64 string directly")

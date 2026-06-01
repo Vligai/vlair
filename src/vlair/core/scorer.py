@@ -229,15 +229,11 @@ class RiskScorer:
 
         dkim = auth.get("dkim", {})
         if dkim.get("result") == "fail":
-            self.add_finding(
-                Severity.MEDIUM, "DKIM validation failed", "eml_parser", {"dkim_result": dkim}
-            )
+            self.add_finding(Severity.MEDIUM, "DKIM validation failed", "eml_parser", {"dkim_result": dkim})
 
         dmarc = auth.get("dmarc", {})
         if dmarc.get("result") == "fail":
-            self.add_finding(
-                Severity.HIGH, "DMARC validation failed", "eml_parser", {"dmarc_result": dmarc}
-            )
+            self.add_finding(Severity.HIGH, "DMARC validation failed", "eml_parser", {"dmarc_result": dmarc})
 
         # Check attachments
         attachments = result.get("attachments", [])

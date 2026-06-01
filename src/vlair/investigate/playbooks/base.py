@@ -222,14 +222,11 @@ class BasePlaybook(ABC):
             failed_required = [
                 r
                 for r in state.steps
-                if r.status == StepStatus.FAILED
-                and any(s.name == r.name and s.required for s in self.steps)
+                if r.status == StepStatus.FAILED and any(s.name == r.name and s.required for s in self.steps)
             ]
 
             if failed_required:
-                state.mark_failed(
-                    f"Required step(s) failed: {', '.join(r.name for r in failed_required)}"
-                )
+                state.mark_failed(f"Required step(s) failed: {', '.join(r.name for r in failed_required)}")
             else:
                 # Mark as completed - risk score and verdict should be set by calculate_verdict step
                 state.status = InvestigationStatus.COMPLETED

@@ -142,9 +142,7 @@ class TestSuspiciousPatternDetector:
     def test_detect_suspicious_keywords(self):
         """Test detection of suspicious keywords"""
         parsed = URLParser.parse_url("http://example.com/login-verify-account")
-        result = SuspiciousPatternDetector.analyze_url(
-            "http://example.com/login-verify-account", parsed
-        )
+        result = SuspiciousPatternDetector.analyze_url("http://example.com/login-verify-account", parsed)
         assert any("suspicious keywords" in s for s in result["suspicions"])
 
     def test_clean_url_low_risk(self):

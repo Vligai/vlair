@@ -346,8 +346,7 @@ class Deobfuscator:
             "language": detected_lang,
             "layers_processed": layer_num - 1 if layers else 0,
             "layers": layers,
-            "fully_deobfuscated": len(layers) == 0
-            or layers[-1]["size_before"] == layers[-1]["size_after"],
+            "fully_deobfuscated": len(layers) == 0 or layers[-1]["size_before"] == layers[-1]["size_after"],
         }
 
         return result
@@ -445,14 +444,10 @@ class IOCExtractor:
         iocs["ips"] = list(set(re.findall(ip_pattern, code)))
 
         # Domains (simplified)
-        domain_pattern = (
-            r"[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(?:\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.[a-zA-Z]{2,6}"
-        )
+        domain_pattern = r"[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(?:\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.[a-zA-Z]{2,6}"
         potential_domains = re.findall(domain_pattern, code)
         # Filter out common false positives
-        iocs["domains"] = [
-            d for d in set(potential_domains) if not d.endswith((".dll", ".exe", ".js"))
-        ]
+        iocs["domains"] = [d for d in set(potential_domains) if not d.endswith((".dll", ".exe", ".js"))]
 
         # Windows file paths
         path_pattern = r'[A-Za-z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*'
@@ -480,9 +475,7 @@ def format_output_text(result: Dict) -> str:
 
     lines.append(f"Language: {result['language']}")
     lines.append(f"Layers Processed: {result['layers_processed']}")
-    lines.append(
-        f"Fully Deobfuscated: {'Yes' if result['fully_deobfuscated'] else 'Possibly more layers'}"
-    )
+    lines.append(f"Fully Deobfuscated: {'Yes' if result['fully_deobfuscated'] else 'Possibly more layers'}")
     lines.append("")
 
     # Show techniques used
@@ -557,12 +550,8 @@ Examples:
         help="Script language (default: auto)",
     )
     parser.add_argument("--max-layers", type=int, default=10, help="Maximum deobfuscation layers")
-    parser.add_argument(
-        "--extract-iocs", action="store_true", help="Extract IOCs from deobfuscated code"
-    )
-    parser.add_argument(
-        "--format", "-f", choices=["json", "txt"], default="txt", help="Output format"
-    )
+    parser.add_argument("--extract-iocs", action="store_true", help="Extract IOCs from deobfuscated code")
+    parser.add_argument("--format", "-f", choices=["json", "txt"], default="txt", help="Output format")
     parser.add_argument("--output", "-o", help="Output file (default: stdout)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 

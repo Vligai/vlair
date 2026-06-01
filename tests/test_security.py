@@ -123,9 +123,7 @@ class TestPathTraversal:
         assert resp.status_code == 400
 
         # Try a Windows-style system path
-        resp2 = self._yara_scan_with_mock(
-            client, token, file_path="C:\\Windows\\System32\\config\\SAM"
-        )
+        resp2 = self._yara_scan_with_mock(client, token, file_path="C:\\Windows\\System32\\config\\SAM")
         assert resp2.status_code == 400
 
     def test_path_traversal_encoded(self, client):
@@ -421,9 +419,7 @@ class TestTOTPBruteForce:
                     )
                     data = resp.get_json()
                     # Should not grant access tokens with a wrong TOTP code
-                    assert (
-                        "access_token" not in data
-                    ), f"Bad TOTP code {bad_code} should not grant access"
+                    assert "access_token" not in data, f"Bad TOTP code {bad_code} should not grant access"
                     assert resp.status_code == 401
 
     def test_totp_rate_limit_applies(self, client):

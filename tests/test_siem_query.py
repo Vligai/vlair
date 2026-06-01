@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 
 from vlair.ai.siem_query import SiemQueryGenerator, PLATFORMS, _TEMPLATES, _GENERIC_TEMPLATE
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -33,9 +32,7 @@ def test_platforms_constant():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "ioc_type", ["ip", "domain", "hash_md5", "hash_sha1", "hash_sha256", "url", "email"]
-)
+@pytest.mark.parametrize("ioc_type", ["ip", "domain", "hash_md5", "hash_sha1", "hash_sha256", "url", "email"])
 def test_template_all_platforms_covered(gen, ioc_type):
     """Every supported IOC type must produce a non-empty query for every platform."""
     queries = gen.generate("test-value", ioc_type)
@@ -178,9 +175,7 @@ def test_ai_generate_uses_provider_response(gen):
 
 
 def test_ai_generate_falls_back_to_template_on_error(gen):
-    with patch(
-        "vlair.ai.providers.anthropic.AnthropicProvider", side_effect=Exception("no provider")
-    ):
+    with patch("vlair.ai.providers.anthropic.AnthropicProvider", side_effect=Exception("no provider")):
         queries = gen.generate("1.2.3.4", "ip", use_ai=True)
 
     # Should fall back to templates, which always contain the value

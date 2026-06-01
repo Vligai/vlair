@@ -318,9 +318,7 @@ class FileCarver:
                                     file_data = f.read(footer_pos)
                                     f.seek(current_pos)
 
-                                    result = self.extract_file(
-                                        file_data, 0, len(file_data), file_type, file_id
-                                    )
+                                    result = self.extract_file(file_data, 0, len(file_data), file_type, file_id)
 
                                     if result:
                                         result["offset"] = offset + i
@@ -334,9 +332,7 @@ class FileCarver:
                                 file_data = f.read(min(1024 * 1024, len(chunk) - i))
                                 current_pos = f.tell()
 
-                                result = self.extract_file(
-                                    file_data, 0, len(file_data), file_type, file_id
-                                )
+                                result = self.extract_file(file_data, 0, len(file_data), file_type, file_id)
 
                                 if result:
                                     result["offset"] = offset + i
@@ -446,13 +442,9 @@ Examples:
     )
 
     parser.add_argument("--image", "-i", help="Source file/image to carve from")
-    parser.add_argument(
-        "--output", "-o", default="./carved", help="Output directory (default: ./carved)"
-    )
+    parser.add_argument("--output", "-o", default="./carved", help="Output directory (default: ./carved)")
     parser.add_argument("--types", "-t", help="File types to carve (comma-separated)")
-    parser.add_argument(
-        "--format", "-f", choices=["json", "csv", "txt"], default="txt", help="Output format"
-    )
+    parser.add_argument("--format", "-f", choices=["json", "csv", "txt"], default="txt", help="Output format")
     parser.add_argument("--report", "-r", help="Report output file")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument("--list-types", action="store_true", help="List supported file types")

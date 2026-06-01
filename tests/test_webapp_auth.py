@@ -916,9 +916,7 @@ class TestAuthRoutes:
             },
         )
 
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "loginuser", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "loginuser", "password": "password123"})
         assert resp.status_code == 200
         data = resp.get_json()
         assert "access_token" in data
@@ -935,9 +933,7 @@ class TestAuthRoutes:
             },
         )
 
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "wrongpw", "password": "wrongpass"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "wrongpw", "password": "wrongpass"})
         assert resp.status_code == 401
 
     def test_login_disabled_user(self):
@@ -956,9 +952,7 @@ class TestAuthRoutes:
         user = get_user_by_username("disabledlogin")
         deactivate_user(user["id"])
 
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "disabledlogin", "password": "password123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "disabledlogin", "password": "password123"})
         assert resp.status_code == 403
 
     def test_refresh_token(self):
@@ -972,9 +966,7 @@ class TestAuthRoutes:
                 "password": "password123",
             },
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "refreshuser", "password": "password123"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "refreshuser", "password": "password123"})
         refresh_token = login_resp.get_json()["refresh_token"]
 
         resp = self.client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
@@ -992,9 +984,7 @@ class TestAuthRoutes:
             "/api/auth/register",
             json={"username": "meuser", "email": "me@example.com", "password": "password123"},
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "meuser", "password": "password123"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "meuser", "password": "password123"})
         token = login_resp.get_json()["access_token"]
 
         resp = self.client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
@@ -1011,9 +1001,7 @@ class TestAuthRoutes:
                 "password": "password123",
             },
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "logoutuser", "password": "password123"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "logoutuser", "password": "password123"})
         token = login_resp.get_json()["access_token"]
 
         resp = self.client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"})
@@ -1025,9 +1013,7 @@ class TestAuthRoutes:
             "/api/auth/register",
             json={"username": "pwchange", "email": "pw@example.com", "password": "oldpassword"},
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "pwchange", "password": "oldpassword"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "pwchange", "password": "oldpassword"})
         token = login_resp.get_json()["access_token"]
 
         resp = self.client.put(
@@ -1038,9 +1024,7 @@ class TestAuthRoutes:
         assert resp.status_code == 200
 
         # Verify new password works
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "pwchange", "password": "newpassword123"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "pwchange", "password": "newpassword123"})
         assert resp.status_code == 200
 
     def test_change_password_wrong_current(self):
@@ -1053,9 +1037,7 @@ class TestAuthRoutes:
                 "password": "correctpassword",
             },
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "pwwrong", "password": "correctpassword"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "pwwrong", "password": "correctpassword"})
         assert login_resp.status_code == 200
         token = login_resp.get_json()["access_token"]
 
@@ -1076,9 +1058,7 @@ class TestAuthRoutes:
                 "password": "password123",
             },
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "keyowner", "password": "password123"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "keyowner", "password": "password123"})
         token = login_resp.get_json()["access_token"]
 
         resp = self.client.post(
@@ -1100,9 +1080,7 @@ class TestAuthRoutes:
                 "password": "password123",
             },
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "listowner", "password": "password123"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "listowner", "password": "password123"})
         token = login_resp.get_json()["access_token"]
 
         # Create a key
@@ -1126,9 +1104,7 @@ class TestAuthRoutes:
                 "password": "password123",
             },
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "deleteowner", "password": "password123"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "deleteowner", "password": "password123"})
         token = login_resp.get_json()["access_token"]
 
         self.client.post(
@@ -1141,9 +1117,7 @@ class TestAuthRoutes:
         keys_resp = self.client.get("/api/auth/keys", headers={"Authorization": f"Bearer {token}"})
         key_id = keys_resp.get_json()["keys"][0]["id"]
 
-        resp = self.client.delete(
-            f"/api/auth/keys/{key_id}", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = self.client.delete(f"/api/auth/keys/{key_id}", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
 
 
@@ -1179,9 +1153,7 @@ class TestAdminRoutes:
 
     def get_admin_token(self):
         """Get admin authentication token."""
-        resp = self.client.post(
-            "/api/auth/login", json={"username": "admintest", "password": "adminpass"}
-        )
+        resp = self.client.post("/api/auth/login", json={"username": "admintest", "password": "adminpass"})
         return resp.get_json()["access_token"]
 
     def test_list_users_admin(self):
@@ -1202,9 +1174,7 @@ class TestAdminRoutes:
                 "password": "password123",
             },
         )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "regular", "password": "password123"}
-        )
+        login_resp = self.client.post("/api/auth/login", json={"username": "regular", "password": "password123"})
         token = login_resp.get_json()["access_token"]
 
         resp = self.client.get("/api/admin/users", headers={"Authorization": f"Bearer {token}"})
@@ -1298,12 +1268,8 @@ class TestAdminRoutes:
         """Test senior analyst can access audit log."""
         from vlair.webapp.auth.models import create_user, Role
 
-        senior = create_user(
-            "senior", "senior@example.com", "password123", role=Role.SENIOR_ANALYST
-        )
-        login_resp = self.client.post(
-            "/api/auth/login", json={"username": "senior", "password": "password123"}
-        )
+        senior = create_user("senior", "senior@example.com", "password123", role=Role.SENIOR_ANALYST)
+        login_resp = self.client.post("/api/auth/login", json={"username": "senior", "password": "password123"})
         token = login_resp.get_json()["access_token"]
 
         resp = self.client.get("/api/admin/audit", headers={"Authorization": f"Bearer {token}"})

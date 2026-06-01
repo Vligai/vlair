@@ -127,9 +127,7 @@ class NetworkForensicsWorkflow(Workflow):
             return StepResult(step_name="parse_pcap", success=True, data=result)
 
         except ImportError:
-            return StepResult(
-                step_name="parse_pcap", success=False, error="PCAP analyzer not available"
-            )
+            return StepResult(step_name="parse_pcap", success=False, error="PCAP analyzer not available")
         except Exception as e:
             return StepResult(step_name="parse_pcap", success=False, error=str(e))
 
@@ -177,9 +175,7 @@ class NetworkForensicsWorkflow(Workflow):
                 {"count": len(high_ports)},
             )
 
-        return StepResult(
-            step_name="detect_scans", success=True, data={"port_scans": len(port_scans)}
-        )
+        return StepResult(step_name="detect_scans", success=True, data={"port_scans": len(port_scans)})
 
     def _analyze_dns(self, context: WorkflowContext) -> StepResult:
         """Analyze DNS queries for suspicious patterns"""

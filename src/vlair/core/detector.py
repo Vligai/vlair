@@ -72,8 +72,7 @@ class InputDetector:
 
     # Network patterns
     IPV4_PATTERN = re.compile(
-        r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}"
-        r"(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+        r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}" r"(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
     )
     IPV6_PATTERN = re.compile(
         r"^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|"
@@ -81,9 +80,7 @@ class InputDetector:
         r"^(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}$"
     )
     URL_PATTERN = re.compile(r'^https?://[^\s<>"{}|\\^`\[\]]+$', re.IGNORECASE)
-    DOMAIN_PATTERN = re.compile(
-        r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$"
-    )
+    DOMAIN_PATTERN = re.compile(r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$")
 
     # File extensions
     EMAIL_EXTENSIONS = {".eml", ".msg"}
@@ -125,9 +122,7 @@ class InputDetector:
 
         # Check for URL (before domain, as URLs contain domains)
         if self.URL_PATTERN.match(input_value):
-            return self._result(
-                InputType.URL, input_value, "high", {"scheme": input_value.split("://")[0]}
-            )
+            return self._result(InputType.URL, input_value, "high", {"scheme": input_value.split("://")[0]})
 
         # Check for IP address
         if self.IPV4_PATTERN.match(input_value):
@@ -157,19 +152,13 @@ class InputDetector:
 
         # Check by extension first
         if ext in self.EMAIL_EXTENSIONS:
-            return self._result(
-                InputType.EMAIL, file_path, "high", {"filename": path.name, "extension": ext}
-            )
+            return self._result(InputType.EMAIL, file_path, "high", {"filename": path.name, "extension": ext})
 
         if ext in self.PCAP_EXTENSIONS:
-            return self._result(
-                InputType.PCAP, file_path, "high", {"filename": path.name, "extension": ext}
-            )
+            return self._result(InputType.PCAP, file_path, "high", {"filename": path.name, "extension": ext})
 
         if ext in self.LOG_EXTENSIONS:
-            return self._result(
-                InputType.LOG, file_path, "high", {"filename": path.name, "extension": ext}
-            )
+            return self._result(InputType.LOG, file_path, "high", {"filename": path.name, "extension": ext})
 
         if ext in self.SCRIPT_EXTENSIONS:
             return self._result(
@@ -192,9 +181,7 @@ class InputDetector:
         # Check for IOC list (text file with one IOC per line)
         if ext in {".txt", ".csv", ".ioc", ".iocs"}:
             if self._looks_like_ioc_list(file_path):
-                return self._result(
-                    InputType.IOC_LIST, file_path, "medium", {"filename": path.name}
-                )
+                return self._result(InputType.IOC_LIST, file_path, "medium", {"filename": path.name})
 
         # Default to generic file
         return self._result(
@@ -304,9 +291,7 @@ class InputDetector:
         except Exception:
             return False
 
-    def _result(
-        self, input_type: str, value: str, confidence: str, metadata: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _result(self, input_type: str, value: str, confidence: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Create a detection result."""
         return {"type": input_type, "value": value, "confidence": confidence, "metadata": metadata}
 

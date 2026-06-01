@@ -74,12 +74,8 @@ class StepResult:
         return cls(
             name=data["name"],
             status=StepStatus(data["status"]),
-            started_at=(
-                datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None
-            ),
-            completed_at=(
-                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
-            ),
+            started_at=(datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None),
+            completed_at=(datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None),
             duration_seconds=data.get("duration_seconds"),
             output=data.get("output"),
             error=data.get("error"),
@@ -133,9 +129,7 @@ class RemediationAction:
             requires_approval=data.get("requires_approval", True),
             priority=data.get("priority", 0),
             description=data.get("description"),
-            executed_at=(
-                datetime.fromisoformat(data["executed_at"]) if data.get("executed_at") else None
-            ),
+            executed_at=(datetime.fromisoformat(data["executed_at"]) if data.get("executed_at") else None),
             executed_by=data.get("executed_by"),
             result=data.get("result"),
         )
@@ -249,24 +243,12 @@ class InvestigationState:
             status=InvestigationStatus(data["status"]),
             inputs=data.get("inputs", {}),
             findings=data.get("findings", []),
-            iocs=data.get(
-                "iocs", {"hashes": [], "domains": [], "ips": [], "urls": [], "emails": []}
-            ),
+            iocs=data.get("iocs", {"hashes": [], "domains": [], "ips": [], "urls": [], "emails": []}),
             risk_score=data.get("risk_score", 0),
             verdict=data.get("verdict", "UNKNOWN"),
-            created_at=(
-                datetime.fromisoformat(data["created_at"])
-                if data.get("created_at")
-                else datetime.now(timezone.utc)
-            ),
-            updated_at=(
-                datetime.fromisoformat(data["updated_at"])
-                if data.get("updated_at")
-                else datetime.now(timezone.utc)
-            ),
-            completed_at=(
-                datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None
-            ),
+            created_at=(datetime.fromisoformat(data["created_at"]) if data.get("created_at") else datetime.now(timezone.utc)),
+            updated_at=(datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else datetime.now(timezone.utc)),
+            completed_at=(datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None),
             error=data.get("error"),
         )
 
@@ -274,9 +256,7 @@ class InvestigationState:
         state.steps = [StepResult.from_dict(s) for s in data.get("steps", [])]
 
         # Deserialize remediation actions
-        state.remediation_actions = [
-            RemediationAction.from_dict(a) for a in data.get("remediation_actions", [])
-        ]
+        state.remediation_actions = [RemediationAction.from_dict(a) for a in data.get("remediation_actions", [])]
 
         return state
 

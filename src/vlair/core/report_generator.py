@@ -45,9 +45,7 @@ class ReportGenerator:
 
     SUPPORTED_FORMATS = ["html", "markdown", "md"]
 
-    def generate(
-        self, result: Dict[str, Any], report_format: str = "html", output_path: Optional[str] = None
-    ) -> str:
+    def generate(self, result: Dict[str, Any], report_format: str = "html", output_path: Optional[str] = None) -> str:
         """
         Generate a report file from analysis results.
 
@@ -60,9 +58,7 @@ class ReportGenerator:
             Path to generated report file
         """
         if report_format not in self.SUPPORTED_FORMATS:
-            raise ValueError(
-                f"Unsupported format: {report_format}. " f"Use: {', '.join(self.SUPPORTED_FORMATS)}"
-            )
+            raise ValueError(f"Unsupported format: {report_format}. " f"Use: {', '.join(self.SUPPORTED_FORMATS)}")
 
         report_data = self._build_report_data(result)
 
@@ -170,9 +166,7 @@ class ReportGenerator:
 
         ioc_count = sum(len(v) for v in data.iocs.values() if isinstance(v, list))
         if ioc_count > 0:
-            parts.append(
-                f"A total of {ioc_count} indicator{'s' if ioc_count != 1 else ''} of compromise"
-            )
+            parts.append(f"A total of {ioc_count} indicator{'s' if ioc_count != 1 else ''} of compromise")
             parts.append(f"{'were' if ioc_count != 1 else 'was'} extracted.")
 
         if data.workflow_name:
@@ -352,15 +346,9 @@ class ReportGenerator:
             type_label = ioc_type.replace("_", " ").capitalize()
             for value in values:
                 defanged = self._defang(str(value))
-                rows.append(
-                    f"<tr><td>{html_escape(type_label)}</td>"
-                    f"<td>{html_escape(defanged)}</td></tr>"
-                )
+                rows.append(f"<tr><td>{html_escape(type_label)}</td>" f"<td>{html_escape(defanged)}</td></tr>")
 
-        return (
-            '<table class="ioc-table">'
-            "<tr><th>Type</th><th>Value (Defanged)</th></tr>" + "".join(rows) + "</table>"
-        )
+        return '<table class="ioc-table">' "<tr><th>Type</th><th>Value (Defanged)</th></tr>" + "".join(rows) + "</table>"
 
     def _html_recommendations(self, recommendations: List[str]) -> str:
         """Build HTML for recommendations list."""
@@ -388,9 +376,7 @@ class ReportGenerator:
                     f"</div>"
                 )
             if data.duration_seconds is not None:
-                lines.append(
-                    f'<p style="margin-top:10px; color:#666;">Total duration: {data.duration_seconds:.1f}s</p>'
-                )
+                lines.append(f'<p style="margin-top:10px; color:#666;">Total duration: {data.duration_seconds:.1f}s</p>')
             return "\n        ".join(lines)
 
         if data.tools_executed:
@@ -410,11 +396,7 @@ class ReportGenerator:
         tools_list = ", ".join(data.tools_executed) if data.tools_executed else "N/A"
         workflow = data.workflow_name or "N/A (direct analysis)"
         duration = f"{data.duration_seconds:.1f}s" if data.duration_seconds else "N/A"
-        steps = (
-            f"{data.steps_completed}/{data.steps_total}"
-            if data.steps_completed is not None
-            else "N/A"
-        )
+        steps = f"{data.steps_completed}/{data.steps_total}" if data.steps_completed is not None else "N/A"
 
         return (
             '<table class="ioc-table">'

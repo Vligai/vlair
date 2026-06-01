@@ -267,9 +267,7 @@ class InteractiveMenu:
     def browse_by_category(self):
         """Browse tools by category"""
         # Get all unique categories
-        categories = sorted(
-            set(tool["category"] for tool in self.discovery.get_all_tools().values())
-        )
+        categories = sorted(set(tool["category"] for tool in self.discovery.get_all_tools().values()))
 
         print("\n" + "=" * 70)
         print("  Tool Categories")
@@ -447,8 +445,7 @@ class InteractiveMenu:
         print("\n" + "=" * 70)
         print("  Quick Start Guide")
         print("=" * 70)
-        print(
-            """
+        print("""
 1. Basic Usage:
 
    Interactive Mode:
@@ -500,8 +497,7 @@ class InteractiveMenu:
    - Multiple output formats (JSON, CSV, TXT)
    - Caching for improved performance
    - STIX 2.1 export support
-        """
-        )
+        """)
 
         input("\nPress Enter to continue...")
         self.show_main_menu()
@@ -509,8 +505,7 @@ class InteractiveMenu:
 
 def print_usage():
     """Print usage information"""
-    print(
-        """
+    print("""
 vlair - Security Operations Toolkit
 
 Quick Start:
@@ -579,8 +574,7 @@ Individual Tools:
     carve        File carving and extraction
 
 Documentation: https://github.com/Vligai/secops-helper
-    """
-    )
+    """)
 
 
 def main():
@@ -769,9 +763,7 @@ def main():
                     print()
 
                     for step in playbook.get("steps", []):
-                        print(
-                            f"Step {step.get('step', '?')}: {step.get('title', '')}  [{step.get('time', '')}]"
-                        )
+                        print(f"Step {step.get('step', '?')}: {step.get('title', '')}  [{step.get('time', '')}]")
                         for action in step.get("actions", []):
                             print(f"  - {action}")
                         print()
@@ -794,9 +786,7 @@ def main():
                         # Save markdown version
                         lines = [f"# {playbook.get('title', 'Playbook')}\n"]
                         for step in playbook.get("steps", []):
-                            lines.append(
-                                f"## Step {step.get('step')}: {step.get('title')} ({step.get('time', '')})\n"
-                            )
+                            lines.append(f"## Step {step.get('step')}: {step.get('title')} ({step.get('time', '')})\n")
                             for action in step.get("actions", []):
                                 lines.append(f"- {action}")
                             lines.append("")
@@ -835,9 +825,7 @@ def main():
                 "  vlair analyze malicious.com                    # Auto-detect domain",
                 file=sys.stderr,
             )
-            print(
-                "  vlair analyze 192.168.1.1                      # Auto-detect IP", file=sys.stderr
-            )
+            print("  vlair analyze 192.168.1.1                      # Auto-detect IP", file=sys.stderr)
             print(
                 "  vlair analyze suspicious.eml --ai              # Add AI assessment",
                 file=sys.stderr,
@@ -953,9 +941,7 @@ def main():
                         _ioc_type = _AI_TYPE_MAP.get(str(result["type"]), "unknown")
                         if not quiet and not json_output:
                             try:
-                                _estimate = _summarizer.estimate_cost(
-                                    result["tool_results"], depth=ai_depth
-                                )
+                                _estimate = _summarizer.estimate_cost(result["tool_results"], depth=ai_depth)
                                 print(
                                     f"[AI] Estimated cost: ${_estimate['estimated_cost_usd']:.4f} "
                                     f"({_estimate['estimated_input_tokens']}+{_estimate['estimated_output_tokens']} tokens, "
@@ -966,9 +952,7 @@ def main():
                                 pass
                         if not quiet:
                             print("[*] Running AI analysis...", file=sys.stderr)
-                        ai_result = _summarizer.summarize(
-                            input_value, _ioc_type, result["tool_results"], ai_depth
-                        )
+                        ai_result = _summarizer.summarize(input_value, _ioc_type, result["tool_results"], ai_depth)
                     else:
                         if not quiet:
                             print(
@@ -1034,9 +1018,7 @@ def main():
 
                     ai_reporter = AIReporter()
                     _ioc_type_for_report = (
-                        _AI_TYPE_MAP.get(str(result.get("type", "")), "unknown")
-                        if "_AI_TYPE_MAP" in dir()
-                        else "unknown"
+                        _AI_TYPE_MAP.get(str(result.get("type", "")), "unknown") if "_AI_TYPE_MAP" in dir() else "unknown"
                     )
                     md_content = ai_reporter.to_markdown(
                         ioc_value=input_value,
@@ -1132,9 +1114,7 @@ def main():
                     print(f"Verdict: {verdict}")
                     if detections or total:
                         print(f"Detections: {detections}/{total}")
-                    malware_family = result.get("malware_family") or result.get(
-                        "suggested_threat_label"
-                    )
+                    malware_family = result.get("malware_family") or result.get("suggested_threat_label")
                     if malware_family:
                         print(f"Family: {malware_family}")
                     sources = result.get("sources", [])
@@ -1268,9 +1248,7 @@ def main():
                 from vlair.core.history import AnalysisHistory
 
                 history = AnalysisHistory()
-                verdict_val = (
-                    result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
-                )
+                verdict_val = result.get("verdict", "UNKNOWN") if isinstance(result, dict) else "UNKNOWN"
                 score_val = result.get("risk_score") if isinstance(result, dict) else None
                 history.record(
                     input_value=sys.argv[3] if len(sys.argv) > 3 else check_type,
@@ -1299,9 +1277,7 @@ def main():
         if len(sys.argv) < 3:
             print("Usage: vlair workflow <name> <input> [--verbose] [--json]", file=sys.stderr)
             print("\nAvailable workflows:", file=sys.stderr)
-            print(
-                "  phishing-email     Comprehensive phishing email investigation", file=sys.stderr
-            )
+            print("  phishing-email     Comprehensive phishing email investigation", file=sys.stderr)
             print("  malware-triage     Quick malware analysis and triage", file=sys.stderr)
             print("  ioc-hunt           Bulk IOC threat hunting", file=sys.stderr)
             print("  network-forensics  Network traffic forensic analysis", file=sys.stderr)
@@ -1421,9 +1397,7 @@ def main():
             print("  status <id>              Check investigation status", file=sys.stderr)
             print("  list [--last 24h]        List recent investigations", file=sys.stderr)
             print("  results <id>             Get investigation results", file=sys.stderr)
-            print(
-                "  interactive              Start interactive investigation mode", file=sys.stderr
-            )
+            print("  interactive              Start interactive investigation mode", file=sys.stderr)
             print("\nExamples:", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --verbose", file=sys.stderr)
             print("  vlair investigate phishing --file suspicious.eml --mock", file=sys.stderr)
@@ -1645,9 +1619,7 @@ def main():
         elif investigate_cmd == "results":
             # Get investigation results
             if len(sys.argv) < 4:
-                print(
-                    "Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr
-                )
+                print("Usage: vlair investigate results <investigation-id> [--json]", file=sys.stderr)
                 sys.exit(1)
 
             investigation_id = sys.argv[3]
@@ -1682,13 +1654,9 @@ def main():
                     print(f"\nSteps ({len(state.steps)}):")
                     for step in state.steps:
                         status_icon = (
-                            "[+]"
-                            if step.status.value == "completed"
-                            else "[-]" if step.status.value == "failed" else "[.]"
+                            "[+]" if step.status.value == "completed" else "[-]" if step.status.value == "failed" else "[.]"
                         )
-                        duration = (
-                            f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
-                        )
+                        duration = f"({step.duration_seconds:.1f}s)" if step.duration_seconds else ""
                         print(f"  {status_icon} {step.name} {duration}")
                         if step.error:
                             print(f"      Error: {step.error}")
@@ -2019,9 +1987,7 @@ def main():
             from vlair.tools.log_analyzer import LogAnalyzer, format_output_json
 
             analyzer_log = LogAnalyzer(verbose=verbose)
-            result = analyzer_log.analyze_file(
-                log_file, sigma_rules=sigma_rules, sigma_min_level=sigma_min_level
-            )
+            result = analyzer_log.analyze_file(log_file, sigma_rules=sigma_rules, sigma_min_level=sigma_min_level)
 
             if "error" in result:
                 print(f"Error: {result['error']}", file=sys.stderr)
@@ -2166,9 +2132,7 @@ def main():
             )
             print("", file=sys.stderr)
             print("Options:", file=sys.stderr)
-            print(
-                "  --type <type>      IOC type: ip, domain, hash_md5, hash_sha1,", file=sys.stderr
-            )
+            print("  --type <type>      IOC type: ip, domain, hash_md5, hash_sha1,", file=sys.stderr)
             print(
                 "                               hash_sha256, url, email (auto-detected)",
                 file=sys.stderr,
@@ -2229,9 +2193,7 @@ def main():
             )
 
             if sq_json:
-                print(
-                    json.dumps({"ioc": sq_value, "type": sq_ioc_type, "queries": queries}, indent=2)
-                )
+                print(json.dumps({"ioc": sq_value, "type": sq_ioc_type, "queries": queries}, indent=2))
             else:
                 print(f"\nSIEM Queries — {sq_value} ({sq_ioc_type})")
                 print("=" * 66)

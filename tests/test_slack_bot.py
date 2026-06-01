@@ -20,7 +20,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -254,9 +253,7 @@ class TestCommandRouterRouting:
                 with patch("vlair.tools.ioc_extractor.IOCExtractor", mock_extractor, create=True):
                     result = router.route("investigate", "Check IP 1.2.3.4 and domain evil.com")
         # Accept either a real IOC extraction result or a mocked one
-        assert (
-            result["error"] is False or "IOC" in result["text"] or "ioc" in result["text"].lower()
-        )
+        assert result["error"] is False or "IOC" in result["text"] or "ioc" in result["text"].lower()
 
     def test_analyze_no_args(self, router):
         result = router.route("analyze", "")
@@ -275,12 +272,8 @@ class TestCommandRouterRouting:
         }
         mock_analyzer_cls.return_value = mock_analyzer_instance
 
-        with patch.dict(
-            "sys.modules", {"vlair.core.analyzer": MagicMock(Analyzer=mock_analyzer_cls)}
-        ):
-            with patch(
-                "vlair.integrations.command_router._first_available_provider", return_value=None
-            ):
+        with patch.dict("sys.modules", {"vlair.core.analyzer": MagicMock(Analyzer=mock_analyzer_cls)}):
+            with patch("vlair.integrations.command_router._first_available_provider", return_value=None):
                 result = router.route("analyze", "evil.com")
 
         assert result["error"] is False
@@ -292,9 +285,7 @@ class TestCommandRouterRouting:
         assert result["error"] is True
 
     def test_explain_no_provider(self, router):
-        with patch(
-            "vlair.integrations.command_router._first_available_provider", return_value=None
-        ):
+        with patch("vlair.integrations.command_router._first_available_provider", return_value=None):
             result = router.route("explain", "lateral movement")
         assert result["error"] is False
         assert "No AI provider" in result["text"]
@@ -350,9 +341,7 @@ class TestCommandRouterRouting:
             {"role": "user", "content": "analyze evil.com"},
             {"role": "assistant", "content": "Verdict: Malicious, risk score 95"},
         ]
-        with patch(
-            "vlair.integrations.command_router._first_available_provider", return_value=None
-        ):
+        with patch("vlair.integrations.command_router._first_available_provider", return_value=None):
             result = router.route("summary", "", thread_context=context)
         assert result["error"] is False
         assert "Summary" in result["text"] or "finding" in result["text"].lower()
@@ -710,11 +699,7 @@ class TestCommandRouterExtended:
         ):
             with patch.dict(
                 "sys.modules",
-                {
-                    "vlair.ai.providers.anthropic": MagicMock(
-                        AnthropicProvider=lambda: mock_provider
-                    )
-                },
+                {"vlair.ai.providers.anthropic": MagicMock(AnthropicProvider=lambda: mock_provider)},
             ):
                 # Use the function directly with a mocked import
                 pass  # covered via explain/ask tests below
@@ -722,9 +707,7 @@ class TestCommandRouterExtended:
     def test_first_available_provider_returns_none_when_none_configured(self):
         from vlair.integrations.command_router import _first_available_provider
 
-        with patch(
-            "vlair.integrations.command_router._first_available_provider", return_value=None
-        ):
+        with patch("vlair.integrations.command_router._first_available_provider", return_value=None):
             result = _first_available_provider()
             assert result is None
 
@@ -876,9 +859,7 @@ class TestCommandRouterExtended:
     # ------------------------------------------------------------------
 
     def test_handle_ask_no_provider(self, router):
-        with patch(
-            "vlair.integrations.command_router._first_available_provider", return_value=None
-        ):
+        with patch("vlair.integrations.command_router._first_available_provider", return_value=None):
             result = router.route("ask", "Is 8.8.8.8 malicious?")
 
         assert result["error"] is False
@@ -923,9 +904,7 @@ class TestCommandRouterExtended:
 
     def test_handle_summary_no_provider_no_assistant_msgs(self, router):
         context = [{"role": "user", "content": "some question"}]
-        with patch(
-            "vlair.integrations.command_router._first_available_provider", return_value=None
-        ):
+        with patch("vlair.integrations.command_router._first_available_provider", return_value=None):
             result = router.route("summary", "", thread_context=context)
 
         assert result["error"] is False
@@ -936,9 +915,7 @@ class TestCommandRouterExtended:
             {"role": "user", "content": "analyze evil.com"},
             {"role": "assistant", "content": "Verdict: MALICIOUS, Risk: 90/100"},
         ]
-        with patch(
-            "vlair.integrations.command_router._first_available_provider", return_value=None
-        ):
+        with patch("vlair.integrations.command_router._first_available_provider", return_value=None):
             result = router.route("summary", "", thread_context=context)
 
         assert result["error"] is False
@@ -946,9 +923,7 @@ class TestCommandRouterExtended:
 
     def test_handle_summary_with_ai_provider(self, router):
         mock_provider = MagicMock()
-        mock_provider.analyze.return_value = MagicMock(
-            content="Key finding: evil.com is malicious."
-        )
+        mock_provider.analyze.return_value = MagicMock(content="Key finding: evil.com is malicious.")
         context = [
             {"role": "user", "content": "analyze evil.com"},
             {"role": "assistant", "content": "Verdict: MALICIOUS"},

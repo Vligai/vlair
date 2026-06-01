@@ -145,16 +145,12 @@ class PhishingEmailWorkflow(Workflow):
             # Check DKIM
             dkim = auth.get("dkim", {})
             if dkim.get("result") == "fail":
-                context.scorer.add_finding(
-                    Severity.MEDIUM, "DKIM validation failed", "eml_parser", {"dkim": dkim}
-                )
+                context.scorer.add_finding(Severity.MEDIUM, "DKIM validation failed", "eml_parser", {"dkim": dkim})
 
             # Check DMARC
             dmarc = auth.get("dmarc", {})
             if dmarc.get("result") == "fail":
-                context.scorer.add_finding(
-                    Severity.HIGH, "DMARC validation failed", "eml_parser", {"dmarc": dmarc}
-                )
+                context.scorer.add_finding(Severity.HIGH, "DMARC validation failed", "eml_parser", {"dmarc": dmarc})
 
             # Extract attachment hashes
             attachments = result.get("attachments", [])
@@ -167,9 +163,7 @@ class PhishingEmailWorkflow(Workflow):
             return StepResult(step_name="parse_email", success=True, data=result)
 
         except ImportError:
-            return StepResult(
-                step_name="parse_email", success=False, error="EML parser not available"
-            )
+            return StepResult(step_name="parse_email", success=False, error="EML parser not available")
         except Exception as e:
             return StepResult(step_name="parse_email", success=False, error=str(e))
 
@@ -184,9 +178,7 @@ class PhishingEmailWorkflow(Workflow):
             context.add_tool_result("ioc_extractor", result)
 
             # Add IOCs to context
-            context.add_iocs(
-                "hashes", result.get("md5", []) + result.get("sha1", []) + result.get("sha256", [])
-            )
+            context.add_iocs("hashes", result.get("md5", []) + result.get("sha1", []) + result.get("sha256", []))
             context.add_iocs("domains", result.get("domains", []))
             context.add_iocs("ips", result.get("ips", []))
             context.add_iocs("urls", result.get("urls", []))
@@ -205,9 +197,7 @@ class PhishingEmailWorkflow(Workflow):
             return StepResult(step_name="extract_iocs", success=True, data=result)
 
         except ImportError:
-            return StepResult(
-                step_name="extract_iocs", success=False, error="IOC extractor not available"
-            )
+            return StepResult(step_name="extract_iocs", success=False, error="IOC extractor not available")
         except Exception as e:
             return StepResult(step_name="extract_iocs", success=False, error=str(e))
 
@@ -215,9 +205,7 @@ class PhishingEmailWorkflow(Workflow):
         """Check attachment hashes against threat intelligence"""
         hashes = context.iocs.get("hashes", [])
         if not hashes:
-            return StepResult(
-                step_name="check_hashes", success=True, data={"message": "No hashes to check"}
-            )
+            return StepResult(step_name="check_hashes", success=True, data={"message": "No hashes to check"})
 
         try:
             from vlair.tools.hash_lookup import HashLookup
@@ -249,9 +237,7 @@ class PhishingEmailWorkflow(Workflow):
             return StepResult(step_name="check_hashes", success=True, data={"results": results})
 
         except ImportError:
-            return StepResult(
-                step_name="check_hashes", success=False, error="Hash lookup not available"
-            )
+            return StepResult(step_name="check_hashes", success=False, error="Hash lookup not available")
         except Exception as e:
             return StepResult(step_name="check_hashes", success=False, error=str(e))
 
@@ -259,9 +245,7 @@ class PhishingEmailWorkflow(Workflow):
         """Check domains against reputation services"""
         domains = context.iocs.get("domains", [])
         if not domains:
-            return StepResult(
-                step_name="check_domains", success=True, data={"message": "No domains to check"}
-            )
+            return StepResult(step_name="check_domains", success=True, data={"message": "No domains to check"})
 
         try:
             from vlair.tools.domain_ip_intel import DomainIPIntelligence as DomainIPIntel
@@ -275,13 +259,9 @@ class PhishingEmailWorkflow(Workflow):
 
                 # Add findings
                 if result.get("verdict") == "malicious":
-                    context.scorer.add_finding(
-                        Severity.CRITICAL, f"Domain is MALICIOUS: {domain}", "domain_intel", result
-                    )
+                    context.scorer.add_finding(Severity.CRITICAL, f"Domain is MALICIOUS: {domain}", "domain_intel", result)
                 elif result.get("verdict") == "suspicious":
-                    context.scorer.add_finding(
-                        Severity.HIGH, f"Domain is suspicious: {domain}", "domain_intel", result
-                    )
+                    context.scorer.add_finding(Severity.HIGH, f"Domain is suspicious: {domain}", "domain_intel", result)
 
                 # Check domain age if available
                 if result.get("domain_age_days", 999) < 30:
@@ -296,9 +276,7 @@ class PhishingEmailWorkflow(Workflow):
             return StepResult(step_name="check_domains", success=True, data={"results": results})
 
         except ImportError:
-            return StepResult(
-                step_name="check_domains", success=False, error="Domain intel not available"
-            )
+            return StepResult(step_name="check_domains", success=False, error="Domain intel not available")
         except Exception as e:
             return StepResult(step_name="check_domains", success=False, error=str(e))
 
@@ -306,9 +284,7 @@ class PhishingEmailWorkflow(Workflow):
         """Analyze URLs for malicious indicators"""
         urls = context.iocs.get("urls", [])
         if not urls:
-            return StepResult(
-                step_name="check_urls", success=True, data={"message": "No URLs to check"}
-            )
+            return StepResult(step_name="check_urls", success=True, data={"message": "No URLs to check"})
 
         try:
             from vlair.tools.url_analyzer import URLAnalyzer
@@ -329,9 +305,7 @@ class PhishingEmailWorkflow(Workflow):
                         result,
                     )
                 elif result.get("verdict") == "suspicious":
-                    context.scorer.add_finding(
-                        Severity.HIGH, f"URL is suspicious: {url[:50]}...", "url_analyzer", result
-                    )
+                    context.scorer.add_finding(Severity.HIGH, f"URL is suspicious: {url[:50]}...", "url_analyzer", result)
 
                 # Check for suspicious patterns
                 patterns = result.get("suspicious_patterns", [])
@@ -347,9 +321,7 @@ class PhishingEmailWorkflow(Workflow):
             return StepResult(step_name="check_urls", success=True, data={"results": results})
 
         except ImportError:
-            return StepResult(
-                step_name="check_urls", success=False, error="URL analyzer not available"
-            )
+            return StepResult(step_name="check_urls", success=False, error="URL analyzer not available")
         except Exception as e:
             return StepResult(step_name="check_urls", success=False, error=str(e))
 
@@ -396,9 +368,7 @@ class PhishingEmailWorkflow(Workflow):
                     continue
 
             context.add_tool_result("cert_analyzer", {"results": results})
-            return StepResult(
-                step_name="check_certificates", success=True, data={"results": results}
-            )
+            return StepResult(step_name="check_certificates", success=True, data={"results": results})
 
         except ImportError:
             return StepResult(

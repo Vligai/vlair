@@ -78,9 +78,7 @@ class TestCheckHashCommand:
         assert hash_type == "sha1"
 
         # Test SHA256
-        is_valid, hash_type = HashValidator.validate(
-            "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
-        )
+        is_valid, hash_type = HashValidator.validate("2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae")
         assert is_valid is True
         assert hash_type == "sha256"
 

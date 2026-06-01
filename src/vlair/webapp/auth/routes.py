@@ -410,11 +410,7 @@ def change_password():
         username=g.current_user["username"],
         ip_address=request.remote_addr,
     )
-    return jsonify(
-        {
-            "message": "Password changed. All active sessions have been invalidated. Please log in again."
-        }
-    )
+    return jsonify({"message": "Password changed. All active sessions have been invalidated. Please log in again."})
 
 
 # ---------------------------------------------------------------------------

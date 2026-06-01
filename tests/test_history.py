@@ -204,16 +204,10 @@ class TestHistoryGetStats:
 
     def test_stats_verdict_breakdown(self):
         """Test verdict breakdown in stats"""
-        self.history.record(
-            input_value="a", input_type="hash", verdict="MALICIOUS", command="check"
-        )
-        self.history.record(
-            input_value="b", input_type="hash", verdict="MALICIOUS", command="check"
-        )
+        self.history.record(input_value="a", input_type="hash", verdict="MALICIOUS", command="check")
+        self.history.record(input_value="b", input_type="hash", verdict="MALICIOUS", command="check")
         self.history.record(input_value="c", input_type="hash", verdict="CLEAN", command="check")
-        self.history.record(
-            input_value="d", input_type="hash", verdict="SUSPICIOUS", command="check"
-        )
+        self.history.record(input_value="d", input_type="hash", verdict="SUSPICIOUS", command="check")
 
         stats = self.history.get_stats()
         assert stats["verdicts"]["MALICIOUS"] == 2

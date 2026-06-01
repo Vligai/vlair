@@ -146,9 +146,7 @@ class STIXExporter:
         # Process URLs
         for url in ioc_data.get("urls", []):
             # Remove defanging if present
-            clean_url = (
-                url.replace("hxxp", "http").replace("[.]", ".").replace("[", "").replace("]", "")
-            )
+            clean_url = url.replace("hxxp", "http").replace("[.]", ".").replace("[", "").replace("]", "")
             pattern = f"[url:value = '{clean_url}']"
             indicator = self._create_indicator(
                 pattern=pattern,
@@ -162,9 +160,7 @@ class STIXExporter:
         # Process email addresses
         for email in ioc_data.get("emails", []):
             # Remove defanging if present
-            clean_email = (
-                email.replace("[@]", "@").replace("[.]", ".").replace("[", "").replace("]", "")
-            )
+            clean_email = email.replace("[@]", "@").replace("[.]", ".").replace("[", "").replace("]", "")
             pattern = f"[email-addr:value = '{clean_email}']"
             indicator = self._create_indicator(
                 pattern=pattern,

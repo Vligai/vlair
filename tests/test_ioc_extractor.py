@@ -114,10 +114,7 @@ class TestIOCExtractor:
         text = "SHA256: 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
         result = extractor.extract_from_text(text, types=["hash"])
 
-        assert (
-            "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
-            in result["hashes"]["sha256"]
-        )
+        assert "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae" in result["hashes"]["sha256"]
 
     def test_extract_cve(self):
         """Test CVE extraction"""

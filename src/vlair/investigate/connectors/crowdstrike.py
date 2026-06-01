@@ -104,9 +104,7 @@ class CrowdStrikeConnector(EDRConnector):
     ) -> None:
         self._client_id = client_id or os.getenv("CROWDSTRIKE_CLIENT_ID", "")
         self._client_secret = client_secret or os.getenv("CROWDSTRIKE_CLIENT_SECRET", "")
-        self._base_url = (
-            base_url or os.getenv("CROWDSTRIKE_BASE_URL", self.DEFAULT_BASE_URL)
-        ).rstrip("/")
+        self._base_url = (base_url or os.getenv("CROWDSTRIKE_BASE_URL", self.DEFAULT_BASE_URL)).rstrip("/")
         self._member_cid = member_cid or os.getenv("CROWDSTRIKE_MEMBER_CID", "")
 
         if not self._client_id or not self._client_secret:

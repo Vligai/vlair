@@ -131,9 +131,7 @@ class Reporter:
                 icon = self._severity_icon(finding["severity"])
                 lines.append(f"  {icon} {finding['message']}")
             if len(findings) > 10:
-                lines.append(
-                    f"  {Colors.DIM}... and {len(findings) - 10} more findings{Colors.RESET}"
-                )
+                lines.append(f"  {Colors.DIM}... and {len(findings) - 10} more findings{Colors.RESET}")
             lines.append("")
 
         # Extracted IOCs
@@ -152,10 +150,7 @@ class Reporter:
                     remaining = len(values) - len(display_vals)
                     suffix = f" (+{remaining} more)" if remaining > 0 else ""
 
-                    lines.append(
-                        f"  {ioc_type.capitalize()} ({len(values)}): "
-                        f"{', '.join(formatted)}{suffix}"
-                    )
+                    lines.append(f"  {ioc_type.capitalize()} ({len(values)}): " f"{', '.join(formatted)}{suffix}")
             lines.append("")
 
         # Recommendations
@@ -167,9 +162,7 @@ class Reporter:
 
         # Footer
         lines.append(self._separator_line())
-        lines.append(
-            f"{Colors.DIM}Use --verbose for detailed results | --json for machine-readable output{Colors.RESET}"
-        )
+        lines.append(f"{Colors.DIM}Use --verbose for detailed results | --json for machine-readable output{Colors.RESET}")
         lines.append(self._header_line())
 
         return "\n".join(lines)
@@ -373,9 +366,7 @@ def main():
 
     # Create test data
     scorer = RiskScorer()
-    scorer.add_finding(
-        Severity.CRITICAL, "Hash detected as malicious by 45/70 AV engines", "hash_lookup"
-    )
+    scorer.add_finding(Severity.CRITICAL, "Hash detected as malicious by 45/70 AV engines", "hash_lookup")
     scorer.add_finding(Severity.HIGH, "SPF validation failed - sender may be spoofed", "eml_parser")
     scorer.add_finding(Severity.MEDIUM, "Script was obfuscated (2 layers)", "deobfuscator")
 

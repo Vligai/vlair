@@ -132,9 +132,7 @@ class MatchAnalyzer:
     SEVERITY_MAP = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 
     @staticmethod
-    def extract_match_info(
-        match: "yara.Match", file_path: str, file_hash: str, file_size: int
-    ) -> Dict:
+    def extract_match_info(match: "yara.Match", file_path: str, file_hash: str, file_size: int) -> Dict:
         """Extract detailed information from a YARA match"""
         match_info = {
             "file_path": file_path,
@@ -206,9 +204,7 @@ class MatchAnalyzer:
             return "clean", 0
 
         # Find highest severity
-        max_severity = max(
-            MatchAnalyzer.SEVERITY_MAP.get(m.get("severity", "low"), 1) for m in matches
-        )
+        max_severity = max(MatchAnalyzer.SEVERITY_MAP.get(m.get("severity", "low"), 1) for m in matches)
 
         # Calculate risk score
         risk_score = min(100, max_severity * 20 + len(matches) * 5)
@@ -275,9 +271,7 @@ class YaraScanner:
                 # Extract match details
                 match_details = []
                 for match in matches:
-                    detail = MatchAnalyzer.extract_match_info(
-                        match, str(file_path), file_hash, file_size
-                    )
+                    detail = MatchAnalyzer.extract_match_info(match, str(file_path), file_hash, file_size)
                     match_details.append(detail)
 
                 # Classify verdict
@@ -314,9 +308,7 @@ class YaraScanner:
                 print(f"Error scanning {file_path}: {e}", file=sys.stderr)
             return None
 
-    def scan_directory(
-        self, dir_path: str, recursive=True, extensions=None, max_workers=4
-    ) -> List[Dict]:
+    def scan_directory(self, dir_path: str, recursive=True, extensions=None, max_workers=4) -> List[Dict]:
         """Scan all files in a directory"""
         dir_path = Path(dir_path)
 
@@ -351,9 +343,7 @@ class YaraScanner:
         results = []
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(self.scan_file, file_path): file_path for file_path in files_to_scan
-            }
+            futures = {executor.submit(self.scan_file, file_path): file_path for file_path in files_to_scan}
 
             # Progress bar if tqdm available
             if TQDM_AVAILABLE and not self.verbose:
@@ -458,9 +448,7 @@ def format_output_text(results: List[Dict]) -> str:
         lines.append("Matched Rules:")
 
         for match in matches:
-            lines.append(
-                f"  [{match['severity'].upper()}] {match['rule_name']} ({match['namespace']})"
-            )
+            lines.append(f"  [{match['severity'].upper()}] {match['rule_name']} ({match['namespace']})")
 
             if match.get("meta"):
                 meta = match["meta"]
@@ -475,9 +463,7 @@ def format_output_text(results: List[Dict]) -> str:
             if match.get("strings"):
                 lines.append(f"    Matched Strings:")
                 for string in match["strings"][:5]:  # Limit to 5
-                    lines.append(
-                        f"      - {string['identifier']}: \"{string['value']}\" at offset {string['offset']}"
-                    )
+                    lines.append(f"      - {string['identifier']}: \"{string['value']}\" at offset {string['offset']}")
 
             lines.append("")
 
@@ -518,26 +504,18 @@ Examples:
     scan_parser = subparsers.add_parser("scan", help="Scan files with YARA rules")
     scan_parser.add_argument("target", help="File or directory to scan")
     scan_parser.add_argument("--rules", "-r", required=True, help="YARA rule file or directory")
-    scan_parser.add_argument(
-        "--recursive", action="store_true", help="Scan directories recursively"
-    )
+    scan_parser.add_argument("--recursive", action="store_true", help="Scan directories recursively")
     scan_parser.add_argument("--extensions", help="File extensions to scan (comma-separated)")
-    scan_parser.add_argument(
-        "--threads", "-t", type=int, default=4, help="Number of worker threads"
-    )
+    scan_parser.add_argument("--threads", "-t", type=int, default=4, help="Number of worker threads")
     scan_parser.add_argument("--timeout", type=int, default=60, help="Timeout per file (seconds)")
-    scan_parser.add_argument(
-        "--format", "-f", choices=["json", "csv", "txt"], default="json", help="Output format"
-    )
+    scan_parser.add_argument("--format", "-f", choices=["json", "csv", "txt"], default="json", help="Output format")
     scan_parser.add_argument("--output", "-o", help="Output file (default: stdout)")
     scan_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     # Validate command
     validate_parser = subparsers.add_parser("validate", help="Validate YARA rules")
     validate_parser.add_argument("rules", help="YARA rule file or directory")
-    validate_parser.add_argument(
-        "--recursive", action="store_true", help="Validate all rules in directory"
-    )
+    validate_parser.add_argument("--recursive", action="store_true", help="Validate all rules in directory")
 
     return parser.parse_args()
 

@@ -303,9 +303,7 @@ class TestPrivacy(unittest.TestCase):
     def test_redact_private_ips_in_list(self):
         from vlair.ai.privacy import sanitize_tool_result
 
-        result = sanitize_tool_result(
-            {"ip_list": ["192.168.1.1", "8.8.8.8", "10.0.0.5", "1.1.1.1"]}
-        )
+        result = sanitize_tool_result({"ip_list": ["192.168.1.1", "8.8.8.8", "10.0.0.5", "1.1.1.1"]})
         # Private IPs should be removed, public kept
         self.assertNotIn("192.168.1.1", result["ip_list"])
         self.assertNotIn("10.0.0.5", result["ip_list"])
@@ -661,9 +659,7 @@ class TestThreatSummarizerRefactored(unittest.TestCase):
     def test_is_unavailable_when_provider_not_configured(self):
         from vlair.ai.summarizer import ThreatSummarizer
 
-        env = {
-            k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY")
-        }
+        env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY")}
         with patch.dict(os.environ, env, clear=True):
             summarizer = ThreatSummarizer()
             # Reset lazy provider

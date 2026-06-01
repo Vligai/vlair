@@ -252,13 +252,7 @@ class IOCExtractor:
             summary[hash_type] = count
             summary["total_iocs"] += count
 
-        summary["total_iocs"] += (
-            summary["ips"]
-            + summary["domains"]
-            + summary["urls"]
-            + summary["emails"]
-            + summary["cves"]
-        )
+        summary["total_iocs"] += summary["ips"] + summary["domains"] + summary["urls"] + summary["emails"] + summary["cves"]
 
         return summary
 
@@ -389,17 +383,11 @@ Examples:
 
     parser.add_argument("--whitelist", "-w", help="Path to whitelist file (domains to exclude)")
 
-    parser.add_argument(
-        "--no-private-ips", action="store_true", help="Exclude private IP addresses"
-    )
+    parser.add_argument("--no-private-ips", action="store_true", help="Exclude private IP addresses")
 
-    parser.add_argument(
-        "--defang", action="store_true", help="Defang IOCs in output (make safe for sharing)"
-    )
+    parser.add_argument("--defang", action="store_true", help="Defang IOCs in output (make safe for sharing)")
 
-    parser.add_argument(
-        "--refang", action="store_true", help="Refang defanged IOCs (convert to active form)"
-    )
+    parser.add_argument("--refang", action="store_true", help="Refang defanged IOCs (convert to active form)")
 
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
@@ -471,9 +459,7 @@ def main():
         try:
             from vlair.common.stix_export import export_to_stix
 
-            output = export_to_stix(
-                ioc_data=results, output_type="simple", description=f"IOCs extracted from {source}"
-            )
+            output = export_to_stix(ioc_data=results, output_type="simple", description=f"IOCs extracted from {source}")
         except ImportError:
             print(
                 "Error: STIX export module not found. Please ensure common/stix_export.py exists.",

@@ -266,9 +266,7 @@ class CacheManager:
                     info = self.redis_client.info("stats")
                     stats["backend"] = "redis"
                     stats["total_keys"] = self.redis_client.dbsize()
-                    stats["memory_used"] = self.redis_client.info("memory").get(
-                        "used_memory_human", "N/A"
-                    )
+                    stats["memory_used"] = self.redis_client.info("memory").get("used_memory_human", "N/A")
                     stats["uptime_seconds"] = info.get("uptime_in_seconds", 0)
                 except:
                     pass
@@ -337,9 +335,7 @@ class CacheManager:
                 self.redis_client.ping()
                 info = self.redis_client.info("server")
                 health["version"] = info.get("redis_version", "unknown")
-                health["uptime_seconds"] = self.redis_client.info("stats").get(
-                    "uptime_in_seconds", 0
-                )
+                health["uptime_seconds"] = self.redis_client.info("stats").get("uptime_in_seconds", 0)
             except Exception as e:
                 health["healthy"] = False
                 health["error"] = str(e)

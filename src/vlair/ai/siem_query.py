@@ -193,9 +193,7 @@ _GENERIC_TEMPLATE: Dict[str, str] = {
         '| WHERE TO_LOWER(CONCAT(COALESCE(TO_STRING(message), ""), " ")) LIKE "%{value_lower}%"\n'
         "| STATS count(*) BY host.name"
     ),
-    "sentinel": (
-        'search "{value}"\n' "| summarize count() by $table, Computer\n" "| sort by count_ desc"
-    ),
+    "sentinel": ('search "{value}"\n' "| summarize count() by $table, Computer\n" "| sort by count_ desc"),
     "sumo": ('_sourceCategory=* "{value}"\n' "| count by _sourceHost, _sourceName"),
 }
 
@@ -278,9 +276,7 @@ class SiemQueryGenerator:
 
         if use_ai:
             try:
-                return self._ai_generate(
-                    ioc_value, ioc_type, target_platforms, investigation_context
-                )
+                return self._ai_generate(ioc_value, ioc_type, target_platforms, investigation_context)
             except Exception:
                 pass  # fall through to templates
 
@@ -320,9 +316,7 @@ class SiemQueryGenerator:
         templates = _TEMPLATES.get(ioc_type, _GENERIC_TEMPLATE)
         result: Dict[str, str] = {}
         for platform in platforms:
-            tmpl = templates.get(
-                platform, _GENERIC_TEMPLATE.get(platform, "# No template available")
-            )
+            tmpl = templates.get(platform, _GENERIC_TEMPLATE.get(platform, "# No template available"))
             result[platform] = tmpl.format(value=value, value_lower=value.lower())
         return result
 

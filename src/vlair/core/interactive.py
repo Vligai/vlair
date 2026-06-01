@@ -269,9 +269,7 @@ class InteractiveInvestigation:
 
                 # Update progress based on completed steps
                 steps_done = result.get("steps_completed", 0)
-                progress.update(
-                    10 + int(80 * steps_done / total_steps), f"Step {steps_done}/{total_steps}"
-                )
+                progress.update(10 + int(80 * steps_done / total_steps), f"Step {steps_done}/{total_steps}")
 
                 progress.complete("Analysis complete")
 

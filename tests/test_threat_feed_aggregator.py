@@ -94,12 +94,8 @@ class TestThreatFeedStorage:
         """Test searching by malware family"""
         db_path = str(tmp_path / "test.db")
         storage = ThreatFeedStorage(db_path)
-        storage.store_ioc(
-            {"value": "evil.com", "type": "domain", "confidence": 75, "malware_family": "Emotet"}
-        )
-        storage.store_ioc(
-            {"value": "bad.com", "type": "domain", "confidence": 80, "malware_family": "TrickBot"}
-        )
+        storage.store_ioc({"value": "evil.com", "type": "domain", "confidence": 75, "malware_family": "Emotet"})
+        storage.store_ioc({"value": "bad.com", "type": "domain", "confidence": 80, "malware_family": "TrickBot"})
 
         results = storage.search_ioc(malware_family="Emotet")
         assert len(results) == 1

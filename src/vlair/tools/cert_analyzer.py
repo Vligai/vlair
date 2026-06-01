@@ -33,9 +33,7 @@ except ImportError:
 try:
     import requests
 except ImportError:
-    print(
-        "Error: requests library not installed. Install with: pip install requests", file=sys.stderr
-    )
+    print("Error: requests library not installed. Install with: pip install requests", file=sys.stderr)
     sys.exit(1)
 
 
@@ -220,12 +218,8 @@ class CertificateAnalyzer:
             key_usage_ext = cert.extensions.get_extension_for_oid(ExtensionOID.KEY_USAGE)
             ku = key_usage_ext.value
             extensions["key_usage"] = {
-                "digital_signature": (
-                    ku.digital_signature if hasattr(ku, "digital_signature") else False
-                ),
-                "key_encipherment": (
-                    ku.key_encipherment if hasattr(ku, "key_encipherment") else False
-                ),
+                "digital_signature": (ku.digital_signature if hasattr(ku, "digital_signature") else False),
+                "key_encipherment": (ku.key_encipherment if hasattr(ku, "key_encipherment") else False),
                 "key_cert_sign": ku.key_cert_sign if hasattr(ku, "key_cert_sign") else False,
             }
         except x509.ExtensionNotFound:
@@ -339,9 +333,7 @@ class CertificateAnalyzer:
         # Check validity period (> 398 days is suspicious as of 2020)
         validity_days = (cert.not_valid_after - cert.not_valid_before).days
         if validity_days > 398:
-            issues["low"].append(
-                f"Long validity period: {validity_days} days (max recommended: 398)"
-            )
+            issues["low"].append(f"Long validity period: {validity_days} days (max recommended: 398)")
 
         return issues
 
@@ -369,9 +361,7 @@ class CertificateAnalyzer:
         for name in all_names:
             for brand in self.COMMON_BRANDS:
                 if brand in name and brand not in hostname if hostname else True:
-                    indicators["suspicious"].append(
-                        f'Possible brand impersonation: {name} contains "{brand}"'
-                    )
+                    indicators["suspicious"].append(f'Possible brand impersonation: {name} contains "{brand}"')
                     indicators["confidence"] += 20
 
         # Check for suspicious patterns
@@ -485,9 +475,7 @@ def format_output_text(result: Dict) -> str:
     lines.append(f"  Days Remaining: {cert['validity']['days_remaining']}")
     lines.append(f"  Serial Number: {cert['serial_number']}")
     lines.append(f"  Signature Algorithm: {cert['signature_algorithm']}")
-    lines.append(
-        f"  Public Key: {cert['public_key']['algorithm']} ({cert['public_key']['size']} bits)"
-    )
+    lines.append(f"  Public Key: {cert['public_key']['algorithm']} ({cert['public_key']['size']} bits)")
     lines.append("")
 
     # SANs
@@ -593,9 +581,7 @@ def main():
     # Certificate Transparency search
     if args.ct_search:
         if args.verbose:
-            print(
-                f"Querying Certificate Transparency logs for {args.ct_search}...", file=sys.stderr
-            )
+            print(f"Querying Certificate Transparency logs for {args.ct_search}...", file=sys.stderr)
 
         ct = CertificateTransparency()
         ct_results = ct.query_crtsh(args.ct_search)

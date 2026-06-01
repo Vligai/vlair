@@ -27,7 +27,6 @@ except ImportError:  # pragma: no cover
 from .bot_context import BotContext
 from .command_router import CommandRouter
 
-
 # Microsoft login endpoint for Bot Framework token acquisition
 _MS_TOKEN_URL = "https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token"
 _BOT_FRAMEWORK_SEND_URL = "{service_url}v3/conversations/{conversation_id}/activities"

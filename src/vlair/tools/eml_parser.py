@@ -212,13 +212,9 @@ def parse_args():
 
     parser.add_argument("--output", "-o", help="Path to output JSON report file (e.g. report.json)")
 
-    parser.add_argument(
-        "--vt", action="store_true", help="Enable VirusTotal scan for SHA256 of attachments"
-    )
+    parser.add_argument("--vt", action="store_true", help="Enable VirusTotal scan for SHA256 of attachments")
 
-    parser.add_argument(
-        "--verbose", action="store_true", help="Enable verbose output (e.g. VT status per hash)"
-    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output (e.g. VT status per hash)")
 
     return parser.parse_args()
 

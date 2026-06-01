@@ -175,9 +175,7 @@ class SuspiciousPatternDetector:
 
         # Check for suspicious keywords
         url_lower = url.lower()
-        found_keywords = [
-            kw for kw in SuspiciousPatternDetector.SUSPICIOUS_KEYWORDS if kw in url_lower
-        ]
+        found_keywords = [kw for kw in SuspiciousPatternDetector.SUSPICIOUS_KEYWORDS if kw in url_lower]
         if found_keywords:
             suspicions.append(f"Contains suspicious keywords: {', '.join(found_keywords)}")
             risk_score += len(found_keywords) * 5
@@ -405,9 +403,7 @@ class URLAnalyzer:
 
         # Cache result
         if self.cache:
-            self.cache.set(
-                normalized_url, result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL
-            )
+            self.cache.set(normalized_url, result, namespace=self.CACHE_NAMESPACE, ttl=self.CACHE_TTL)
 
         return result
 

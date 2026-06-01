@@ -93,10 +93,7 @@ class SplunkConnector(SIEMConnector):
             self._verify_ssl = verify_ssl
 
         if not self._token:
-            raise EnvironmentError(
-                "SPLUNK_TOKEN must be set. "
-                "Create a token at Settings → Tokens in the Splunk Web UI."
-            )
+            raise EnvironmentError("SPLUNK_TOKEN must be set. " "Create a token at Settings → Tokens in the Splunk Web UI.")
 
         if not self._verify_ssl:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -239,9 +236,7 @@ class SplunkConnector(SIEMConnector):
     ) -> List[Dict[str, Any]]:
         """Search all indexes for events referencing *username*."""
         user = username.replace("'", "\\'")
-        spl = (
-            f'index=* (user="{user}" OR src_user="{user}" OR User="{user}" OR AccountName="{user}")'
-        )
+        spl = f'index=* (user="{user}" OR src_user="{user}" OR User="{user}" OR AccountName="{user}")'
         if event_types:
             type_filter = " OR ".join(f'sourcetype="{t}"' for t in event_types)
             spl += f" ({type_filter})"
@@ -291,9 +286,7 @@ class SplunkConnector(SIEMConnector):
             f"| head {limit}"
         )
         try:
-            raw_events = self._run_search(
-                spl, start_time=start_time, end_time=end_time, limit=limit
-            )
+            raw_events = self._run_search(spl, start_time=start_time, end_time=end_time, limit=limit)
         except Exception:
             return []
 

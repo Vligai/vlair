@@ -170,7 +170,7 @@ exclude_lines = [
 ]
 
 [tool.black]
-line-length = 100
+line-length = 127
 target-version = ['py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 exclude = '''
@@ -188,7 +188,7 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
-line_length = 100
+line_length = 127
 skip_gitignore = true
 known_first_party = ["vlair"]
 
