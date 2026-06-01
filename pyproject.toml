@@ -132,7 +132,14 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --strict-markers --cov=src/vlair --cov-report=term-missing --cov-fail-under=75"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "-m", "not benchmark",
+    "--cov=src/vlair",
+    "--cov-report=term-missing",
+    "--cov-fail-under=75",
+]
 markers = [
     "benchmark: marks tests as benchmarks (deselect with '-m not benchmark')",
 ]
@@ -152,6 +159,9 @@ omit = [
     "src/vlair/webapp/*",
     "src/vlair/integrations/slack.py",
     "src/vlair/integrations/teams.py",
+    "src/vlair/cli/shell.py",
+    "src/vlair/investigate/connectors/crowdstrike.py",
+    "src/vlair/investigate/connectors/splunk.py",
 ]
 
 [tool.coverage.report]

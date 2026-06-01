@@ -197,6 +197,7 @@ class LogInvestigationWorkflow(Workflow):
 
         _type_to_sev = {
             "sql_injection": Severity.CRITICAL,
+            "command_injection": Severity.CRITICAL,
             "xss": Severity.HIGH,
             "path_traversal": Severity.HIGH,
             "scanner_detected": Severity.MEDIUM,

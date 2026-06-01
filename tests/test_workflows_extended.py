@@ -930,7 +930,7 @@ class TestLogInvestigationWorkflowSteps:
         ctx = _make_context("test.log")
 
         mock_analyzer = MagicMock()
-        mock_analyzer.analyze.return_value = {
+        mock_analyzer.analyze_file.return_value = {
             "statistics": {"total_entries": 200},
         }
 
@@ -957,12 +957,12 @@ class TestLogInvestigationWorkflowSteps:
         wf = self._make_workflow()
         ctx = _make_context()
         ctx.data["log_result"] = {
-            "threats": {
-                "sql_injection": [{"ip": "1.1.1.1"}],
-                "xss": [{"ip": "2.2.2.2"}],
-                "path_traversal": [{"ip": "3.3.3.3"}],
-                "command_injection": [{"ip": "4.4.4.4"}],
-            }
+            "alerts": [
+                {"source": "pattern", "type": "sql_injection"},
+                {"source": "pattern", "type": "xss"},
+                {"source": "pattern", "type": "path_traversal"},
+                {"source": "pattern", "type": "command_injection"},
+            ]
         }
 
         result = wf._detect_attacks(ctx)
@@ -986,16 +986,14 @@ class TestLogInvestigationWorkflowSteps:
     # ----- detect_bruteforce -----
 
     def test_detect_bruteforce_with_dict_entries(self):
-        """Brute force dict entries add IPs to context."""
+        """Brute force alerts add IPs to context."""
         wf = self._make_workflow()
         ctx = _make_context()
         ctx.data["log_result"] = {
-            "threats": {
-                "brute_force": [
-                    {"ip": "10.0.0.1"},
-                    {"ip": "10.0.0.2"},
-                ],
-            }
+            "alerts": [
+                {"source": "pattern", "type": "brute_force_attempt", "source_ip": "10.0.0.1"},
+                {"source": "pattern", "type": "brute_force_attempt", "source_ip": "10.0.0.2"},
+            ]
         }
 
         result = wf._detect_bruteforce(ctx)
@@ -1004,13 +1002,13 @@ class TestLogInvestigationWorkflowSteps:
         assert "10.0.0.1" in ctx.iocs["ips"]
 
     def test_detect_bruteforce_with_string_entries(self):
-        """Brute force string entries are also handled."""
+        """Brute force single alert IP is extracted."""
         wf = self._make_workflow()
         ctx = _make_context()
         ctx.data["log_result"] = {
-            "threats": {
-                "brute_force": ["10.0.0.1"],
-            }
+            "alerts": [
+                {"source": "pattern", "type": "brute_force_attempt", "source_ip": "10.0.0.1"},
+            ]
         }
 
         result = wf._detect_bruteforce(ctx)
@@ -1030,13 +1028,14 @@ class TestLogInvestigationWorkflowSteps:
     # ----- detect_scanners -----
 
     def test_detect_scanners_with_entries(self):
-        """Scanner IPs add LOW finding and IOCs."""
+        """Scanner alerts add LOW finding and IOCs."""
         wf = self._make_workflow()
         ctx = _make_context()
         ctx.data["log_result"] = {
-            "threats": {
-                "scanners": [{"ip": "8.8.8.8"}, {"ip": "9.9.9.9"}],
-            }
+            "alerts": [
+                {"source": "pattern", "type": "scanner_detected", "source_ip": "8.8.8.8"},
+                {"source": "pattern", "type": "scanner_detected", "source_ip": "9.9.9.9"},
+            ]
         }
 
         result = wf._detect_scanners(ctx)
@@ -1056,16 +1055,15 @@ class TestLogInvestigationWorkflowSteps:
     # ----- extract_attackers -----
 
     def test_extract_attackers_mixed_entries(self):
-        """Attacker IPs are extracted from various formats."""
+        """Attacker IPs are extracted from alerts across sources."""
         wf = self._make_workflow(verbose=True)
         ctx = _make_context()
         ctx.data["log_result"] = {
-            "threats": {
-                "sql_injection": [{"ip": "1.1.1.1"}],
-                "xss": ["2.2.2.2"],
-                "scanners": [{"ip": "1.1.1.1"}],  # duplicate
-                "other": "not_a_list",
-            }
+            "alerts": [
+                {"source": "pattern", "type": "sql_injection", "source_ip": "1.1.1.1"},
+                {"source": "sigma", "type": "web_attack", "source_ip": "2.2.2.2"},
+                {"source": "pattern", "type": "scanner_detected", "source_ip": "1.1.1.1"},  # duplicate
+            ]
         }
 
         result = wf._extract_attackers(ctx)
